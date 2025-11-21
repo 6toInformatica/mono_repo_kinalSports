@@ -38,25 +38,18 @@ NODE_ENV=development
 PORT=3002
 
 # MongoDB
-MONGODB_URI=mongodb://localhost:27017/kinalsports_admin
-MONGODB_URI_PROD=mongodb+srv://user:password@cluster.mongodb.net/kinalsports_admin
+URI_MONGODB=mongodb://localhost:27017/kinalsports
 
-# Auth Service
-AUTH_SERVICE_URL=http://localhost:3001
-JWT_SECRET=debe-coincidir-con-auth-service
+# JWT Configuration
+JWT_SECRET=tu-secret-key-aqui
+JWT_ISSUER=KinalSportsAuth
+JWT_AUDIENCE=KinalSportsAPI
 
 # Cloudinary (upload de imágenes de campos)
 CLOUDINARY_CLOUD_NAME=tu_cloud_name
 CLOUDINARY_API_KEY=tu_api_key
 CLOUDINARY_API_SECRET=tu_api_secret
 CLOUDINARY_FOLDER=kinalSports/fields
-
-# CORS
-ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
-
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
 ```
 
 ## 📂 Estructura
@@ -114,48 +107,41 @@ pnpm --filter server-admin format:check
 
 ### Campos Deportivos
 
-| Método | Endpoint                     | Descripción             | Auth  |
-| ------ | ---------------------------- | ----------------------- | ----- |
-| GET    | `/api/fields`                | Listar todos los campos | Admin |
-| GET    | `/api/fields/:id`            | Obtener campo por ID    | Admin |
-| POST   | `/api/fields`                | Crear nuevo campo       | Admin |
-| PUT    | `/api/fields/:id`            | Actualizar campo        | Admin |
-| PUT    | `/api/fields/:id/activate`   | Activar campo           | Admin |
-| PUT    | `/api/fields/:id/deactivate` | Desactivar campo        | Admin |
+| Método | Endpoint                                     | Descripción             | Auth  |
+| ------ | -------------------------------------------- | ----------------------- | ----- |
+| GET    | `/kinalSportsAdmin/v1/fields`                | Listar todos los campos | Admin |
+| GET    | `/kinalSportsAdmin/v1/fields/:id`            | Obtener campo por ID    | Admin |
+| POST   | `/kinalSportsAdmin/v1/fields`                | Crear nuevo campo       | Admin |
+| PUT    | `/kinalSportsAdmin/v1/fields/:id`            | Actualizar campo        | Admin |
+| PUT    | `/kinalSportsAdmin/v1/fields/:id/activate`   | Activar campo           | Admin |
+| PUT    | `/kinalSportsAdmin/v1/fields/:id/deactivate` | Desactivar campo        | Admin |
 
 ### Reservas
 
-| Método | Endpoint                        | Descripción               | Auth  |
-| ------ | ------------------------------- | ------------------------- | ----- |
-| GET    | `/api/reservations`             | Listar todas las reservas | Admin |
-| GET    | `/api/reservations/:id`         | Obtener reserva por ID    | Admin |
-| PUT    | `/api/reservations/:id/confirm` | Confirmar reserva         | Admin |
+| Método | Endpoint                                        | Descripción               | Auth  |
+| ------ | ----------------------------------------------- | ------------------------- | ----- |
+| GET    | `/kinalSportsAdmin/v1/reservations`             | Listar todas las reservas | Admin |
+| GET    | `/kinalSportsAdmin/v1/reservations/:id`         | Obtener reserva por ID    | Admin |
+| PUT    | `/kinalSportsAdmin/v1/reservations/:id/confirm` | Confirmar reserva         | Admin |
 
-### Torneos (Pendiente)
+### Torneos
 
-| Método | Endpoint               | Descripción       | Auth  |
-| ------ | ---------------------- | ----------------- | ----- |
-| GET    | `/api/tournaments`     | Listar torneos    | Admin |
-| POST   | `/api/tournaments`     | Crear torneo      | Admin |
-| PUT    | `/api/tournaments/:id` | Actualizar torneo | Admin |
+**Nota**: Los endpoints de torneos aún no están implementados (carpeta `tournaments/` vacía).
 
 ### Ejemplo de Requests
 
 **Crear Campo:**
 
 ```bash
-POST http://localhost:3002/api/fields
-Authorization: Bearer <admin-jwt-token>
+POST http://localhost:3002/kinalSportsAdmin/v1/fields
 Content-Type: multipart/form-data
 
 {
-  "name": "Cancha Futbol 11",
+  "fieldName": "Cancha Futbol 11",
   "description": "Cancha de futbol tamaño reglamentario",
-  "type": "FUTBOL",
-  "capacity": 22,
+  "fieldType": "NATURAL",
+  "capacity": "FUTBOL_11",
   "pricePerHour": 150.00,
-  "location": "Zona 10, Guatemala",
-  "amenities": ["Iluminación", "Vestidores", "Estacionamiento"],
   "image": <file>
 }
 ```
@@ -163,19 +149,17 @@ Content-Type: multipart/form-data
 **Listar Reservas:**
 
 ```bash
-GET http://localhost:3002/api/reservations?status=PENDING&startDate=2025-11-20
-Authorization: Bearer <admin-jwt-token>
+GET http://localhost:3002/kinalSportsAdmin/v1/reservations?status=PENDING
 ```
 
 **Confirmar Reserva:**
 
 ```bash
-PUT http://localhost:3002/api/reservations/507f1f77bcf86cd799439011/confirm
-Authorization: Bearer <admin-jwt-token>
+PUT http://localhost:3002/kinalSportsAdmin/v1/reservations/507f1f77bcf86cd799439011/confirm
 Content-Type: application/json
 
 {
-  "notes": "Reserva confirmada. Pago recibido."
+  "confirmedBy": "admin-user-id"
 }
 ```
 
@@ -186,14 +170,12 @@ Content-Type: application/json
 ```javascript
 {
   _id: ObjectId,
-  name: String (required),
-  description: String,
-  type: String (FUTBOL, BASKETBALL, VOLLEYBALL, etc.),
-  capacity: Number,
-  pricePerHour: Number (required),
-  location: String,
-  amenities: [String],
-  imageUrl: String (Cloudinary),
+  fieldName: String (required, max 100),
+  description: String (max 500),
+  fieldType: String (enum: 'NATURAL', 'SINTETICA', 'CONCRETO'),
+  capacity: String (enum: 'FUTBOL_5', 'FUTBOL_7', 'FUTBOL_11'),
+  pricePerHour: Number (required, min 0),
+  photo: String (Cloudinary URL),
   isActive: Boolean (default: true),
   createdAt: Date,
   updatedAt: Date
@@ -207,36 +189,22 @@ Content-Type: application/json
   _id: ObjectId,
   userId: String (UUID del auth-service),
   fieldId: ObjectId (ref: Field),
-  date: Date (required),
-  startTime: String (HH:mm),
-  endTime: String (HH:mm),
-  duration: Number (horas),
-  totalPrice: Number,
-  status: String (PENDING, CONFIRMED, CANCELLED),
-  paymentStatus: String (PENDING, PAID, REFUNDED),
-  notes: String,
-  adminNotes: String,
+  startTime: Date (required),
+  endTime: Date (required),
+  status: String (enum: 'PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'),
+  confirmation: {
+    confirmedAt: Date,
+    confirmedBy: String
+  },
+  lastModifiedBy: String,
   createdAt: Date,
   updatedAt: Date
 }
 ```
 
-### Tournament (Torneo) - Pendiente
+### Tournament (Torneo)
 
-```javascript
-{
-  _id: ObjectId,
-  name: String,
-  description: String,
-  startDate: Date,
-  endDate: Date,
-  fieldIds: [ObjectId],
-  teams: [ObjectId],
-  status: String (SCHEDULED, IN_PROGRESS, COMPLETED),
-  createdAt: Date,
-  updatedAt: Date
-}
-```
+**Nota**: El modelo de Tournament no está implementado aún. La carpeta `tournaments/` está vacía.
 
 ## 🔐 Autenticación y Autorización
 
@@ -268,11 +236,7 @@ verifica rol ADMIN → permite acceso
 
 ## 📊 Swagger / API Documentation
 
-Acceder a la documentación interactiva en:
-
-```
-http://localhost:3002/api-docs
-```
+**Nota**: Swagger aún no está configurado en este servicio.
 
 ## 🧪 Testing
 

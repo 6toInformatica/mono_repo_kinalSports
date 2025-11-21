@@ -42,33 +42,47 @@ PORT=3001
 DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=kinalsports_auth
-DB_USER=postgres
+DB_USERNAME=postgres
 DB_PASSWORD=tu_password
-DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
+DB_SQL_LOGGING=false
 
-# JWT
+# JWT Configuration
 JWT_SECRET=tu-secret-key-super-segura
-JWT_EXPIRE=7d
-JWT_REFRESH_EXPIRE=30d
+JWT_EXPIRES_IN=30m
+JWT_REFRESH_EXPIRES_IN=7d
+JWT_ISSUER=KinalSportsAuth
+JWT_AUDIENCE=KinalSportsAPI
+
+# SMTP Configuration
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_ENABLE_SSL=true
+SMTP_USERNAME=tu-email@gmail.com
+SMTP_PASSWORD=tu-app-password
+EMAIL_FROM=noreply@kinalsports.com
+EMAIL_FROM_NAME=KinalSports
 
 # Cloudinary (upload de perfiles)
 CLOUDINARY_CLOUD_NAME=tu_cloud_name
 CLOUDINARY_API_KEY=tu_api_key
 CLOUDINARY_API_SECRET=tu_api_secret
+CLOUDINARY_BASE_URL=https://res.cloudinary.com
+CLOUDINARY_FOLDER=kinalSports/profiles
+CLOUDINARY_DEFAULT_AVATAR_FILENAME=default-avatar.png
 
-# Email (Nodemailer)
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USER=tu-email@gmail.com
-EMAIL_PASSWORD=tu-app-password
-EMAIL_FROM=KinalSports <noreply@kinalsports.com>
+# File Upload
+UPLOAD_PATH=./uploads
 
-# CORS
+# Frontend URL
+FRONTEND_URL=http://localhost:5173
+
+# Security
 ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
+ADMIN_ALLOWED_ORIGINS=http://localhost:5173
 
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
+# Verification Tokens (en horas)
+VERIFICATION_EMAIL_EXPIRY_HOURS=24
+PASSWORD_RESET_EXPIRY_HOURS=1
 ```
 
 ## 📂 Estructura

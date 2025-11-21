@@ -29,18 +29,14 @@ pnpm --filter client-admin install
 
 ## ⚙️ Variables de Entorno
 
-Crear archivo `.env` en `client-admin/`:
+**Nota**: Actualmente el proyecto NO usa variables de entorno. Las URLs de los servicios están hardcodeadas en el código.
+
+Si deseas configurar variables de entorno, crea archivo `.env` en `client-admin/`:
 
 ```env
-# API Endpoints
-VITE_AUTH_API_URL=http://localhost:3001/api
-VITE_ADMIN_API_URL=http://localhost:3002/api
-
-# Environment
-VITE_APP_ENV=development
-
-# Optional
-VITE_CLOUDINARY_CLOUD_NAME=tu_cloud_name
+# API Endpoints (ejemplo - no implementado aún)
+VITE_AUTH_API_URL=http://localhost:3001/api/v1
+VITE_ADMIN_API_URL=http://localhost:3002/kinalSportsAdmin/v1
 ```
 
 ## 📂 Estructura

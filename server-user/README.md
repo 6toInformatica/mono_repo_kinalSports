@@ -4,17 +4,15 @@ API RESTful para que usuarios finales consulten campos disponibles y gestionen s
 
 ## 📋 Descripción
 
-Servicio backend público que permite a usuarios autenticados explorar campos deportivos disponibles, crear reservas, consultar su historial y cancelar reservas. Este servicio complementa al `server-admin` proporcionando endpoints orientados al usuario final.
+Servicio backend público que permite a usuarios autenticados explorar campos deportivos disponibles, crear reservas, consultar su historial y cancelar reservas. Comparte la base de datos MongoDB con `server-admin`.
 
 ## 🛠️ Tech Stack
 
 - **Runtime**: Node.js 18+ (ESM)
 - **Framework**: Express 5.x
-- **Base de Datos**: MongoDB 6.0+
+- **Base de Datos**: MongoDB 6.0+ (compartida con server-admin)
 - **ODM**: Mongoose 8.x
 - **Autenticación**: JWT (validación contra auth-service)
-- **Validación**: express-validator
-- **Documentación**: Swagger (swagger-ui-express)
 - **Seguridad**: Helmet, CORS, Rate Limiting
 
 ## 🚀 Instalación
@@ -36,20 +34,13 @@ Crear archivo `.env` en `server-user/`:
 NODE_ENV=development
 PORT=3003
 
-# MongoDB (puede compartir base de datos con server-admin)
-MONGODB_URI=mongodb://localhost:27017/kinalsports_admin
-MONGODB_URI_PROD=mongodb+srv://user:password@cluster.mongodb.net/kinalsports_admin
+# MongoDB (comparte base de datos con server-admin)
+URI_MONGODB=mongodb://localhost:27017/kinalsports
 
-# Auth Service
-AUTH_SERVICE_URL=http://localhost:3001
-JWT_SECRET=debe-coincidir-con-auth-service
-
-# CORS
-ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://localhost:8080
-
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=150
+# JWT Configuration
+JWT_SECRET=tu-secret-key-aqui
+JWT_ISSUER=KinalSportsAuth
+JWT_AUDIENCE=KinalSportsAPI
 ```
 
 ## 📂 Estructura
@@ -64,23 +55,21 @@ server-user/
 ├── helpers/
 │   └── validation-helpers.js     # Helpers de validación
 ├── middlewares/
-│   ├── validate-JWT.js           # Verificación de tokens
+│   ├── validate-JWT.js           # Verificación de tokens JWT
 │   ├── reservation-validators.js # Validadores de reservas
 │   ├── reservation-conflict.js   # Validación de conflictos
 │   └── handle-errors.js          # Manejo centralizado de errores
 ├── src/
 │   ├── fields/
 │   │   ├── field.controller.js   # Controladores de campos (solo lectura)
-│   │   ├── field.model.js        # Modelo de campo deportivo
+│   │   ├── field.model.js        # Modelo Field (compartido con admin)
 │   │   └── field.routes.js       # Rutas de campos
 │   ├── reservations/
 │   │   ├── reservation.controller.js # Controladores de reservas
-│   │   ├── reservation.model.js      # Modelo de reserva
+│   │   ├── reservation.model.js      # Modelo Reservation (compartido)
 │   │   └── reservation.routes.js     # Rutas de reservas
-│   └── tournaments/
-│       ├── tournament.controller.js  # Controladores de torneos (solo lectura)
-│       ├── tournament.model.js       # Modelo de torneo
-│       └── tournament.routes.js      # Rutas de torneos
+│   ├── teams/                    # ⚠️ Carpeta vacía - no implementado
+│   └── tournaments/              # ⚠️ Carpeta vacía - no implementado
 ├── utils/
 │   └── validation-utils.js       # Utilidades de validación
 └── index.js                      # Punto de entrada
@@ -98,203 +87,167 @@ pnpm --filter server-user start
 # Lint
 pnpm --filter server-user lint
 pnpm --filter server-user lint:fix
-
-# Format
-pnpm --filter server-user format
-pnpm --filter server-user format:check
 ```
 
 ## 🔌 Endpoints Principales
 
+**Base Path**: `/kinalSportsUser/v1`
+
 ### Campos Deportivos (Solo Lectura)
 
-| Método | Endpoint          | Descripción               | Auth |
-| ------ | ----------------- | ------------------------- | ---- |
-| GET    | `/api/fields`     | Listar campos activos     | No\* |
-| GET    | `/api/fields/:id` | Obtener detalles de campo | No\* |
-
-\*Puede requerir autenticación según configuración
+| Método | Endpoint                         | Descripción               | Auth |
+| ------ | -------------------------------- | ------------------------- | ---- |
+| GET    | `/kinalSportsUser/v1/fields`     | Listar campos disponibles | No   |
+| GET    | `/kinalSportsUser/v1/fields/:id` | Ver detalles de un campo  | No   |
 
 ### Reservas
 
-| Método | Endpoint                            | Descripción         | Auth             |
-| ------ | ----------------------------------- | ------------------- | ---------------- |
-| POST   | `/api/reservations`                 | Crear nueva reserva | Sí (USER)        |
-| GET    | `/api/reservations/my-reservations` | Mis reservas        | Sí (USER)        |
-| GET    | `/api/reservations/:id`             | Detalles de reserva | Sí (USER, owner) |
-| PUT    | `/api/reservations/:id/cancel`      | Cancelar reserva    | Sí (USER, owner) |
+| Método | Endpoint                                           | Descripción                 | Auth |
+| ------ | -------------------------------------------------- | --------------------------- | ---- |
+| POST   | `/kinalSportsUser/v1/reservations`                 | Crear nueva reserva         | Sí   |
+| GET    | `/kinalSportsUser/v1/reservations/:id`             | Ver detalles de una reserva | Sí   |
+| DELETE | `/kinalSportsUser/v1/reservations/:id/cancel`      | Cancelar reserva            | Sí   |
+| GET    | `/kinalSportsUser/v1/reservations/my-reservations` | Listar reservas del usuario | Sí   |
 
-### Torneos (Solo Lectura)
+### Torneos
 
-| Método | Endpoint               | Descripción            | Auth |
-| ------ | ---------------------- | ---------------------- | ---- |
-| GET    | `/api/tournaments`     | Listar torneos activos | No   |
-| GET    | `/api/tournaments/:id` | Detalles de torneo     | No   |
+**Nota**: Los endpoints de torneos aún no están implementados (carpeta `tournaments/` vacía).
+
+### Equipos
+
+**Nota**: Los endpoints de equipos aún no están implementados (carpeta `teams/` vacía).
+
+### Health Check
+
+| Método | Endpoint                     | Descripción         |
+| ------ | ---------------------------- | ------------------- |
+| GET    | `/kinalSportsUser/v1/health` | Estado del servicio |
 
 ### Ejemplo de Requests
 
 **Listar Campos Disponibles:**
 
 ```bash
-GET http://localhost:3003/api/fields?type=FUTBOL&isActive=true
+GET http://localhost:3003/kinalSportsUser/v1/fields
 ```
 
 **Crear Reserva:**
 
 ```bash
-POST http://localhost:3003/api/reservations
+POST http://localhost:3003/kinalSportsUser/v1/reservations
 Authorization: Bearer <user-jwt-token>
 Content-Type: application/json
 
 {
   "fieldId": "507f1f77bcf86cd799439011",
-  "date": "2025-11-25",
-  "startTime": "14:00",
-  "endTime": "16:00",
-  "notes": "Partido amistoso"
+  "startTime": "2025-11-21T10:00:00.000Z",
+  "endTime": "2025-11-21T12:00:00.000Z"
 }
 ```
 
 **Mis Reservas:**
 
 ```bash
-GET http://localhost:3003/api/reservations/my-reservations?status=CONFIRMED
+GET http://localhost:3003/kinalSportsUser/v1/reservations/my-reservations
 Authorization: Bearer <user-jwt-token>
 ```
 
 **Cancelar Reserva:**
 
 ```bash
-PUT http://localhost:3003/api/reservations/507f1f77bcf86cd799439012/cancel
+DELETE http://localhost:3003/kinalSportsUser/v1/reservations/507f1f77bcf86cd799439011/cancel
 Authorization: Bearer <user-jwt-token>
-Content-Type: application/json
-
-{
-  "reason": "Cambio de planes"
-}
 ```
 
 ## 🗄️ Modelos de Base de Datos
 
-### Field (Compartido con server-admin)
+### Field (Campo Deportivo) - Compartido con server-admin
 
 ```javascript
 {
   _id: ObjectId,
-  name: String,
-  description: String,
-  type: String (FUTBOL, BASKETBALL, VOLLEYBALL, etc.),
-  capacity: Number,
-  pricePerHour: Number,
-  location: String,
-  amenities: [String],
-  imageUrl: String,
-  isActive: Boolean,
+  fieldName: String (required, max 100),
+  description: String (max 500),
+  fieldType: String (enum: 'NATURAL', 'SINTETICA', 'CONCRETO'),
+  capacity: String (enum: 'FUTBOL_5', 'FUTBOL_7', 'FUTBOL_11'),
+  pricePerHour: Number (required, min 0),
+  photo: String (Cloudinary URL),
+  isActive: Boolean (default: true),
   createdAt: Date,
   updatedAt: Date
 }
 ```
 
-### Reservation (Compartido con server-admin)
+### Reservation (Reserva) - Compartido con server-admin
 
 ```javascript
 {
   _id: ObjectId,
   userId: String (UUID del auth-service),
   fieldId: ObjectId (ref: Field),
-  date: Date,
-  startTime: String (HH:mm),
-  endTime: String (HH:mm),
-  duration: Number,
-  totalPrice: Number,
-  status: String (PENDING, CONFIRMED, CANCELLED),
-  paymentStatus: String (PENDING, PAID, REFUNDED),
-  notes: String (del usuario),
-  adminNotes: String (solo visible para admin),
-  cancellationReason: String,
+  startTime: Date (required),
+  endTime: Date (required),
+  status: String (enum: 'PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'),
+  confirmation: {
+    confirmedAt: Date,
+    confirmedBy: String
+  },
+  lastModifiedBy: String,
   createdAt: Date,
   updatedAt: Date
 }
 ```
 
-## 🔐 Autenticación y Autorización
+## 🔐 Autenticación
 
-- **Middleware `validate-JWT.js`**: Verifica token JWT en rutas protegidas
-- **Validación de ownership**: Los usuarios solo pueden ver/modificar sus propias reservas
-- **Permisos**:
-  - `USER`: Puede crear y cancelar sus propias reservas
-  - Solo el owner de una reserva puede cancelarla
+Este servicio valida tokens JWT emitidos por `auth-service`:
 
-**Flujo de autenticación:**
+1. **Middleware `validate-JWT.js`**: Verifica token en header `Authorization: Bearer <token>`
+2. Decodifica el token y extrae información del usuario
+3. Valida `JWT_SECRET`, `JWT_ISSUER`, y `JWT_AUDIENCE`
 
-```
-Cliente → [JWT Token] → server-user → validate-JWT → decodifica userId →
-verifica ownership → permite acceso
-```
+**Rutas públicas** (sin auth):
+
+- GET `/kinalSportsUser/v1/fields`
+- GET `/kinalSportsUser/v1/fields/:id`
+- GET `/kinalSportsUser/v1/health`
+
+**Rutas protegidas** (requieren JWT):
+
+- POST `/kinalSportsUser/v1/reservations`
+- GET `/kinalSportsUser/v1/reservations/:id`
+- DELETE `/kinalSportsUser/v1/reservations/:id/cancel`
+- GET `/kinalSportsUser/v1/reservations/my-reservations`
 
 ## 🔗 Dependencias con Otros Servicios
 
-- **auth-node / auth-service**: Valida tokens JWT y obtiene userId
-- **server-admin**: Comparte base de datos MongoDB (mismas colecciones Fields y Reservations)
-- **client-user (Mobile App)**: Frontend móvil que consume estos endpoints
+- **auth-node / auth-service**: Valida tokens JWT
+- **server-admin**: Comparte modelos Field y Reservation en MongoDB
+- **client-user** (futuro): Frontend móvil que consumirá estos endpoints
 
 ## 🛡️ Validaciones y Seguridad
 
-### Validación de Reservas
-
-- **Disponibilidad**: Verifica que el campo esté activo
-- **Conflictos**: No permite reservas superpuestas
-- **Horarios válidos**: Valida formato HH:mm y coherencia startTime < endTime
-- **Duración mínima**: Mínimo 1 hora de reserva
-- **Fecha futura**: No permite reservas en el pasado
-
-### Validación de Cancelación
-
-- **Ownership**: Solo el creador puede cancelar su reserva
-- **Estado**: Solo reservas PENDING o CONFIRMED pueden cancelarse
-- **Tiempo límite**: Puede configurarse tiempo mínimo antes de la fecha de reserva
-
-### Seguridad General
-
-- **Rate limiting**: 150 requests por 15 minutos (más permisivo que admin)
-- **Sanitización**: Todos los inputs sanitizados
-- **CORS**: Configurado para permitir apps móviles
-- **Error messages**: No revelan información sensible
-
-## 📊 Swagger / API Documentation
-
-Acceder a la documentación interactiva en:
-
-```
-http://localhost:3003/api-docs
-```
-
-## 🧪 Testing
-
-```bash
-# Ejecutar tests (cuando estén implementados)
-pnpm --filter server-user test
-```
+- **Validación de conflictos**: No permite reservas superpuestas
+- **Validación de horarios**: `startTime` < `endTime`
+- **Validación de ownership**: Solo el dueño puede cancelar su reserva
+- **Rate limiting**: Configurado en middlewares
+- **CORS**: Configurado en `cors-configuration.js`
 
 ## 📝 Notas de Desarrollo
 
-- El servidor escucha en el puerto definido en `.env` (default: 3003)
-- Las rutas están prefijadas con `/api`
-- Comparte base de datos MongoDB con `server-admin`
-- Las reservas se crean con status `PENDING` por defecto
-- Admin debe confirmarlas desde `server-admin`
-- El cálculo de `totalPrice` se hace automáticamente: `pricePerHour * duration`
-- MongoDB se conecta automáticamente al iniciar
+- El servidor escucha en puerto 3003 (configurable en `.env`)
+- Base path: `/kinalSportsUser/v1`
+- Comparte MongoDB con `server-admin`
+- Los modelos Field y Reservation son los mismos que en server-admin
+- Carpetas `teams/` y `tournaments/` están vacías (pendiente implementación)
 
 ## 🚀 Próximas Funcionalidades
 
-- [ ] Filtros avanzados de búsqueda de campos (por precio, ubicación, amenities)
-- [ ] Sistema de favoritos de campos
+- [ ] CRUD de equipos
+- [ ] Consulta de torneos
+- [ ] Sistema de notificaciones
 - [ ] Historial de reservas con paginación
-- [ ] Notificaciones cuando una reserva es confirmada/rechazada
-- [ ] Integración de pagos (Stripe / PayPal)
-- [ ] Reviews y ratings de campos
-- [ ] Búsqueda de compañeros para partidos (matchmaking)
+- [ ] Ratings y reviews de campos
 
 ## 👤 Autor
 
