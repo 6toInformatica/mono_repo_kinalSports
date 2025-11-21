@@ -1,0 +1,7 @@
+packages:
+  - authentication-service/auth-node
+  - authentication-service/auth-service
+  - server-admin
+  - server-user
+  - client-admin
+  # - client-user  # habilitar cuando exista
