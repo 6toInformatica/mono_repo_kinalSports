@@ -1,0 +1,40 @@
+{
+  "name": "kinalsports-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Monorepo para servicios y clientes de KinalSports",
+  "workspaces": [
+    "authentication-service/auth-node",
+    "authentication-service/auth-service",
+    "server-admin",
+    "server-user",
+    "client-admin"
+  ],
+  "scripts": {
+    "prepare": "husky install",
+    "lint": "pnpm -r --filter './server-*' run lint && pnpm --filter authentication-service/auth-node run lint && pnpm --filter client-admin run lint",
+    "format": "pnpm -r --filter './server-*' run format || true",
+    "commit": "cz",
+    "lint:changed": "git diff --name-only --cached | xargs pnpm exec eslint"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,jsx,ts,tsx}": "pnpm exec eslint --max-warnings=0",
+    "*.{json,css,md,yaml,yml}": "pnpm exec prettier --write",
+    "*.cs": "dotnet format --verify-no-changes || true"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "commitizen": "^4.3.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
+    "eslint": "^9.39.0",
+    "prettier": "^3.2.5"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "start": "dotnet run --project src/AuthService.Api",
+    "dev": "dotnet watch --project src/AuthService.Api",
+    "build": "dotnet build",
+    "test": "dotnet test",
+    "format": "dotnet format",
+    "format:check": "dotnet format --verify-no-changes",
+    "clean": "dotnet clean"
+  },
+  "devDependencies": {}
+}
