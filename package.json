@@ -18,7 +18,10 @@
     "lint:changed": "git diff --name-only --cached | xargs pnpm exec eslint"
   },
   "lint-staged": {
-    "*.{js,mjs,cjs,jsx,ts,tsx}": "pnpm exec eslint --max-warnings=0",
+    "*.{js,mjs,cjs,jsx,ts,tsx}": [
+      "pnpm exec prettier --write",
+      "pnpm exec eslint --fix --max-warnings=0"
+    ],
     "*.{json,css,md,yaml,yml}": "pnpm exec prettier --write",
     "*.cs": "dotnet format --verify-no-changes || true"
   },
