@@ -1,5 +1,5 @@
 {
-  "name": "client-admin",
+  "name": "server-admin",
   "version": "1.0.0",
   "description": "APIRest para gestión administrativa de Kinal Sport",
   "main": "index.js",
