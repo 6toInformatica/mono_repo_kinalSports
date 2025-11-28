@@ -69,5 +69,10 @@ export const uploadFieldImage = createCloudinaryUploader(
   process.env.CLOUDINARY_FOLDER || 'kinal_sports/fields'
 );
 
+// Uploader para imágenes de Equipos deportivos
+export const uploadTeamImage = createCloudinaryUploader(
+  process.env.CLOUDINARY_TEAMS_FOLDER || 'kinal_sports/teams'
+);
+
 // Export cloudinary instance para usar en delete-file-on-error
 export { cloudinary };

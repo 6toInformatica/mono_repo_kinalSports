@@ -50,6 +50,7 @@ CLOUDINARY_CLOUD_NAME=tu_cloud_name
 CLOUDINARY_API_KEY=tu_api_key
 CLOUDINARY_API_SECRET=tu_api_secret
 CLOUDINARY_FOLDER=kinalSports/fields
+CLOUDINARY_TEAMS_FOLDER=kinalSports/teams
 ```
 
 ## 📂 Estructura
@@ -71,18 +72,22 @@ server-admin/
 │   └── handle-errors.js          # Manejo centralizado de errores
 ├── src/
 │   ├── fields/
-│   │   ├── field.controller.js   # Controladores de campos
-│   │   ├── field.model.js        # Modelo de campo deportivo
-│   │   └── field.routes.js       # Rutas de campos
+│   │   ├── field.controller.js       # Controladores de campos
+│   │   ├── field.model.js            # Modelo de campo deportivo
+│   │   └── field.routes.js           # Rutas de campos
 │   ├── reservations/
 │   │   ├── reservation.controller.js # Controladores de reservas
 │   │   ├── reservation.model.js      # Modelo de reserva
 │   │   └── reservation.routes.js     # Rutas de reservas
+│   ├── teams/
+│   │   ├── team.controller.js        # Controladores de equipo
+│   │   ├── team.model.js             # Modelo de equipos deportivo
+│   │   └── team.routes.js            # Rutas de equipos
 │   └── tournaments/
 │       ├── tournament.controller.js  # Controladores de torneos
 │       ├── tournament.model.js       # Modelo de torneo
 │       └── tournament.routes.js      # Rutas de torneos
-└── index.js                      # Punto de entrada
+└── index.js                          # Punto de entrada
 ```
 
 ## 🎯 Scripts Disponibles
@@ -124,11 +129,23 @@ pnpm --filter server-admin format:check
 | GET    | `/kinalSportsAdmin/v1/reservations/:id`         | Obtener reserva por ID    | Admin |
 | PUT    | `/kinalSportsAdmin/v1/reservations/:id/confirm` | Confirmar reserva         | Admin |
 
+### Equipos deportivos
+
+| Método | Endpoint                                    | Descripción                 | Auth  |
+| ------ | ------------------------------------------- | --------------------------- | ----- |
+| GET    | `/kinalSportsAdmin/v1/teams`                | Listar todos los equipos    | Admin |
+| GET    | `/kinalSportsAdmin/v1/teams/:id`            | Obtener un equipo por ID    | Admin |
+| POST   | `/kinalSportsAdmin/v1/teams`                | Crear un nuevo equipo       | Admin |
+| PUT    | `/kinalSportsAdmin/v1/teams/:id`            | Actualizar datos del equipo | Admin |
+| PUT    | `/kinalSportsAdmin/v1/teams/:id/activate`   | Activar equipo              | Admin |
+| PUT    | `/kinalSportsAdmin/v1/teams/:id/deactivate` | Desactivar equipo           | Admin |
+| DELETE | `/kinalSportsAdmin/v1/teams/:id`            | Eliminar equipo             | Admin |
+
 ### Torneos
 
 **Nota**: Los endpoints de torneos aún no están implementados (carpeta `tournaments/` vacía).
 
-### Ejemplo de Requests
+### Ejemplo de Requests Campo
 
 **Crear Campo:**
 
@@ -200,6 +217,66 @@ Content-Type: application/json
   createdAt: Date,
   updatedAt: Date
 }
+```
+
+### Team (Equipo Deportivo)
+
+**Listar todo:**
+
+```javascript
+GET http://localhost:3002/kinalSportsAdmin/v1/teams
+```
+
+**Listar todo:**
+
+```javascript
+GET http://localhost:3002/kinalSportsAdmin/v1/teams/67af2c9082b48b2be88bb72d
+```
+
+**Crear un quipo:**
+
+```javascript
+POST http://localhost:3002/kinalSportsAdmin/v1/teams
+
+{
+  "teamName": "Los Halcones",
+  "managerName": "Carlos López",
+  "category": "FUTBOL_11",
+  "uniformColor": "Azul",
+  "logo": <file>    # OPCIONAL
+}
+```
+
+**Actualizar equipo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/teams/67af2c9082b48b2be88bb72d
+
+{
+  "teamName": "Los Halcones FC",
+  "managerName": "Eduardo Pérez",
+  "category": "FUTBOL_11",
+  "uniformColor": "Negro",
+  "logo": <file>    # OPCIONAL (reemplaza el anterior)
+}
+```
+
+**Activar equipo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/teams/67af2c9082b48b2be88bb72d/activate
+```
+
+**Desactivar equipo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/teams/67af2c9082b48b2be88bb72d/deactivate
+```
+
+**Eliminar equipo:**
+
+```javascript
+DELETE http://localhost:3002/kinalSportsAdmin/v1/teams/67af2c9082b48b2be88bb72d
 ```
 
 ### Tournament (Torneo)
