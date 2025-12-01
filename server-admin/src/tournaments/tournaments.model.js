@@ -53,4 +53,4 @@ tournamentsSchema.index({ category: 1 });
 tournamentsSchema.index({ status: 1 });
 tournamentsSchema.index({ isActive: 1 });
 
-export default mongoose.model('Tournaments', tournamentsSchema);
+export default mongoose.model('Tournament', tournamentsSchema);
