@@ -143,7 +143,15 @@ pnpm --filter server-admin format:check
 
 ### Torneos
 
-**Nota**: Los endpoints de torneos aún no están implementados (carpeta `tournaments/` vacía).
+| Método | Endpoint                                          | Descripción                 | Auth  |
+| ------ | ------------------------------------------------- | --------------------------- | ----- |
+| GET    | `/kinalSportsAdmin/v1/tournaments`                | Listar todos los torneos    | Admin |
+| GET    | `/kinalSportsAdmin/v1/tournaments/:id`            | Obtener un torneo por ID    | Admin |
+| POST   | `/kinalSportsAdmin/v1/tournaments`                | Crear un nuevo torneo       | Admin |
+| PUT    | `/kinalSportsAdmin/v1/tournaments/:id`            | Actualizar datos del torneo | Admin |
+| PUT    | `/kinalSportsAdmin/v1/tournaments/:id/activate`   | Activar torneo              | Admin |
+| PUT    | `/kinalSportsAdmin/v1/tournaments/:id/deactivate` | Desactivar torneo           | Admin |
+| DELETE | `/kinalSportsAdmin/v1/tournaments/:id`            | Eliminar torneo             | Admin |
 
 ### Ejemplo de Requests Campo
 
@@ -281,7 +289,67 @@ DELETE http://localhost:3002/kinalSportsAdmin/v1/teams/67af2c9082b48b2be88bb72d
 
 ### Tournament (Torneo)
 
-**Nota**: El modelo de Tournament no está implementado aún. La carpeta `tournaments/` está vacía.
+**Listar todo:**
+
+```javascript
+GET http://localhost:3002/kinalSportsAdmin/v1/tournaments
+```
+
+**Listar todo:**
+
+```javascript
+GET http://localhost:3002/kinalSportsAdmin/v1/tournaments/67af2c9082b48b2be88bb72d
+```
+
+**Crear un torneo:**
+
+```javascript
+POST http://localhost:3002/kinalSportsAdmin/v1/tournaments
+
+{
+  "tournamentName": "Copa de Campeones",
+  "category": "FUTBOL_11",
+  "startDate": "2024-01-01",
+  "endDate": "2024-01-31",
+  "location": "Ciudad de Guatemala",
+  "description": "Torneo de fútbol de la ciudad de Guatemala",
+  "logo": <file>    # OPCIONAL
+}
+```
+
+**Actualizar torneo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/tournaments/67af2c9082b48b2be88bb72d
+
+{
+  "tournamentName": "Copa de Campeones",
+  "category": "FUTBOL_11",
+  "startDate": "2024-01-01",
+  "endDate": "2024-01-31",
+  "location": "Ciudad de Guatemala",
+  "description": "Torneo de fútbol de la ciudad de Guatemala",
+  "logo": <file>    # OPCIONAL (reemplaza el anterior)
+}
+```
+
+**Activar torneo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/tournaments/67af2c9082b48b2be88bb72d/activate
+```
+
+**Desactivar torneo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/tournaments/67af2c9082b48b2be88bb72d/deactivate
+```
+
+**Eliminar torneo:**
+
+```javascript
+DELETE http://localhost:3002/kinalSportsAdmin/v1/tournaments/67af2c9082b48b2be88bb72d
+```
 
 ## 🔐 Autenticación y Autorización
 
