@@ -31,11 +31,19 @@ export const validateGetReservationById = [
 // PUT /:id/confirm
 export const validateConfirmReservationRequest = [
   validateJWT,
+  requireRole('ADMIN_ROLE'),
   param('id')
     .isMongoId()
     .withMessage('ID debe ser un ObjectId válido de MongoDB'),
   checkValidators,
 ];
 
-// PUT /:id/status
-// (Status and Notes validators removed due to minimal API)
+// PUT /:id/cancel
+export const validateCancelReservationRequest = [
+  validateJWT,
+  requireRole('ADMIN_ROLE'),
+  param('id')
+    .isMongoId()
+    .withMessage('ID debe ser un ObjectId válido de MongoDB'),
+  checkValidators,
+];

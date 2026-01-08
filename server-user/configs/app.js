@@ -26,7 +26,6 @@ const middlewares = (app) => {
 const routes = (app) => {
   app.use(`${BASE_PATH}/fields`, fieldRoutes);
   app.use(`${BASE_PATH}/reservations`, reservationRoutes);
-
   app.get(`${BASE_PATH}/health`, (req, res) => {
     res.status(200).json({
       status: 'Healthy',

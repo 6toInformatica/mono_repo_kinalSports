@@ -50,6 +50,7 @@ CLOUDINARY_CLOUD_NAME=tu_cloud_name
 CLOUDINARY_API_KEY=tu_api_key
 CLOUDINARY_API_SECRET=tu_api_secret
 CLOUDINARY_FOLDER=kinalSports/fields
+CLOUDINARY_TEAMS_FOLDER=kinalSports/teams
 ```
 
 ## 📂 Estructura
@@ -71,18 +72,22 @@ server-admin/
 │   └── handle-errors.js          # Manejo centralizado de errores
 ├── src/
 │   ├── fields/
-│   │   ├── field.controller.js   # Controladores de campos
-│   │   ├── field.model.js        # Modelo de campo deportivo
-│   │   └── field.routes.js       # Rutas de campos
+│   │   ├── field.controller.js       # Controladores de campos
+│   │   ├── field.model.js            # Modelo de campo deportivo
+│   │   └── field.routes.js           # Rutas de campos
 │   ├── reservations/
 │   │   ├── reservation.controller.js # Controladores de reservas
 │   │   ├── reservation.model.js      # Modelo de reserva
 │   │   └── reservation.routes.js     # Rutas de reservas
+│   ├── teams/
+│   │   ├── team.controller.js        # Controladores de equipo
+│   │   ├── team.model.js             # Modelo de equipos deportivo
+│   │   └── team.routes.js            # Rutas de equipos
 │   └── tournaments/
 │       ├── tournament.controller.js  # Controladores de torneos
 │       ├── tournament.model.js       # Modelo de torneo
 │       └── tournament.routes.js      # Rutas de torneos
-└── index.js                      # Punto de entrada
+└── index.js                          # Punto de entrada
 ```
 
 ## 🎯 Scripts Disponibles
@@ -124,11 +129,31 @@ pnpm --filter server-admin format:check
 | GET    | `/kinalSportsAdmin/v1/reservations/:id`         | Obtener reserva por ID    | Admin |
 | PUT    | `/kinalSportsAdmin/v1/reservations/:id/confirm` | Confirmar reserva         | Admin |
 
+### Equipos deportivos
+
+| Método | Endpoint                                    | Descripción                 | Auth  |
+| ------ | ------------------------------------------- | --------------------------- | ----- |
+| GET    | `/kinalSportsAdmin/v1/teams`                | Listar todos los equipos    | Admin |
+| GET    | `/kinalSportsAdmin/v1/teams/:id`            | Obtener un equipo por ID    | Admin |
+| POST   | `/kinalSportsAdmin/v1/teams`                | Crear un nuevo equipo       | Admin |
+| PUT    | `/kinalSportsAdmin/v1/teams/:id`            | Actualizar datos del equipo | Admin |
+| PUT    | `/kinalSportsAdmin/v1/teams/:id/activate`   | Activar equipo              | Admin |
+| PUT    | `/kinalSportsAdmin/v1/teams/:id/deactivate` | Desactivar equipo           | Admin |
+| DELETE | `/kinalSportsAdmin/v1/teams/:id`            | Eliminar equipo             | Admin |
+
 ### Torneos
 
-**Nota**: Los endpoints de torneos aún no están implementados (carpeta `tournaments/` vacía).
+| Método | Endpoint                                          | Descripción                 | Auth  |
+| ------ | ------------------------------------------------- | --------------------------- | ----- |
+| GET    | `/kinalSportsAdmin/v1/tournaments`                | Listar todos los torneos    | Admin |
+| GET    | `/kinalSportsAdmin/v1/tournaments/:id`            | Obtener un torneo por ID    | Admin |
+| POST   | `/kinalSportsAdmin/v1/tournaments`                | Crear un nuevo torneo       | Admin |
+| PUT    | `/kinalSportsAdmin/v1/tournaments/:id`            | Actualizar datos del torneo | Admin |
+| PUT    | `/kinalSportsAdmin/v1/tournaments/:id/activate`   | Activar torneo              | Admin |
+| PUT    | `/kinalSportsAdmin/v1/tournaments/:id/deactivate` | Desactivar torneo           | Admin |
+| DELETE | `/kinalSportsAdmin/v1/tournaments/:id`            | Eliminar torneo             | Admin |
 
-### Ejemplo de Requests
+### Ejemplo de Requests Campo
 
 **Crear Campo:**
 
@@ -202,9 +227,129 @@ Content-Type: application/json
 }
 ```
 
+### Team (Equipo Deportivo)
+
+**Listar todo:**
+
+```javascript
+GET http://localhost:3002/kinalSportsAdmin/v1/teams
+```
+
+**Listar todo:**
+
+```javascript
+GET http://localhost:3002/kinalSportsAdmin/v1/teams/67af2c9082b48b2be88bb72d
+```
+
+**Crear un quipo:**
+
+```javascript
+POST http://localhost:3002/kinalSportsAdmin/v1/teams
+
+{
+  "teamName": "Los Halcones",
+  "managerName": "Carlos López",
+  "category": "FUTBOL_11",
+  "uniformColor": "Azul",
+  "logo": <file>    # OPCIONAL
+}
+```
+
+**Actualizar equipo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/teams/67af2c9082b48b2be88bb72d
+
+{
+  "teamName": "Los Halcones FC",
+  "managerName": "Eduardo Pérez",
+  "category": "FUTBOL_11",
+  "uniformColor": "Negro",
+  "logo": <file>    # OPCIONAL (reemplaza el anterior)
+}
+```
+
+**Activar equipo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/teams/67af2c9082b48b2be88bb72d/activate
+```
+
+**Desactivar equipo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/teams/67af2c9082b48b2be88bb72d/deactivate
+```
+
+**Eliminar equipo:**
+
+```javascript
+DELETE http://localhost:3002/kinalSportsAdmin/v1/teams/67af2c9082b48b2be88bb72d
+```
+
 ### Tournament (Torneo)
 
-**Nota**: El modelo de Tournament no está implementado aún. La carpeta `tournaments/` está vacía.
+**Listar todo:**
+
+```javascript
+GET http://localhost:3002/kinalSportsAdmin/v1/tournaments
+```
+
+**Listar todo:**
+
+```javascript
+GET http://localhost:3002/kinalSportsAdmin/v1/tournaments/67af2c9082b48b2be88bb72d
+```
+
+**Crear un torneo:**
+
+```javascript
+POST http://localhost:3002/kinalSportsAdmin/v1/tournaments
+
+{
+  "tournamentName": "Copa de Campeones",
+  "category": "FUTBOL_11",
+  "startDate": "2024-01-01",
+  "endDate": "2024-01-31",
+  "location": "Ciudad de Guatemala",
+  "description": "Torneo de fútbol de la ciudad de Guatemala",
+  "logo": <file>    # OPCIONAL
+}
+```
+
+**Actualizar torneo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/tournaments/67af2c9082b48b2be88bb72d
+
+{
+  "tournamentName": "Copa de Campeones",
+  "category": "FUTBOL_11",
+  "startDate": "2024-01-01",
+  "endDate": "2024-01-31",
+  "location": "Ciudad de Guatemala",
+  "description": "Torneo de fútbol de la ciudad de Guatemala",
+  "logo": <file>    # OPCIONAL (reemplaza el anterior)
+}
+```
+
+**Activar torneo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/tournaments/67af2c9082b48b2be88bb72d/activate
+```
+
+**Desactivar torneo:**
+
+```javascript
+PUT http://localhost:3002/kinalSportsAdmin/v1/tournaments/67af2c9082b48b2be88bb72d/deactivate
+```
+
+**Eliminar torneo:**
+
+```javascript
+DELETE http://localhost:3002/kinalSportsAdmin/v1/tournaments/67af2c9082b48b2be88bb72d
+```
 
 ## 🔐 Autenticación y Autorización
 

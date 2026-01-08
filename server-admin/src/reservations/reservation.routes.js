@@ -3,11 +3,13 @@ import {
   getReservations,
   getReservationById,
   confirmReservation,
+  cancelReservation,
 } from './reservation.controller.js';
 import {
   validateGetReservations,
   validateGetReservationById,
   validateConfirmReservationRequest,
+  validateCancelReservationRequest,
 } from '../../middlewares/reservation-validators.js';
 import { checkReservationConflict } from '../../middlewares/reservation-conflict.js';
 
@@ -23,5 +25,7 @@ router.put(
   checkReservationConflict,
   confirmReservation
 );
+
+router.put('/:id/cancel', validateCancelReservationRequest, cancelReservation);
 
 export default router;
