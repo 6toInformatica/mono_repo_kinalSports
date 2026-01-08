@@ -78,6 +78,9 @@ export const createField = async (req, res) => {
       const relativePath = filename.substring(filename.indexOf('fields/'));
 
       fieldData.photo = `${relativePath}.${extension}`;
+    } else {
+      // Si no se envía archivo, usar imagen por defecto
+      fieldData.photo = 'fields/kinal_sports_nyvxo5';
     }
 
     const field = new Field(fieldData);

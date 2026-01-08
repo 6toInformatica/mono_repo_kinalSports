@@ -5,16 +5,16 @@ import {
   createTeam,
   updateTeam,
   changeTeamStatus,
-  deleteTeam,
+  changeTeamManager,
 } from './team.controller.js';
-
-//! Falta trabajar las validaciones para equipos
-//import {
-//    validateCreateTeam,
-//    validateUpdateTeamRequest,
-//    validateTeamStatusChange,
-//    validateGetTeamById,
-//} from '../../middlewares/Team-validators.js';
+import {
+  validateCreateTeam,
+  validateUpdateTeamRequest,
+  validateTeamStatusChange,
+  validateGetTeamById,
+  authorizeUpdateTeam,
+  validateChangeTeamManager,
+} from '../../middlewares/team-validators.js';
 import { uploadTeamImage } from '../../middlewares/file-uploader.js';
 import { cleanupUploadedFileOnFinish } from '../../middlewares/delete-file-on-error.js';
 
@@ -22,17 +22,14 @@ const router = Router();
 
 // Rutas GET
 router.get('/', getTeams);
-router.get('/:id', getTeamById);
-
-//! Falta verificación <validateGetTeamById>
-//router.get('/:id', validateGetTeamById, getTeamById);
+router.get('/:id', validateGetTeamById, getTeamById);
 
 // Rutas POST - Requieren autentiación
 router.post(
   '/',
   uploadTeamImage.single('logo'),
   cleanupUploadedFileOnFinish,
-  //  validateCreateTeam,
+  validateCreateTeam,
   createTeam
 );
 
@@ -41,19 +38,18 @@ router.put(
   '/:id',
   uploadTeamImage.single('logo'),
   cleanupUploadedFileOnFinish,
-  //  validateUpdateTeamRequest,
+  validateUpdateTeamRequest,
+  authorizeUpdateTeam,
   updateTeam
 );
 
-router.put('/:id/activate', changeTeamStatus);
-router.put('/:id/deactivate', changeTeamStatus);
+router.put('/:id/activate', validateTeamStatusChange, changeTeamStatus);
+router.put('/:id/deactivate', validateTeamStatusChange, changeTeamStatus);
 
-//! Falta verificación <validateTeamStatusChange>
-//router.put('/:id/activate', validateTeamStatusChange, changeTeamStatus);
-//router.put('/:id/deactivate', validateTeamStatusChange, changeTeamStatus);
+// Cambio de manager (solo admin)
+router.put('/:id/manager', validateChangeTeamManager, changeTeamManager);
 
 // Rutas DELETE
-//! Falta verificación < >
-router.delete('/:id', deleteTeam);
+// Ruta DELETE eliminada: usar PUT /:id/deactivate (soft delete)
 
 export default router;

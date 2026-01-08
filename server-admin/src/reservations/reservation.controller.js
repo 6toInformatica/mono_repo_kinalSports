@@ -133,3 +133,44 @@ export const confirmReservation = async (req, res) => {
     });
   }
 };
+
+// Cancelar reserva
+export const cancelReservation = async (req, res) => {
+  try {
+    const adminId = req.user?.id || 'admin';
+    const { id } = req.params;
+
+    const reservation = await Reservation.findById(id);
+
+    if (!reservation) {
+      return res.status(404).json({
+        success: false,
+        message: 'Reserva no encontrada',
+      });
+    }
+
+    if (!['PENDING', 'CONFIRMED'].includes(reservation.status)) {
+      return res.status(400).json({
+        success: false,
+        message: `No se puede cancelar una reserva con estado: ${reservation.status}`,
+      });
+    }
+
+    reservation.status = 'CANCELLED';
+    reservation.lastModifiedBy = adminId;
+
+    await reservation.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Reserva cancelada exitosamente',
+      data: reservation,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al cancelar la reserva',
+      error: error.message,
+    });
+  }
+};

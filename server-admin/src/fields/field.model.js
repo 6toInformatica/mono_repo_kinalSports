@@ -38,7 +38,7 @@ const fieldSchema = mongoose.Schema(
     },
     photo: {
       type: String,
-      default: null,
+      default: 'fields/kinal_sports_nyvxo5',
     },
     isActive: {
       type: Boolean,

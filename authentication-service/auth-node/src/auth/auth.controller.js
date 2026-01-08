@@ -182,3 +182,23 @@ export const getProfile = asyncHandler(async (req, res) => {
     data: user,
   });
 });
+
+export const getProfileById = asyncHandler(async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      message: 'El userId es requerido',
+    });
+  }
+
+  const user = await getUserProfileHelper(userId);
+
+  // Respuesta estandarizada con envelope
+  return res.status(200).json({
+    success: true,
+    message: 'Perfil obtenido exitosamente',
+    data: user,
+  });
+});

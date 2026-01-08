@@ -34,6 +34,37 @@ public class AuthController(IAuthService authService) : ControllerBase
             data = user
         });
     }
+
+    [HttpPost("profile/by-id")]
+    [EnableRateLimiting("ApiPolicy")]
+    public async Task<ActionResult<object>> GetProfileById([FromBody] GetProfileByIdDto request)
+    {
+        if (string.IsNullOrEmpty(request.UserId))
+        {
+            return BadRequest(new
+            {
+                success = false,
+                message = "El userId es requerido"
+            });
+        }
+
+        var user = await authService.GetUserByIdAsync(request.UserId);
+        if (user == null)
+        {
+            return NotFound(new
+            {
+                success = false,
+                message = "Usuario no encontrado"
+            });
+        }
+
+        return Ok(new
+        {
+            success = true,
+            message = "Perfil obtenido exitosamente",
+            data = user
+        });
+    }
     [HttpPost("register")]
     [RequestSizeLimit(10 * 1024 * 1024)] // 10MB límite
     [EnableRateLimiting("AuthPolicy")]

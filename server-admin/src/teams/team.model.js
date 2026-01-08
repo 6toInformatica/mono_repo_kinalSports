@@ -8,10 +8,10 @@ const teamSchema = new mongoose.Schema(
       required: [true, 'El nombre del equipo es requerido'],
       trim: true,
     },
-    managerName: {
+    managerId: {
       type: String,
+      required: [true, 'El ID del manager es requerido'],
       trim: true,
-      default: null,
     },
     category: {
       type: String,
@@ -20,11 +20,7 @@ const teamSchema = new mongoose.Schema(
     },
     logo: {
       type: String,
-      default: null,
-    },
-    uniformColor: {
-      type: String,
-      default: null,
+      default: 'fields/kinal_sports_nyvxo5',
     },
     isActive: {
       type: Boolean,
