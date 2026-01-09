@@ -14,7 +14,8 @@ export const requestLimit = rateLimit({
     console.log(`Rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
     res.status(429).json({
       success: false,
-      message: 'Demasiadas peticiones desde esta IP, intenta de nuevo más tarde.',
+      message:
+        'Demasiadas peticiones desde esta IP, intenta de nuevo más tarde.',
       error: 'RATE_LIMIT_EXCEEDED',
       retryAfter: Math.round((req.rateLimit.resetTime - Date.now()) / 1000),
     });
