@@ -108,7 +108,7 @@ public class UserRepository(ApplicationDbContext context) : IUserRepository
         var existingRoles = await context.UserRoles
             .Where(ur => ur.UserId == userId)
             .ToListAsync();
-        
+
         context.UserRoles.RemoveRange(existingRoles);
 
         // Add new user-role association with the existing role
@@ -120,7 +120,7 @@ public class UserRepository(ApplicationDbContext context) : IUserRepository
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
-        
+
         context.UserRoles.Add(newUserRole);
         await context.SaveChangesAsync();
     }

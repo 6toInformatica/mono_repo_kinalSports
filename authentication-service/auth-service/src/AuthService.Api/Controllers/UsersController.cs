@@ -50,7 +50,7 @@ public class UsersController(IUserManagementService userManagementService) : Con
         {
             return StatusCode(403, new { success = false, message = "Forbidden" });
         }
-        
+
         var users = await userManagementService.GetUsersByRoleAsync(roleName);
         return Ok(users);
     }

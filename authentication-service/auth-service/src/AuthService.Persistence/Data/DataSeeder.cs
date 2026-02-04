@@ -17,7 +17,7 @@ public static class DataSeeder
                 new() {
                     Id = UuidGenerator.GenerateRoleId(),
                         Name = RoleConstants.ADMIN_ROLE
-                },  
+                },
                 new() {
                     Id = UuidGenerator.GenerateRoleId(),
                         Name = RoleConstants.USER_ROLE

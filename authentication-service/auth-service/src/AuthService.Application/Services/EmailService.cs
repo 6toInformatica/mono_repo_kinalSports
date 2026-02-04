@@ -103,7 +103,7 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
             var timeoutMs = int.Parse(smtpSettings["Timeout"] ?? "30000");
             client.Timeout = timeoutMs;
 
-            // FIX: Bypass SSL certificate validation errors (CRL issues, self-signed, etc.)
+            // FIX: Bypass SSL (Cloudinary, etc.)
             client.CheckCertificateRevocation = false;
             client.ServerCertificateValidationCallback = (s, c, h, e) => true;
 
