@@ -10,6 +10,7 @@ using AuthService.Domain.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using AuthService.Application.DTOs.Email;
+using System.Security.Cryptography.X509Certificates;
 
 namespace AuthService.Application.Services;
 
@@ -115,7 +116,14 @@ public class AuthService(
                     UserId = userId,
                     RoleId = defaultRole.Id
                 }
-            ]
+            ],
+            UserPasswordReset = new UserPasswordReset //Generar el objeto.
+            {
+                Id = UuidGenerator.GenerateUserId(),
+                UserId = userId,
+                PasswordResetToken = null,
+                PasswordResetTokenExpiry = null
+            },
         };
 
         // Guardar usuario y entidades relacionadas
@@ -421,5 +429,10 @@ public class AuthService(
 
         return MapToUserResponseDto(user);
     }
-}
 
+    public async Task<IEnumerable<UserResponseDto>> GetAllUsersAsync()
+    {
+        var users = await userRepository.GetUsersAsync();
+        return users.Select(MapToUserResponseDto);
+    }
+}

@@ -73,14 +73,7 @@ export const createField = async (req, res) => {
     const fieldData = req.body;
 
     if (req.file) {
-      const extension = req.file.path.split('.').pop();
-      const filename = req.file.filename;
-      const relativePath = filename.substring(filename.indexOf('fields/'));
-
-      fieldData.photo = `${relativePath}.${extension}`;
-    } else {
-      // Si no se envía archivo, usar imagen por defecto
-      fieldData.photo = 'fields/kinal_sports_nyvxo5';
+      fieldData.photo = req.file.path;
     }
 
     const field = new Field(fieldData);
@@ -104,57 +97,40 @@ export const createField = async (req, res) => {
 export const updateField = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const currentField = await Field.findById(id);
+    if (!currentField) {
+      return res.status(404).json({
+        success: false,
+        message: "Campo no encontrado",
+      });
+    }
+
     const updateData = { ...req.body };
 
     if (req.file) {
-      const currentField = await Field.findById(id);
-
-      if (currentField && currentField.photo) {
-        const photoPath = currentField.photo;
-        const photoWithoutExt = photoPath.substring(
-          0,
-          photoPath.lastIndexOf('.')
-        );
-        const publicId = `kinal_sports/${photoWithoutExt}`;
-
-        try {
-          await cloudinary.uploader.destroy(publicId);
-        } catch (deleteError) {
-          console.error(
-            `Error al eliminar imagen anterior de Cloudinary: ${deleteError.message}`
-          );
-        }
+      if (currentField.photo_public_id) {
+        await cloudinary.uploader.destroy(currentField.photo_public_id);
       }
 
-      const extension = req.file.path.split('.').pop();
-      const filename = req.file.filename;
-      const relativePath = filename.includes('fields/')
-        ? filename.substring(filename.indexOf('fields/'))
-        : filename;
-      updateData.photo = `${relativePath}.${extension}`;
+      updateData.photo = req.file.path;
+      updateData.photo_public_id = req.file.filename;
     }
 
-    const field = await Field.findByIdAndUpdate(id, updateData, {
+    const updatedField = await Field.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     });
 
-    if (!field) {
-      return res.status(404).json({
-        success: false,
-        message: 'Campo no encontrado',
-      });
-    }
-
     res.status(200).json({
       success: true,
-      message: 'Campo actualizado exitosamente',
-      data: field,
+      message: "Campo actualizado exitosamente",
+      data: updatedField,
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
-      message: 'Error al actualizar el campo',
+      message: "Error al actualizar campo",
       error: error.message,
     });
   }
