@@ -2,6 +2,8 @@ import { Router } from 'express';
 import {
   createReservation,
   cancelReservation,
+  getUserHistory,
+  checkAvailability,
 } from './reservation.controller.js';
 import {
   validateCreateReservation,
@@ -11,13 +13,21 @@ import { checkReservationConflict } from '../../middlewares/reservation-conflict
 
 const router = Router();
 
-// Rutas alineadas al estándar de server-admin (solo creación y cancelación para user)
+// Ver disponibilidad de un campo en fecha específica
+router.get('/availability', checkAvailability);
+
+// Ver historial de reservaciones del usuario autenticado
+router.get('/me/history', getUserHistory);
+
+// Crear reservación (POST /)
 router.post(
   '/',
   validateCreateReservation,
   checkReservationConflict,
   createReservation
 );
+
+// Cancelar reservación (PUT /:id/cancel)
 router.put('/:id/cancel', validateCancelReservation, cancelReservation);
 
 export default router;

@@ -1,22 +1,24 @@
-import Reservation from '../reservations/reservation.model.js';
+'use strict';
 
-// Crear reservación (POST /)
+import {
+  registerReservation,
+  cancelUserReservation,
+  fetchUserReservationHistory,
+  fetchOccupiedSlots,
+} from './reservation.service.js';
+
+/**
+ * Crear reservación.
+ */
 export const createReservation = async (req, res) => {
   try {
     const { fieldId, startTime, endTime } = req.body;
     const userId = req.user.id;
 
-    // El middleware de conflicto ya habrá verificado disponibilidad.
-    const reservation = new Reservation({
-      userId,
-      fieldId,
-      startTime: new Date(startTime),
-      endTime: new Date(endTime),
-      status: 'PENDING',
-      lastModifiedBy: userId,
-    });
-
-    await reservation.save();
+    const reservation = await registerReservation(
+      { fieldId, startTime, endTime },
+      userId
+    );
 
     return res.status(201).json({
       success: true,
@@ -24,6 +26,7 @@ export const createReservation = async (req, res) => {
       data: reservation,
     });
   } catch (error) {
+    console.error('Error en createReservation controller:', error);
     return res.status(500).json({
       success: false,
       message: 'Error al crear la reservación',
@@ -32,30 +35,22 @@ export const createReservation = async (req, res) => {
   }
 };
 
-// Cancelar reservación (PUT /:id/cancel)
+/**
+ * Cancelar reservación (Usuario).
+ */
 export const cancelReservation = async (req, res) => {
   try {
-    const { id } = req.params;
+    const { id: reservationId } = req.params;
     const userId = req.user.id;
 
-    const reservation = await Reservation.findOne({ _id: id, userId });
+    const reservation = await cancelUserReservation(reservationId, userId);
+
     if (!reservation) {
       return res.status(404).json({
         success: false,
-        message: 'Reserva no encontrada',
+        message: 'Reserva no encontrada o no pertenece al usuario autenticado',
       });
     }
-
-    if (['CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(reservation.status)) {
-      return res.status(400).json({
-        success: false,
-        message: `No se puede cancelar una reserva con estado ${reservation.status}`,
-      });
-    }
-
-    reservation.status = 'CANCELLED';
-    reservation.lastModifiedBy = userId;
-    await reservation.save();
 
     return res.status(200).json({
       success: true,
@@ -63,9 +58,61 @@ export const cancelReservation = async (req, res) => {
       data: reservation,
     });
   } catch (error) {
+    const isClientError = error.message.includes('No se puede cancelar');
+    return res.status(isClientError ? 400 : 500).json({
+      success: false,
+      message: error.message || 'Error interno al cancelar la reservación',
+    });
+  }
+};
+
+/**
+ * Ver historial del usuario.
+ */
+export const getUserHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const history = await fetchUserReservationHistory(userId);
+
+    return res.status(200).json({
+      success: true,
+      data: history,
+    });
+  } catch (error) {
+    console.error('Error en getUserHistory controller:', error);
     return res.status(500).json({
       success: false,
-      message: 'Error al cancelar la reservación',
+      message: 'Error al procesar la obtención del historial de reservaciones',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Verificar disponibilidad por fecha.
+ */
+export const checkAvailability = async (req, res) => {
+  try {
+    const { fieldId, date } = req.query;
+
+    if (!fieldId || !date) {
+      return res.status(400).json({
+        success: false,
+        message: 'Debe proporcionar fieldId y date (en formato YYYY-MM-DD)',
+      });
+    }
+
+    const occupiedSlots = await fetchOccupiedSlots(fieldId, date);
+
+    return res.status(200).json({
+      success: true,
+      data: occupiedSlots,
+    });
+  } catch (error) {
+    console.error('Error en checkAvailability controller:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error interno al consultar disponibilidad del campo deportivo',
       error: error.message,
     });
   }

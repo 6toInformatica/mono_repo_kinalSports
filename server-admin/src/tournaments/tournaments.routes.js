@@ -14,30 +14,54 @@ import {
   validateGetTournamentById,
   validateDeleteTournament,
 } from '../../middlewares/tournament-validators.js';
+import { requireRole } from '../../middlewares/validate-role.js';
+import { authOrInternal } from '../../middlewares/validate-internal-token.js';
 
 const router = Router();
 
-// Rutas GET
-router.get('/', getTournaments);
-router.get('/:id', validateGetTournamentById, getTournamentById);
+// Rutas GET - Públicas o consumidas por server-user vía x-internal-token
+router.get('/', authOrInternal, getTournaments);
+router.get(
+  '/:id',
+  authOrInternal,
+  validateGetTournamentById,
+  getTournamentById
+);
 
-// Rutas POST - requieren autenticación
-router.post('/', validateCreateTournament, createTournament);
+// Rutas de escritura - SOLO para administradores globales
+router.post(
+  '/',
+  requireRole('ADMIN_ROLE'),
+  validateCreateTournament,
+  createTournament
+);
 
-// Rutas PUT - Requiere autenticación
-router.put('/:id', validateUpdateTournamentRequest, updateTournament);
+router.put(
+  '/:id',
+  requireRole('ADMIN_ROLE'),
+  validateUpdateTournamentRequest,
+  updateTournament
+);
 
 router.put(
   '/:id/activate',
-  validateTournamentStatusChange,
-  changeTournamentStatus
-);
-router.put(
-  '/:id/deactivate',
+  requireRole('ADMIN_ROLE'),
   validateTournamentStatusChange,
   changeTournamentStatus
 );
 
-// Rutas DELETE - Requiere autenticación
-router.delete('/:id', validateDeleteTournament, deleteTournament);
+router.put(
+  '/:id/deactivate',
+  requireRole('ADMIN_ROLE'),
+  validateTournamentStatusChange,
+  changeTournamentStatus
+);
+
+router.delete(
+  '/:id',
+  requireRole('ADMIN_ROLE'),
+  validateDeleteTournament,
+  deleteTournament
+);
+
 export default router;

@@ -1,5 +1,4 @@
 'use strict';
-
 import mongoose from 'mongoose';
 
 const tournamentsSchema = new mongoose.Schema(
@@ -48,9 +47,6 @@ const tournamentsSchema = new mongoose.Schema(
   }
 );
 
-// Índices para optimizar búsquedas por administración
-tournamentsSchema.index({ category: 1 });
-tournamentsSchema.index({ status: 1 });
 tournamentsSchema.index({ isActive: 1 });
 
 export default mongoose.model('Tournament', tournamentsSchema);

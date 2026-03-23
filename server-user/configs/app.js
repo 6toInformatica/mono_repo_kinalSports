@@ -9,8 +9,18 @@ import { requestLimit } from '../middlewares/request-limit.js';
 import { corsOptions } from './cors-configuration.js';
 import { helmetConfiguration } from './helmet-configuration.js';
 import { errorHandler } from '../middlewares/handle-errors.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+import {
+  generalUserLimit,
+  reservationLimit,
+} from '../middlewares/rate-limit-user.js';
+
 import fieldRoutes from '../src/fields/field.routes.js';
+
 import reservationRoutes from '../src/reservations/reservation.routes.js';
+import teamRoutes from '../src/teams/team.routes.js';
+import tournamentRoutes from '../src/tournaments/tournament.routes.js';
+import userRoutes from '../src/users/user.routes.js';
 
 const BASE_PATH = '/kinalSportsUser/v1';
 
@@ -24,8 +34,18 @@ const middlewares = (app) => {
 };
 
 const routes = (app) => {
+  // Rutas públicas
   app.use(`${BASE_PATH}/fields`, fieldRoutes);
-  app.use(`${BASE_PATH}/reservations`, reservationRoutes);
+
+  // Aplicar middleware de autenticación JWT para el resto de módulos
+  app.use(authMiddleware);
+
+  // Rutas protegidas (Requieren token)
+  app.use(`${BASE_PATH}/users`, userRoutes);
+  app.use(`${BASE_PATH}/reservations`, reservationLimit, reservationRoutes);
+  app.use(`${BASE_PATH}/teams`, generalUserLimit, teamRoutes);
+  app.use(`${BASE_PATH}/tournaments`, generalUserLimit, tournamentRoutes);
+
   app.get(`${BASE_PATH}/health`, (req, res) => {
     res.status(200).json({
       status: 'Healthy',

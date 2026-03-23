@@ -9,7 +9,7 @@ const teamSchema = new mongoose.Schema(
       trim: true,
     },
     managerId: {
-      type: String,
+      type: String, // Se mantiene como String para consistencia con Reservation y req.user.id
       required: [true, 'El ID del manager es requerido'],
       trim: true,
     },
@@ -29,17 +29,17 @@ const teamSchema = new mongoose.Schema(
       default: 'fields/kinal_sports_nyvxo5',
     },
     isActive: {
+      type: Boolean,
       default: true,
     },
   },
-
   {
     timestamps: true,
     versionKey: false,
   }
 );
 
-// Índice para optimizar búsquedas
 teamSchema.index({ isActive: 1 });
+teamSchema.index({ members: 1 });
 
 export default mongoose.model('Team', teamSchema);
