@@ -5,13 +5,22 @@ using AuthService.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using AuthService.Domain.Constants;
 
 namespace AuthService.Api.Controllers;
 
 [ApiController]
 [Route("api/v1/[controller]")]
-public class AuthController(IAuthService authService) : ControllerBase
+public class AuthController(IAuthService authService, IUserManagementService userManagementService) : ControllerBase
 {
+    private async Task<bool> CurrentUserIsAdmin()
+    {
+        var userId = User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+        if (string.IsNullOrEmpty(userId)) return false;
+        var roles = await userManagementService.GetUserRolesAsync(userId);
+        return roles.Contains(RoleConstants.ADMIN_ROLE);
+    }
+
     [HttpGet("profile")]
     [Authorize]
     public async Task<ActionResult<object>> GetProfile()
@@ -138,5 +147,19 @@ public class AuthController(IAuthService authService) : ControllerBase
     {
         var result = await authService.ResetPasswordAsync(resetPasswordDto);
         return Ok(result);
+    }
+
+    [HttpGet("users")]
+    [Authorize]
+    [EnableRateLimiting("AuthPolicy")]
+    public async Task<ActionResult<IEnumerable<UserResponseDto>>> GetAllUsers()
+    {
+        if (!await CurrentUserIsAdmin())
+        {
+            return StatusCode(403, new { success = false, message = "Forbidden" });
+        }
+
+        var users = await authService.GetAllUsersAsync();
+        return Ok(users);
     }
 }

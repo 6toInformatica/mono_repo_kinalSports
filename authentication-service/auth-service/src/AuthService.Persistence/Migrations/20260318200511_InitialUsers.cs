@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AuthService.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreateWithUUIDs : Migration
+    public partial class InitialUsers : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,7 +16,9 @@ namespace AuthService.Persistence.Migrations
                 columns: table => new
                 {
                     id = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
+                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -109,7 +111,9 @@ namespace AuthService.Persistence.Migrations
                 {
                     id = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
                     user_id = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
-                    role_id = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false)
+                    role_id = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
