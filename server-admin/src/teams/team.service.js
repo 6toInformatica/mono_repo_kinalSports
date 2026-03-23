@@ -49,11 +49,7 @@ export const createTeamRecord = async ({ teamData, file }) => {
   const data = { ...teamData };
 
   if (file) {
-    const extension = file.path.split('.').pop();
-    const fileName = file.filename;
-    const relativePath = fileName.substring(fileName.indexOf('teams/'));
-
-    data.logo = `${relativePath}.${extension}`;
+    data.logo = file.path; // Guardar la ruta relativa del archivo subido
   } else {
     data.logo = 'fields/kinal_sports_nyvxo5';
   }
@@ -80,25 +76,22 @@ export const updateTeamRecord = async ({ id, updateData, file }) => {
     const currentTeam = await Team.findById(id);
 
     if (currentTeam && currentTeam.logo) {
-      const logoPath = currentTeam.logo;
-      const logoWithOutExt = logoPath.substring(0, logoPath.lastIndexOf('.'));
-      const publicId = `kinal_sports/${logoWithOutExt}`;
-
       try {
+        // Extraer public_id de la URL guardada
+        const url = currentTeam.logo; // URL actual en Cloudinary
+        const parts = url.split('/');
+        const fileNameWithExt = parts[parts.length - 1]; // ej: team123.jpg
+        const publicId = `kinal_sports/teams/${fileNameWithExt.split('.')[0]}`; // quitar extensión
         await cloudinary.uploader.destroy(publicId);
       } catch (deleteError) {
         console.error(
-          `Error al eliminar imagen anteriores de Cloudinary: ${deleteError.message}`
+          `Error al eliminar imagen anterior de Cloudinary: ${deleteError.message}`
         );
       }
     }
 
-    const extension = file.path.split('.').pop();
-    const fileName = file.filename;
-    const relativePath = fileName.includes('teams/')
-      ? fileName.substring(fileName.indexOf('teams/'))
-      : fileName;
-    data.logo = `${relativePath}.${extension}`;
+    // Guardar la nueva URL pública
+    data.logo = file.path;
   }
 
   return Team.findByIdAndUpdate(id, data, {
