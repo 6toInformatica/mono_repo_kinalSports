@@ -9,7 +9,6 @@ if [ $status -ne 0 ]; then
   echo "  - Errores de ESLint que no se pueden auto-fixear"
   echo "  - Warnings de ESLint (configurados como errores con --max-warnings=0)"
   echo "  - Errores de formato con Prettier"
-  echo "  - Problemas con dotnet format en archivos .cs"
   echo ""
   echo "Soluciones:"
   echo "  1. Revisa los mensajes de error específicos arriba"
@@ -18,6 +17,17 @@ if [ $status -ne 0 ]; then
   echo "  4. Ejecuta 'pnpm exec prettier --write .' para formatear"
   echo "  5. Vuelve a hacer git add de los archivos corregidos"
   echo "  6. Intenta el commit nuevamente"
+  exit 1
+fi
+
+# Corrección automática de formato C# para la solución .NET
+echo "[Husky] Corrigiendo formato de C# (.NET)..."
+dotnet format authentication-service/auth-service/AuthService.sln
+if [ $? -ne 0 ]; then
   echo ""
+  echo "✖ dotnet format detectó y corrigió problemas de formato en archivos C#."
+  echo "Se han realizado cambios automáticos."
+  echo "Por favor, revisa los archivos modificados, haz 'git add' y repite el commit."
+  exit 1
 fi
 exit $status

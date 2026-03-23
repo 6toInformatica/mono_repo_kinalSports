@@ -20,11 +20,10 @@
   },
   "lint-staged": {
     "*.{js,mjs,cjs,jsx,ts,tsx}": [
-      "pnpm exec prettier --write",
+      "pnpm exec prettier --write --ignore-unknown",
       "pnpm exec eslint --fix --max-warnings=0"
     ],
-    "*.{json,css,md,yaml,yml}": "pnpm exec prettier --write",
-    "*.cs": "dotnet format --verify-no-changes || true"
+    "*.{json,css,md,yaml,yml}": "pnpm exec prettier --write --ignore-unknown"
   },
   "config": {
     "commitizen": {
