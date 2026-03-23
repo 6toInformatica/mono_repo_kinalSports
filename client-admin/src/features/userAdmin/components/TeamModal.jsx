@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useFieldsStore } from "../store/adminStore.js";
+import { useTeamsStore } from "../store/teamStore";
 import { Spinner } from "../../auth/components/Spinner.jsx";
-import { useSaveField } from "../hooks/useSaveField";
+import { useSaveTeam } from "../hooks/useSaveTeam";
 
-export const FieldModal = ({ isOpen, onClose, field }) => {
-
+export const TeamModal = ({ isOpen, onClose, team }) => {
     const {
         register,
         handleSubmit,
@@ -14,31 +13,27 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
         formState: { errors },
     } = useForm();
 
-    const { saveField } = useSaveField();
-    const loading = useFieldsStore((state) => state.loading);
+    const { saveTeam } = useSaveTeam();
+    const loading = useTeamsStore((state) => state.loading);
 
     const [preview, setPreview] = useState(null);
-    const photoFile = watch("photo");
+    const logoFile = watch("logo");
 
     useEffect(() => {
         if (isOpen) {
-            if (field) {
+            if (team) {
                 reset({
-                    fieldName: field.fieldName,
-                    fieldType: field.fieldType,
-                    capacity: field.capacity,
-                    pricePerHour: field.pricePerHour,
-                    description: field.description,
+                    teamName: team.teamName,
+                    managerId: team.managerId,
+                    category: team.category,
                 });
-                setPreview(field.photo);
+                setPreview(team.logo);
             } else {
                 reset({
-                    fieldName: "",
-                    fieldType: "",
-                    capacity: "",
-                    pricePerHour: "",
-                    description: "",
-                    photo: null
+                    teamName: "",
+                    managerId: "",
+                    category: "",
+                    logo: null,
                 });
                 setPreview(null);
             }
@@ -46,14 +41,14 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
     }, [isOpen]);
 
     useEffect(() => {
-        if (photoFile && photoFile.length > 0) {
-            const file = photoFile[0];
+        if (logoFile && logoFile.length > 0) {
+            const file = logoFile[0];
             setPreview(URL.createObjectURL(file));
         }
-    }, [photoFile]);
+    }, [logoFile]);
 
     const onSubmit = async (data) => {
-        await saveField(data, field?._id);
+        await saveTeam(data, team?._id);
         reset();
         setPreview(null);
         onClose();
@@ -70,14 +65,14 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                 {/* HEADER */}
                 <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4 sm:p-5 text-white sticky top-0 z-10">
                     <h2 className="text-xl sm:text-2xl font-bold">
-                        {field ? "Editar Campo" : "Nuevo Campo"}
+                        {team ? "Editar Equipo" : "Nuevo Equipo"}
                     </h2>
                     <p className="text-xs sm:text-sm opacity-80">
-                        Completa la información de la cancha
+                        Completa la información del equipo
                     </p>
                 </div>
 
-                {/* FORM */}
+                {/* FORM SCROLL */}
                 <form
                     onSubmit={handleSubmit(onSubmit)}
                     className="p-4 sm:p-6 space-y-5 overflow-y-auto"
@@ -105,13 +100,13 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                         {/* Nombre */}
                         <div className="flex flex-col md:col-span-2">
                             <label className="text-sm font-semibold text-gray-700 mb-1">
-                                Nombre del campo
+                                Nombre del equipo
                             </label>
                             <input
                                 className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
                                 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                                placeholder="Ej. Cancha Central"
-                                {...register("fieldName", {
+                                placeholder="Ej. Barcelona FC"
+                                {...register("teamName", {
                                     required: "El nombre es obligatorio",
                                     minLength: {
                                         value: 3,
@@ -119,97 +114,56 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                                     },
                                 })}
                             />
-                            {errors.fieldName && (
+                            {errors.teamName && (
                                 <p className="text-red-600 text-xs mt-1">
-                                    {errors.fieldName.message}
+                                    {errors.teamName.message}
                                 </p>
                             )}
                         </div>
 
-                        {/* Tipo */}
+                        {/* Manager */}
                         <div className="flex flex-col">
                             <label className="text-sm font-semibold text-gray-700 mb-1">
-                                Tipo de cancha
+                                Manager ID
                             </label>
-                            <select
-                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
-                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                                {...register("fieldType", { required: "El tipo es obligatorio" })}
-                            >
-                                <option value="">Seleccione un tipo</option>
-                                <option value="SINTETICA">Sintética</option>
-                                <option value="CONCRETO">Concreto</option>
-                                <option value="NATURAL">Natural</option>
-                            </select>
-                            {errors.fieldType && (
+                            <input
+                                className={`w-full px-3 py-2 rounded-lg border-2 shadow-sm transition
+                                    ${team
+                                        ? "bg-gray-200 border-gray-200 cursor-not-allowed"
+                                        : "border-gray-300 bg-gray-50 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                                    }`}
+                                placeholder="Ej. usr_xxxxxx"
+                                disabled={!!team}
+                                {...register("managerId", {
+                                    required: !team ? "El manager es obligatorio" : false,
+                                })}
+                            />
+                            {errors.managerId && (
                                 <p className="text-red-600 text-xs mt-1">
-                                    {errors.fieldType.message}
+                                    {errors.managerId.message}
                                 </p>
                             )}
                         </div>
 
-                        {/* Capacidad */}
+                        {/* Categoría */}
                         <div className="flex flex-col">
                             <label className="text-sm font-semibold text-gray-700 mb-1">
-                                Capacidad
+                                Categoría
                             </label>
                             <select
                                 className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
                                 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                                {...register("capacity", {
-                                    required: "La capacidad es obligatoria",
+                                {...register("category", {
+                                    required: "La categoría es obligatoria",
                                 })}
                             >
-                                <option value="">Seleccione capacidad</option>
-                                <option value="FUTBOL_5">Fútbol 5</option>
+                                <option value="">Seleccione categoría</option>
                                 <option value="FUTBOL_7">Fútbol 7</option>
                                 <option value="FUTBOL_11">Fútbol 11</option>
                             </select>
-                            {errors.capacity && (
+                            {errors.category && (
                                 <p className="text-red-600 text-xs mt-1">
-                                    {errors.capacity.message}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Precio */}
-                        <div className="flex flex-col">
-                            <label className="text-sm font-semibold text-gray-700 mb-1">
-                                Precio por hora
-                            </label>
-                            <input
-                                type="number"
-                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
-                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                                placeholder="Q100"
-                                {...register("pricePerHour", {
-                                    required: "El precio es obligatorio",
-                                    min: { value: 1, message: "Debe ser mayor a 0" },
-                                })}
-                            />
-                            {errors.pricePerHour && (
-                                <p className="text-red-600 text-xs mt-1">
-                                    {errors.pricePerHour.message}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Descripción */}
-                        <div className="flex flex-col md:col-span-2">
-                            <label className="text-sm font-semibold text-gray-700 mb-1">
-                                Descripción
-                            </label>
-                            <textarea
-                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
-                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                                placeholder="Detalles del campo..."
-                                {...register("description", {
-                                    required: "La descripción es obligatoria",
-                                })}
-                            />
-                            {errors.description && (
-                                <p className="text-red-600 text-xs mt-1">
-                                    {errors.description.message}
+                                    {errors.category.message}
                                 </p>
                             )}
                         </div>
@@ -217,14 +171,14 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                         {/* Imagen */}
                         <div className="flex flex-col md:col-span-2">
                             <label className="text-sm font-semibold text-gray-700 mb-1">
-                                Imagen del campo
+                                Logo del equipo
                             </label>
                             <input
                                 type="file"
                                 className="w-full px-3 py-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 
                                 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 transition cursor-pointer"
                                 accept="image/*"
-                                {...register("photo")}
+                                {...register("logo")}
                             />
                         </div>
 
@@ -248,7 +202,7 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                             type="submit"
                             className="w-full sm:w-auto px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition shadow"
                         >
-                            {loading ? <Spinner small /> : field ? "Guardar cambios" : "Crear campo"}
+                            {loading ? <Spinner small /> : team ? "Guardar cambios" : "Crear equipo"}
                         </button>
                     </div>
 

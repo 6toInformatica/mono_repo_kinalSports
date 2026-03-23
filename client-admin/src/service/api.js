@@ -61,13 +61,11 @@ export const forgotPassword = async (email) => {
 }
 
 export const resetPassword = async (token, newPassword) => {
-  return await axiosAuth.post("/auth/reset-password", {token, newPassword})
+  return await axiosAuth.post("/auth/reset-password", { token, newPassword })
 }
 
 export const changeUserRole = async (userId, roleName) => {
-  return await axiosAuth.put(`/users/${userId}/role`, {
-    roleName,
-  });
+  return await axiosAuth.put(`/users/${userId}/role`, { roleName });
 };
 
 export const getFields = async () => {
@@ -97,3 +95,39 @@ export const getAllReservations = async () => {
 export const confirmReservation = async (id) => {
   return await axiosAdmin.put(`/reservations/${id}/confirm`);
 }
+
+export const getTeams = async () => {
+  return await axiosAdmin.get("/teams");
+};
+
+export const createTeam = async (data) => {
+  return await axiosAdmin.post("/teams", data, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
+export const updateTeam = async (id, data) => {
+  return await axiosAdmin.put(`/teams/${id}`, data, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+};
+
+export const deleteTeam = async (id) => {
+  return await axiosAdmin.put(`/teams/${id}/deactivate`);
+};
+
+export const getTournaments = async () => {
+  return await axiosAdmin.get("/tournaments");
+};
+
+export const createTournament = async (data) => {
+  return await axiosAdmin.post("/tournaments", data);
+};
+
+export const updateTournament = async (id, data) => {
+  return await axiosAdmin.put(`/tournaments/${id}`, data);
+};
+
+export const deleteTournament = async (id) => {
+  return await axiosAdmin.put(`/tournaments/${id}/desactivate`);
+};

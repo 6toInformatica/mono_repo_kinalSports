@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
-import { useFieldsStore } from "../store/adminStore.js";
+import { useTournamentsStore } from "../store/tournamentStore";
 import { Spinner } from "../../auth/components/Spinner.jsx";
-import { FieldModal } from "./FieldModal.jsx";
+import { TournamentModal } from "./TournamentModal.jsx";
 import { useUIStore } from "../../auth/store/uiStore.js";
 
-export const Fields = () => {
-    const { fields, loading, error, getFields, deleteField } = useFieldsStore();
+export const Tournaments = () => {
+    const { tournaments, loading, error, getTournaments, deleteTournament } = useTournamentsStore();
+
     const [openModal, setOpenModal] = useState(false);
-    const [selectedField, setSelectedField] = useState(null);
+    const [selectedTournament, setSelectedTournament] = useState(null);
     const { openConfirm } = useUIStore();
 
     useEffect(() => {
-        getFields();
+        getTournaments();
     }, []);
 
     if (loading) return <Spinner />;
@@ -23,21 +24,21 @@ export const Fields = () => {
             <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
                 <div>
                     <h1 className="text-3xl font-bold text-gray-800">
-                        Gestión de Canchas
+                        Gestión de Torneos
                     </h1>
                     <p className="text-gray-500 text-sm">
-                        Administra las canchas registradas
+                        Administra los torneos registrados
                     </p>
                 </div>
 
                 <button
                     className="bg-green-600 px-4 py-2 rounded text-white hover:bg-green-700 transition"
                     onClick={() => {
-                        setSelectedField(null);
+                        setSelectedTournament(null);
                         setOpenModal(true);
                     }}
                 >
-                    + Agregar Campo
+                    + Agregar Torneo
                 </button>
             </div>
 
@@ -47,50 +48,45 @@ export const Fields = () => {
                 </div>
             )}
 
-            {/* GRID RESPONSIVE */}
+            {/* GRID */}
             <div className="grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {fields.map((field) => (
+                {tournaments.map((t) => (
                     <div
-                        key={field._id}
+                        key={t._id}
                         className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:scale-[1.02]"
                     >
-                        {/* IMAGEN */}
-                        <div className="w-full h-52 bg-gray-100 flex items-center justify-center">
-                            <img
-                                src={field.photo}
-                                alt={field.fieldName}
-                                className="max-h-full max-w-full object-contain rounded-t-xl"
-                            />
-                        </div>
-
-                        {/* CONTENIDO */}
                         <div className="p-5">
                             <h2 className="text-xl font-bold text-gray-800">
-                                {field.fieldName}
+                                {t.tournamentsName}
                             </h2>
 
                             {/* BADGES */}
                             <div className="flex gap-2 mt-2 flex-wrap">
                                 <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium">
-                                    {field.capacity.replace("_", " ")}
+                                    {t.category.replace("_", " ")}
                                 </span>
 
                                 <span className="px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium">
-                                    Q{field.pricePerHour}/hora
+                                    {t.status}
                                 </span>
                             </div>
 
                             {/* INFO */}
-                            <p className="text-sm text-gray-400 mt-2 truncate">
-                                ID: {field._id}
+                            <p className="text-sm text-gray-400 mt-2">
+                                Equipos: {t.teams.length}
+                            </p>
+
+                            <p className="text-sm text-gray-400">
+                                {new Date(t.startDate).toLocaleDateString()} -{" "}
+                                {new Date(t.endDate).toLocaleDateString()}
                             </p>
 
                             {/* BOTONES */}
                             <div className="flex gap-3 mt-5">
                                 <button
-                                    className="flex-1 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
+                                    className="flex-1 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                                     onClick={() => {
-                                        setSelectedField(field);
+                                        setSelectedTournament(t);
                                         setOpenModal(true);
                                     }}
                                 >
@@ -98,12 +94,12 @@ export const Fields = () => {
                                 </button>
 
                                 <button
-                                    className="flex-1 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition"
+                                    className="flex-1 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700"
                                     onClick={() =>
                                         openConfirm({
-                                            title: "Eliminar campo",
-                                            message: `¿Eliminar ${field.fieldName}?`,
-                                            onConfirm: () => deleteField(field._id),
+                                            title: "Eliminar torneo",
+                                            message: `¿Eliminar ${t.tournamentsName}?`,
+                                            onConfirm: () => deleteTournament(t._id),
                                         })
                                     }
                                 >
@@ -115,13 +111,13 @@ export const Fields = () => {
                 ))}
             </div>
 
-            <FieldModal
+            <TournamentModal
                 isOpen={openModal}
                 onClose={() => {
                     setOpenModal(false);
-                    setSelectedField(null);
+                    setSelectedTournament(null);
                 }}
-                field={selectedField}
+                tournament={selectedTournament}
             />
         </div>
     );

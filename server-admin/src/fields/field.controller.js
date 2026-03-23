@@ -88,15 +88,22 @@ export const updateField = async (req, res) => {
       file: req.file,
     });
 
+    if (!field) {
+      return res.status(404).json({
+        success: false,
+        message: 'Campo no encontrado',
+      });
+    }
+
     res.status(200).json({
       success: true,
-      message: "Campo actualizado exitosamente",
-      data: updatedField,
+      message: 'Campo actualizado exitosamente',
+      data: field,
     });
   } catch (error) {
-    res.status(500).json({
+    res.status(400).json({
       success: false,
-      message: "Error al actualizar campo",
+      message: 'Error al actualizar el campo',
       error: error.message,
     });
   }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { verifyEmail as verifyEmailRequest } from "../../../service";
 
-export function useVerifyEmail(token, onSuccess) {
+export const useVerifyEmail = (token, onSuccess) => {
     const [status, setStatus] = useState("loading");
     const [message, setMessage] = useState("");
 

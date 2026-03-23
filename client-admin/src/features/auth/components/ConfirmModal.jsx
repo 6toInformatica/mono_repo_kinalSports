@@ -11,10 +11,10 @@ export const ConfirmModal = () => {
                 <h2 className="text-xl font-bold mb-2">{confirmModal.title}</h2>
                 <p className="mb-4">{confirmModal.message}</p>
 
-                <div className="flex justify-end gap-3">
+                <div className="flex justify-center gap-4 mt-4">
                     <button
                         onClick={closeConfirm}
-                        className="px-4 py-2 bg-gray-300 rounded-lg"
+                        className="px-5 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition"
                     >
                         Cancelar
                     </button>
@@ -24,7 +24,7 @@ export const ConfirmModal = () => {
                             confirmModal.onConfirm?.();
                             closeConfirm();
                         }}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg"
+                        className="px-5 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition"
                     >
                         Confirmar
                     </button>

@@ -1,7 +1,7 @@
 import { Navbar } from "./Navbar";
 import { Sidebar } from "./Sidebar";
 
-export function DashboardContainer({ user, onLogout, children }) {
+export const DashboardContainer = ({ user, onLogout, children }) => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
 

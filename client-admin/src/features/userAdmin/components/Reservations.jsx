@@ -1,12 +1,19 @@
 import { useEffect } from "react";
 import { useUIStore } from "../../auth/store/uiStore.js";
-import { useFieldsStore } from "../../../store/adminStore";
+import { useFieldsStore } from "../store/adminStore";
 import { formatDate, formatTime } from "../../../shared/utils/formatters";
 import { Spinner } from "../../auth/components/Spinner.jsx";
 
-export function Reservations() {
-    const { reservations, loading, error, getAllReservations, confirmReservation } = useFieldsStore();
-    const openConfirm = useUIStore((state) => state.openConfirm);
+export const Reservations = () => {
+    const {
+        reservations,
+        loading,
+        error,
+        getAllReservations,
+        confirmReservation
+    } = useFieldsStore();
+
+    const { openConfirm } = useUIStore();
 
     useEffect(() => {
         getAllReservations();
@@ -15,69 +22,104 @@ export function Reservations() {
     if (loading) return <Spinner />;
 
     return (
-        <div>
-            <h1 className="text-3xl font-semibold text-gray-800 mb-6">
-                Reservaciones Pendientes
-            </h1>
+        <div className="p-4">
 
-            {error && <p className="text-red-500 mb-4">{error}</p>}
-
-            <div className="space-y-4">
-                {reservations.map((reservation) => (
-                    <div
-                        key={reservation._id}
-                        className="bg-white shadow rounded-xl p-5 flex justify-between items-center"
-                    >
-                        <div>
-                            <h2 className="text-xl font-semibold text-gray-700">
-                                Usuario: {reservation.userId}
-                            </h2>
-
-                            <p className="text-gray-500">
-                                Cancha: {reservation.fieldId.fieldName}
-                            </p>
-
-                            <p className="text-gray-500">
-                                Fecha: {formatDate(reservation.startTime)}
-                            </p>
-
-                            <p className="text-gray-500">
-                                Hora: {formatTime(reservation.startTime)} - {formatTime(reservation.endTime)}
-                            </p>
-
-                            <p className="text-gray-600 mt-1">
-                                Estado:{" "}
-                                <span className="font-semibold">
-                                    {reservation.status}
-                                </span>
-                            </p>
-                        </div>
-
-                        <button
-                            disabled={reservation.status === "CONFIRMED"}
-                            onClick={() =>
-                                reservation.status !== "CONFIRMED" &&
-                                openConfirm({
-                                    title: "Confirmar Reserva",
-                                    message: "¿Estás seguro de confirmar esta reserva?",
-                                    onConfirm: async () => {
-                                        await confirmReservation(reservation._id);
-                                    },
-                                })
-                            }
-                            className={
-                                `px-4 py-2 rounded-lg text-white 
-                                ${reservation.status === "CONFIRMED"
-                                    ? "bg-gray-400 cursor-not-allowed"
-                                    : "bg-green-600 hover:bg-green-700"}`
-                            }
-                        >
-                            {reservation.status === "CONFIRMED" ? "Confirmada" : "Confirmar"}
-                        </button>
-
-                    </div>
-                ))}
+            {/* HEADER */}
+            <div className="mb-8">
+                <h1 className="text-3xl font-bold text-gray-800">
+                    Gestión de Reservaciones
+                </h1>
+                <p className="text-gray-500 text-sm">
+                    Administra y confirma las reservaciones pendientes
+                </p>
             </div>
+
+            {/* ERROR */}
+            {error && (
+                <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-6">
+                    {error}
+                </div>
+            )}
+
+            {/* GRID */}
+            <div className="grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {reservations.map((reservation) => {
+                    const isConfirmed = reservation.status === "CONFIRMED";
+
+                    return (
+                        <div
+                            key={reservation._id}
+                            className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 hover:scale-[1.02]"
+                        >
+                            <div className="p-5">
+
+                                {/* TITLE */}
+                                <h2 className="text-lg font-bold text-gray-800">
+                                    {reservation.fieldId.fieldName}
+                                </h2>
+
+                                <p className="text-sm text-gray-400 truncate">
+                                    Usuario: {reservation.userId}
+                                </p>
+
+                                {/* BADGES */}
+                                <div className="flex gap-2 mt-3 flex-wrap">
+                                    <span className="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium">
+                                        {formatDate(reservation.startTime)}
+                                    </span>
+
+                                    <span className="px-3 py-1 text-xs rounded-full bg-purple-100 text-purple-700 font-medium">
+                                        {formatTime(reservation.startTime)} - {formatTime(reservation.endTime)}
+                                    </span>
+
+                                    <span
+                                        className={`px-3 py-1 text-xs rounded-full font-medium
+                                        ${isConfirmed
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-yellow-100 text-yellow-700"
+                                            }`}
+                                    >
+                                        {reservation.status}
+                                    </span>
+                                </div>
+
+                                {/* ACTION */}
+                                <div className="mt-5">
+                                    <button
+                                        disabled={isConfirmed}
+                                        onClick={() =>
+                                            !isConfirmed &&
+                                            openConfirm({
+                                                title: "Confirmar Reserva",
+                                                message: "¿Estás seguro de confirmar esta reserva?",
+                                                onConfirm: async () => {
+                                                    await confirmReservation(reservation._id);
+                                                },
+                                            })
+                                        }
+                                        className={`
+                                            w-full py-2 rounded-lg text-white font-medium transition
+                                            ${isConfirmed
+                                                ? "bg-gray-400 cursor-not-allowed"
+                                                : "bg-green-600 hover:bg-green-700"}
+                                        `}
+                                    >
+                                        {isConfirmed ? "✔ Confirmada" : "✔ Confirmar"}
+                                    </button>
+                                </div>
+
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* EMPTY STATE */}
+            {reservations.length === 0 && !loading && (
+                <div className="text-center text-gray-500 mt-10">
+                    No hay reservaciones registradas
+                </div>
+            )}
         </div>
     );
-}
+};

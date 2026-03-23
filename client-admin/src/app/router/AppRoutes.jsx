@@ -9,6 +9,8 @@ import { RoleGuard } from "./RoleGuard.jsx";
 import { UnauthorizedPage } from "../../features/auth/pages/UnauthorizedPage.jsx";
 import { Settings } from "../../features/userManagement/components/Settings.jsx";
 import { ResetPasswordPage } from "../../features/auth/pages/ResetPasswordPage.jsx";
+import { Teams } from "../../features/userAdmin/components/Teams.jsx";
+import { Tournaments } from "../../features/userAdmin/components/Tournaments.jsx";
 
 export const AppRoutes = () => {
   return (
@@ -32,6 +34,8 @@ export const AppRoutes = () => {
       >
         <Route path="fields" element={<Fields />} />
         <Route path="reservations" element={<Reservations />} />
+        <Route path="teams" element={<Teams />} />
+        <Route path="tournaments" element={<Tournaments />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

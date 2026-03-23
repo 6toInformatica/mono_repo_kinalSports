@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useFieldsStore } from "../store/adminStore.js";
+import { useSaveTournament } from "../hooks/useSaveTournament";
+import { useTournamentsStore } from "../store/tournamentStore";
 import { Spinner } from "../../auth/components/Spinner.jsx";
-import { useSaveField } from "../hooks/useSaveField";
+import { formatDateForInput } from "../../../shared/utils/formatters.js";
 
-export const FieldModal = ({ isOpen, onClose, field }) => {
+export const TournamentModal = ({ isOpen, onClose, tournament }) => {
 
     const {
         register,
@@ -14,31 +15,31 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
         formState: { errors },
     } = useForm();
 
-    const { saveField } = useSaveField();
-    const loading = useFieldsStore((state) => state.loading);
+    const { saveTournament } = useSaveTournament();
+    const loading = useTournamentsStore((state) => state.loading);
 
     const [preview, setPreview] = useState(null);
-    const photoFile = watch("photo");
+    const logoFile = watch("logo");
 
     useEffect(() => {
         if (isOpen) {
-            if (field) {
+            if (tournament) {
                 reset({
-                    fieldName: field.fieldName,
-                    fieldType: field.fieldType,
-                    capacity: field.capacity,
-                    pricePerHour: field.pricePerHour,
-                    description: field.description,
+                    tournamentsName: tournament.tournamentsName,
+                    category: tournament.category,
+                    startDate: tournament.startDate ? formatDateForInput(tournament.startDate) : "",
+                    endDate: tournament.endDate ? formatDateForInput(tournament.endDate) : "",
+                    description: tournament.description,
                 });
-                setPreview(field.photo);
+                setPreview(tournament.logo || null);
             } else {
                 reset({
-                    fieldName: "",
-                    fieldType: "",
-                    capacity: "",
-                    pricePerHour: "",
+                    tournamentsName: "",
+                    category: "",
+                    startDate: "",
+                    endDate: "",
                     description: "",
-                    photo: null
+                    logo: null
                 });
                 setPreview(null);
             }
@@ -46,14 +47,14 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
     }, [isOpen]);
 
     useEffect(() => {
-        if (photoFile && photoFile.length > 0) {
-            const file = photoFile[0];
+        if (logoFile && logoFile.length > 0) {
+            const file = logoFile[0];
             setPreview(URL.createObjectURL(file));
         }
-    }, [photoFile]);
+    }, [logoFile]);
 
     const onSubmit = async (data) => {
-        await saveField(data, field?._id);
+        await saveTournament(data, tournament?._id);
         reset();
         setPreview(null);
         onClose();
@@ -64,26 +65,24 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 px-3 sm:px-4">
 
-            {/* CONTENEDOR */}
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg md:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
 
                 {/* HEADER */}
                 <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4 sm:p-5 text-white sticky top-0 z-10">
                     <h2 className="text-xl sm:text-2xl font-bold">
-                        {field ? "Editar Campo" : "Nuevo Campo"}
+                        {tournament ? "Editar Torneo" : "Nuevo Torneo"}
                     </h2>
                     <p className="text-xs sm:text-sm opacity-80">
-                        Completa la información de la cancha
+                        Completa la información del torneo
                     </p>
                 </div>
 
-                {/* FORM */}
                 <form
                     onSubmit={handleSubmit(onSubmit)}
                     className="p-4 sm:p-6 space-y-5 overflow-y-auto"
                 >
 
-                    {/* PREVIEW */}
+                    {/* PREVIEW LOGO */}
                     <div className="flex justify-center">
                         <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl bg-gray-100 border flex items-center justify-center overflow-hidden shadow-inner">
                             {preview ? (
@@ -93,7 +92,7 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                                 />
                             ) : (
                                 <span className="text-gray-400 text-xs sm:text-sm">
-                                    Sin imagen
+                                    Sin logo
                                 </span>
                             )}
                         </div>
@@ -105,13 +104,13 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                         {/* Nombre */}
                         <div className="flex flex-col md:col-span-2">
                             <label className="text-sm font-semibold text-gray-700 mb-1">
-                                Nombre del campo
+                                Nombre del torneo
                             </label>
                             <input
-                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
+                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm
                                 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                                placeholder="Ej. Cancha Central"
-                                {...register("fieldName", {
+                                placeholder="Ej. Copa Primavera 2026"
+                                {...register("tournamentsName", {
                                     required: "El nombre es obligatorio",
                                     minLength: {
                                         value: 3,
@@ -119,77 +118,66 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                                     },
                                 })}
                             />
-                            {errors.fieldName && (
+                            {errors.tournamentsName && (
                                 <p className="text-red-600 text-xs mt-1">
-                                    {errors.fieldName.message}
+                                    {errors.tournamentsName.message}
                                 </p>
                             )}
                         </div>
 
-                        {/* Tipo */}
+                        {/* Categoría */}
                         <div className="flex flex-col">
                             <label className="text-sm font-semibold text-gray-700 mb-1">
-                                Tipo de cancha
+                                Categoría
                             </label>
                             <select
-                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
+                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm
                                 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                                {...register("fieldType", { required: "El tipo es obligatorio" })}
+                                {...register("category", { required: "La categoría es obligatoria" })}
                             >
-                                <option value="">Seleccione un tipo</option>
-                                <option value="SINTETICA">Sintética</option>
-                                <option value="CONCRETO">Concreto</option>
-                                <option value="NATURAL">Natural</option>
-                            </select>
-                            {errors.fieldType && (
-                                <p className="text-red-600 text-xs mt-1">
-                                    {errors.fieldType.message}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Capacidad */}
-                        <div className="flex flex-col">
-                            <label className="text-sm font-semibold text-gray-700 mb-1">
-                                Capacidad
-                            </label>
-                            <select
-                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
-                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                                {...register("capacity", {
-                                    required: "La capacidad es obligatoria",
-                                })}
-                            >
-                                <option value="">Seleccione capacidad</option>
+                                <option value="">Seleccione una categoría</option>
                                 <option value="FUTBOL_5">Fútbol 5</option>
                                 <option value="FUTBOL_7">Fútbol 7</option>
                                 <option value="FUTBOL_11">Fútbol 11</option>
                             </select>
-                            {errors.capacity && (
+                            {errors.category && (
                                 <p className="text-red-600 text-xs mt-1">
-                                    {errors.capacity.message}
+                                    {errors.category.message}
                                 </p>
                             )}
                         </div>
 
-                        {/* Precio */}
+                        {/* Fechas */}
                         <div className="flex flex-col">
                             <label className="text-sm font-semibold text-gray-700 mb-1">
-                                Precio por hora
+                                Fecha de inicio
                             </label>
                             <input
-                                type="number"
-                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
+                                type="date"
+                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm
                                 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                                placeholder="Q100"
-                                {...register("pricePerHour", {
-                                    required: "El precio es obligatorio",
-                                    min: { value: 1, message: "Debe ser mayor a 0" },
-                                })}
+                                {...register("startDate", { required: "La fecha de inicio es obligatoria" })}
                             />
-                            {errors.pricePerHour && (
+                            {errors.startDate && (
                                 <p className="text-red-600 text-xs mt-1">
-                                    {errors.pricePerHour.message}
+                                    {errors.startDate.message}
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col">
+                            <label className="text-sm font-semibold text-gray-700 mb-1">
+                                Fecha de fin
+                            </label>
+                            <input
+                                type="date"
+                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm
+                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+                                {...register("endDate", { required: "La fecha de fin es obligatoria" })}
+                            />
+                            {errors.endDate && (
+                                <p className="text-red-600 text-xs mt-1">
+                                    {errors.endDate.message}
                                 </p>
                             )}
                         </div>
@@ -200,9 +188,9 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                                 Descripción
                             </label>
                             <textarea
-                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
+                                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm
                                 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
-                                placeholder="Detalles del campo..."
+                                placeholder="Detalles del torneo..."
                                 {...register("description", {
                                     required: "La descripción es obligatoria",
                                 })}
@@ -214,17 +202,17 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                             )}
                         </div>
 
-                        {/* Imagen */}
+                        {/* Logo */}
                         <div className="flex flex-col md:col-span-2">
                             <label className="text-sm font-semibold text-gray-700 mb-1">
-                                Imagen del campo
+                                Logo del torneo
                             </label>
                             <input
                                 type="file"
-                                className="w-full px-3 py-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 
+                                className="w-full px-3 py-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50
                                 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 transition cursor-pointer"
                                 accept="image/*"
-                                {...register("photo")}
+                                {...register("logo")}
                             />
                         </div>
 
@@ -248,7 +236,7 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                             type="submit"
                             className="w-full sm:w-auto px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition shadow"
                         >
-                            {loading ? <Spinner small /> : field ? "Guardar cambios" : "Crear campo"}
+                            {loading ? <Spinner small /> : tournament ? "Guardar cambios" : "Crear torneo"}
                         </button>
                     </div>
 

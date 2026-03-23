@@ -1,11 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 
-export function Sidebar() {
+export const Sidebar = () => {
   const location = useLocation();
 
   const items = [
     { label: "Canchas", to: "/dashboard/fields" },
     { label: "Reservaciones", to: "/dashboard/reservations" },
+    { label: "Teams", to: "/dashboard/teams" },
+    { label: "Torneos", to: "/dashboard/tournaments" },
   ];
 
   return (

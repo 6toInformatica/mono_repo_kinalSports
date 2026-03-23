@@ -6,7 +6,7 @@ import {
   updateMyProfile,
   uploadAvatar,
 } from './user.controller.js';
-import { uploadProfileImage } from '../../middlewares/file-uploader.js';
+//import { uploadProfileImage } from '../../middlewares/file-uploader.js';
 
 const router = Router();
 
@@ -15,7 +15,7 @@ router.get('/profile', getMyProfile);
 router.put('/profile', updateMyProfile);
 router.post(
   '/profile/avatar',
-  uploadProfileImage.single('avatar'),
+  //uploadProfileImage.single('avatar'),
   uploadAvatar
 );
 

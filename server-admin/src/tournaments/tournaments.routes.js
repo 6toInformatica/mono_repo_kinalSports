@@ -31,36 +31,36 @@ router.get(
 // Rutas de escritura - SOLO para administradores globales
 router.post(
   '/',
-  requireRole('ADMIN_ROLE'),
   validateCreateTournament,
+  requireRole('ADMIN_ROLE'),
   createTournament
 );
 
 router.put(
   '/:id',
-  requireRole('ADMIN_ROLE'),
   validateUpdateTournamentRequest,
+  requireRole('ADMIN_ROLE'),
   updateTournament
 );
 
 router.put(
   '/:id/activate',
-  requireRole('ADMIN_ROLE'),
   validateTournamentStatusChange,
+  requireRole('ADMIN_ROLE'),
   changeTournamentStatus
 );
 
 router.put(
   '/:id/deactivate',
-  requireRole('ADMIN_ROLE'),
   validateTournamentStatusChange,
+  requireRole('ADMIN_ROLE'),
   changeTournamentStatus
 );
 
 router.delete(
   '/:id',
-  requireRole('ADMIN_ROLE'),
   validateDeleteTournament,
+  requireRole('ADMIN_ROLE'),
   deleteTournament
 );
 

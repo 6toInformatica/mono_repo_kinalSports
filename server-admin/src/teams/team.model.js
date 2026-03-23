@@ -29,6 +29,7 @@ const teamSchema = new mongoose.Schema(
       default: 'fields/kinal_sports_nyvxo5',
     },
     isActive: {
+      type: Boolean,
       default: true,
     },
   },

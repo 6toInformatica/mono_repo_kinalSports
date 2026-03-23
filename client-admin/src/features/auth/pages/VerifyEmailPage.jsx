@@ -4,7 +4,7 @@ import { useVerifyEmail } from "../hooks/useVerifyEmail";
 import { useUIStore } from "../store/uiStore";
 import { Modal } from "../components/Modal";
 
-export function VerifyEmailPage() {
+export const VerifyEmailPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
     const openModal = useUIStore((state) => state.openModal);

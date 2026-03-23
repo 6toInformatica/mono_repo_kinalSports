@@ -1,6 +1,6 @@
-import { useFieldsStore } from "../../../store/adminStore";
+import { useFieldsStore } from "../store/adminStore";
 
-export function useSaveField() {
+export const useSaveField = () => {
     const createField = useFieldsStore((state) => state.createField);
     const updateField = useFieldsStore((state) => state.updateField);
 

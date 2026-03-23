@@ -2,7 +2,7 @@ import { useForm } from "react-hook-form";
 import { useRegister } from "../hooks/useRegister";
 import { useUIStore } from "../store/uiStore";
 
-export function RegisterForm({ onSwitch }) {
+export const RegisterForm = ({ onSwitch }) => {
   const {
     register,
     handleSubmit,

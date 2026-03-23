@@ -3,7 +3,7 @@ import { LoginForm } from "../components/LoginForm";
 import { RegisterForm } from "../components/RegisterForm";
 import { ForgotPasswordForm } from "../components/ForgotPasswordForm";
 
-export function AuthPage() {
+export const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgot, setIsForgot] = useState(false);
 
