@@ -20,40 +20,40 @@ import { authOrInternal } from '../../middlewares/validate-internal-token.js';
 const router = Router();
 
 // Rutas GET - Consumibles tanto por el frontend como por otros microservicios
-router.get('/', authOrInternal, validateGetFieldById, getFields);
+router.get('/', authOrInternal, getFields);
 router.get('/:id', authOrInternal, validateGetFieldById, getFieldById);
 
 // Rutas POST - Solo para administradores
 router.post(
   '/',
-  requireRole('ADMIN_ROLE'), // Validar rol antes de procesar archivos
   uploadFieldImage.single('image'),
   cleanupUploadedFileOnFinish,
   validateCreateField,
+  requireRole('ADMIN_ROLE'), // Validar rol antes de procesar archivos
   createField
 );
 
 // Rutas PUT - Solo para administradores
 router.put(
   '/:id',
-  requireRole('ADMIN_ROLE'), // Validar rol antes de procesar archivos
   uploadFieldImage.single('image'),
   cleanupUploadedFileOnFinish,
   validateUpdateFieldRequest,
+  requireRole('ADMIN_ROLE'), // Validar rol antes de procesar archivos
   updateField
 );
 
 router.put(
   '/:id/activate',
-  requireRole('ADMIN_ROLE'),
   validateFieldStatusChange,
+  requireRole('ADMIN_ROLE'),
   changeFieldStatus
 );
 
 router.put(
   '/:id/deactivate',
-  requireRole('ADMIN_ROLE'),
   validateFieldStatusChange,
+  requireRole('ADMIN_ROLE'),
   changeFieldStatus
 );
 

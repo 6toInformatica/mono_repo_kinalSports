@@ -8,6 +8,16 @@ namespace AuthService.Persistence.Repositories;
 
 public class UserRepository(ApplicationDbContext context) : IUserRepository
 {
+    public async Task<IEnumerable<User>> GetUsersAsync()
+    {
+        return await context.Users
+            .Include(u => u.UserProfile)
+            .Include(u => u.UserEmail)
+            .Include(u => u.UserPasswordReset)
+            .Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+            .ToListAsync();
+    }
     public async Task<User> GetByIdAsync(string id)
     {
         var user = await context.Users

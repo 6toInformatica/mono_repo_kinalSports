@@ -64,6 +64,8 @@ export const confirmReservationById = async ({ reservation, adminId }) => {
   reservation.lastModifiedBy = adminId;
 
   await reservation.save();
+  await reservation.populate("fieldId");
+  await reservation.populate("userId");
   return reservation;
 };
 

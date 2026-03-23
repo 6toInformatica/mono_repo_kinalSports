@@ -23,16 +23,16 @@ import { authOrInternal } from '../../middlewares/validate-internal-token.js';
 const router = Router();
 
 // Rutas GET - Permiten autenticación mixta para ser consumidos por el microservicio de usuarios
-router.get('/', authOrInternal, validateGetTeamById, getTeams);
+router.get('/', authOrInternal, getTeams);
 router.get('/:id', authOrInternal, validateGetTeamById, getTeamById);
 
 // Rutas POST - Crear un equipo oficial (Solo ADMIN)
 router.post(
   '/',
-  requireRole('ADMIN_ROLE'), // Validar rol antes de subir logo
   uploadTeamImage.single('logo'),
   cleanupUploadedFileOnFinish,
   validateCreateTeam,
+  requireRole('ADMIN_ROLE'), // Validar rol antes de subir logo
   createTeam
 );
 
@@ -42,32 +42,32 @@ router.post(
  */
 router.put(
   '/:id',
-  authorizeUpdateTeam,
   uploadTeamImage.single('logo'),
   cleanupUploadedFileOnFinish,
   validateUpdateTeamRequest,
+  authorizeUpdateTeam,
   updateTeam
 );
 
 // Gestión de estado y manager (Restringido solo a ADMIN)
 router.put(
   '/:id/activate',
-  requireRole('ADMIN_ROLE'),
   validateTeamStatusChange,
+  requireRole('ADMIN_ROLE'),
   changeTeamStatus
 );
 
 router.put(
   '/:id/deactivate',
-  requireRole('ADMIN_ROLE'),
   validateTeamStatusChange,
+  requireRole('ADMIN_ROLE'),
   changeTeamStatus
 );
 
 router.put(
   '/:id/manager',
-  requireRole('ADMIN_ROLE'),
   validateChangeTeamManager,
+  requireRole('ADMIN_ROLE'),
   changeTeamManager
 );
 
