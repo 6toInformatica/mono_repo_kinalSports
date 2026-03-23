@@ -1,8 +1,8 @@
 'use strict';
 
-import mongoose from 'mongoose';
+import { Schema, model } from 'mongoose';
 
-const fieldSchema = mongoose.Schema(
+const fieldSchema = new Schema(
   {
     fieldName: {
       type: String,
@@ -56,4 +56,4 @@ fieldSchema.index({ isActive: 1 });
 fieldSchema.index({ fieldType: 1 });
 fieldSchema.index({ isActive: 1, fieldType: 1 });
 
-export default mongoose.model('Field', fieldSchema);
+export default model('Field', fieldSchema);

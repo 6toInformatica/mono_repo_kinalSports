@@ -1,45 +1,28 @@
-import Reservation from './reservation.model.js';
+import {
+  fetchReservations,
+  fetchReservationById,
+  confirmReservationById,
+  cancelReservationById,
+} from './reservation.service.js';
 
 // Obtener todas las reservas con paginación y filtros
 export const getReservations = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, fieldId, date, userId } = req.query;
 
-    const filter = {};
-
-    if (status) filter.status = status;
-    if (fieldId) filter.fieldId = fieldId;
-    if (userId) filter.userId = userId;
-
-    // Filtro por fecha (día completo)
-    if (date) {
-      const startDate = new Date(date);
-      const endDate = new Date(date);
-      endDate.setDate(endDate.getDate() + 1);
-
-      filter.startTime = {
-        $gte: startDate,
-        $lt: endDate,
-      };
-    }
-
-    const reservations = await Reservation.find(filter)
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .sort({ startTime: -1 })
-      .populate('fieldId', 'fieldName fieldType location pricePerHour');
-
-    const total = await Reservation.countDocuments(filter);
+    const { reservations, pagination } = await fetchReservations({
+      page,
+      limit,
+      status,
+      fieldId,
+      date,
+      userId,
+    });
 
     res.status(200).json({
       success: true,
       data: reservations,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(total / limit),
-        totalRecords: total,
-        limit: parseInt(limit),
-      },
+      pagination,
     });
   } catch (error) {
     res.status(500).json({
@@ -57,10 +40,7 @@ export const getReservationById = async (req, res) => {
     const userId = req.user.id;
     const userRole = req.user.role;
 
-    const reservation = await Reservation.findById(id).populate(
-      'fieldId',
-      'fieldName fieldType location pricePerHour capacity'
-    );
+    const reservation = await fetchReservationById(id);
 
     if (!reservation) {
       return res.status(404).json({
@@ -111,19 +91,15 @@ export const confirmReservation = async (req, res) => {
       });
     }
 
-    reservation.status = 'CONFIRMED';
-    reservation.confirmation = {
-      confirmedAt: new Date(),
-      confirmedBy: adminId,
-    };
-    reservation.lastModifiedBy = adminId;
-
-    await reservation.save();
+    const confirmedReservation = await confirmReservationById({
+      reservation,
+      adminId,
+    });
 
     res.status(200).json({
       success: true,
       message: 'Reserva confirmada exitosamente',
-      data: reservation,
+      data: confirmedReservation,
     });
   } catch (error) {
     res.status(500).json({
@@ -140,7 +116,7 @@ export const cancelReservation = async (req, res) => {
     const adminId = req.user?.id || 'admin';
     const { id } = req.params;
 
-    const reservation = await Reservation.findById(id);
+    const reservation = await cancelReservationById({ id, adminId });
 
     if (!reservation) {
       return res.status(404).json({
@@ -148,18 +124,6 @@ export const cancelReservation = async (req, res) => {
         message: 'Reserva no encontrada',
       });
     }
-
-    if (!['PENDING', 'CONFIRMED'].includes(reservation.status)) {
-      return res.status(400).json({
-        success: false,
-        message: `No se puede cancelar una reserva con estado: ${reservation.status}`,
-      });
-    }
-
-    reservation.status = 'CANCELLED';
-    reservation.lastModifiedBy = adminId;
-
-    await reservation.save();
 
     res.status(200).json({
       success: true,

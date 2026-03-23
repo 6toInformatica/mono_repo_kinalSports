@@ -1,35 +1,25 @@
-import Field from './field.model.js';
-import { cloudinary } from '../../middlewares/file-uploader.js';
+import {
+  fetchFields,
+  fetchFieldById,
+  createFieldRecord,
+  updateFieldRecord,
+  updateFieldStatus,
+} from './field.service.js';
 
 // Obtener todos los campos con paginación y filtros
 export const getFields = async (req, res) => {
   try {
     const { page = 1, limit = 10, isActive = true } = req.query;
-
-    const filter = { isActive };
-
-    const options = {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      sort: { createdAt: -1 },
-    };
-
-    const fields = await Field.find(filter)
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .sort(options.sort);
-
-    const total = await Field.countDocuments(filter);
+    const { fields, pagination } = await fetchFields({
+      page,
+      limit,
+      isActive,
+    });
 
     res.status(200).json({
       success: true,
       data: fields,
-      pagination: {
-        currentPage: page,
-        totalPages: Math.ceil(total / limit),
-        totalRecords: total,
-        limit,
-      },
+      pagination,
     });
   } catch (error) {
     res.status(500).json({
@@ -44,8 +34,7 @@ export const getFields = async (req, res) => {
 export const getFieldById = async (req, res) => {
   try {
     const { id } = req.params;
-
-    const field = await Field.findById(id);
+    const field = await fetchFieldById(id);
 
     if (!field) {
       return res.status(404).json({
@@ -70,21 +59,10 @@ export const getFieldById = async (req, res) => {
 // Crear nuevo campo
 export const createField = async (req, res) => {
   try {
-    const fieldData = req.body;
-
-    if (req.file) {
-      const extension = req.file.path.split('.').pop();
-      const filename = req.file.filename;
-      const relativePath = filename.substring(filename.indexOf('fields/'));
-
-      fieldData.photo = `${relativePath}.${extension}`;
-    } else {
-      // Si no se envía archivo, usar imagen por defecto
-      fieldData.photo = 'fields/kinal_sports_nyvxo5';
-    }
-
-    const field = new Field(fieldData);
-    await field.save();
+    const field = await createFieldRecord({
+      fieldData: req.body,
+      file: req.file,
+    });
 
     res.status(201).json({
       success: true,
@@ -104,39 +82,10 @@ export const createField = async (req, res) => {
 export const updateField = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = { ...req.body };
-
-    if (req.file) {
-      const currentField = await Field.findById(id);
-
-      if (currentField && currentField.photo) {
-        const photoPath = currentField.photo;
-        const photoWithoutExt = photoPath.substring(
-          0,
-          photoPath.lastIndexOf('.')
-        );
-        const publicId = `kinal_sports/${photoWithoutExt}`;
-
-        try {
-          await cloudinary.uploader.destroy(publicId);
-        } catch (deleteError) {
-          console.error(
-            `Error al eliminar imagen anterior de Cloudinary: ${deleteError.message}`
-          );
-        }
-      }
-
-      const extension = req.file.path.split('.').pop();
-      const filename = req.file.filename;
-      const relativePath = filename.includes('fields/')
-        ? filename.substring(filename.indexOf('fields/'))
-        : filename;
-      updateData.photo = `${relativePath}.${extension}`;
-    }
-
-    const field = await Field.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
+    const field = await updateFieldRecord({
+      id,
+      updateData: req.body,
+      file: req.file,
     });
 
     if (!field) {
@@ -167,12 +116,7 @@ export const changeFieldStatus = async (req, res) => {
     // Detectar si es activate o deactivate desde la URL
     const isActive = req.url.includes('/activate');
     const action = isActive ? 'activado' : 'desactivado';
-
-    const field = await Field.findByIdAndUpdate(
-      id,
-      { isActive },
-      { new: true }
-    );
+    const field = await updateFieldStatus({ id, isActive });
 
     if (!field) {
       return res.status(404).json({

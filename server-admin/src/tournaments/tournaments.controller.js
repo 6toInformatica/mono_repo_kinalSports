@@ -1,41 +1,28 @@
-import Tournament from './tournaments.model.js';
+import {
+  fetchTournaments,
+  fetchTournamentById,
+  createTournamentRecord,
+  updateTournamentRecord,
+  updateTournamentStatus,
+  deleteTournamentRecord,
+} from './tournaments.service.js';
 
 // Obtener todos los torneos con paginación y filtro
 export const getTournaments = async (req, res) => {
   try {
     const { page = 1, limit = 10, isActive, category } = req.query;
 
-    // Crear un objeto para filtrar la consulta
-    const filter = {};
-
-    if (typeof isActive !== 'undefined') {
-      filter.isActive = isActive === 'true';
-    }
-
-    if (category) {
-      filter.category = category;
-    }
-
-    const pageNumber = parseInt(page);
-    const limitNumber = parseInt(limit);
-
-    // Consulta por página
-    const tournaments = await Tournament.find(filter)
-      .limit(limitNumber)
-      .skip((pageNumber - 1) * limitNumber)
-      .sort({ createdAt: -1 });
-
-    // Culsulta la cantidad de documentos que cumplen el filtro
-    const totalTournaments = await Tournament.countDocuments(filter);
+    const { tournaments, pagination } = await fetchTournaments({
+      page,
+      limit,
+      isActive,
+      category,
+    });
 
     res.status(200).json({
       success: true,
       data: tournaments,
-      pagination: {
-        currentPage: pageNumber,
-        totalPages: Math.ceil(totalTournaments / limitNumber),
-        limit: limitNumber,
-      },
+      pagination,
     });
   } catch (error) {
     return res.status(500).json({
@@ -51,8 +38,7 @@ export const getTournamentById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Consulta
-    const tournament = await Tournament.findById(id);
+    const tournament = await fetchTournamentById(id);
 
     if (!tournament) {
       return res.status(404).json({
@@ -77,11 +63,7 @@ export const getTournamentById = async (req, res) => {
 // Crear torneo
 export const createTournament = async (req, res) => {
   try {
-    const tournamentData = req.body;
-
-    // Consulta y creación de nuevo archivo en la base de datos
-    const tournament = new Tournament(tournamentData);
-    await tournament.save();
+    const tournament = await createTournamentRecord(req.body);
 
     res.status(200).json({
       success: true,
@@ -99,17 +81,12 @@ export const createTournament = async (req, res) => {
 // Actualizar torneo
 export const updateTournament = async (req, res) => {
   try {
-    const updateTournament = { ...req.body };
     const { id } = req.params;
 
-    const tournament = await Tournament.findByIdAndUpdate(
+    const tournament = await updateTournamentRecord({
       id,
-      updateTournament,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+      updateData: req.body,
+    });
 
     if (!tournament) {
       return res.status(404).json({
@@ -139,14 +116,7 @@ export const changeTournamentStatus = async (req, res) => {
     const isActive = req.url.includes('/activate');
     const action = isActive ? 'activado' : 'desactivado';
 
-    console.log('---------------' + action);
-
-    // Consulta en la base de datos
-    const tournament = await Tournament.findByIdAndUpdate(
-      id,
-      { isActive },
-      { new: true }
-    );
+    const tournament = await updateTournamentStatus({ id, isActive });
 
     if (!tournament) {
       return res.status(404).json({
@@ -174,7 +144,7 @@ export const deleteTournament = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const tournament = await Tournament.findByIdAndDelete(id);
+    const tournament = await deleteTournamentRecord(id);
 
     if (!tournament) {
       return res.status(404).json({

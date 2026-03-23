@@ -7,27 +7,37 @@ import {
   changeTournamentStatus,
   deleteTournament,
 } from './tournaments.controller.js';
-import { cleanupUploadedFileOnFinish } from '../../middlewares/delete-file-on-error.js';
+import {
+  validateCreateTournament,
+  validateUpdateTournamentRequest,
+  validateTournamentStatusChange,
+  validateGetTournamentById,
+  validateDeleteTournament,
+} from '../../middlewares/tournament-validators.js';
 
 const router = Router();
 
 // Rutas GET
-//! Falta verificación <validateGetTournamentById>
-//router.get('/:id', validateGetTournamentById, getTournamentById);
 router.get('/', getTournaments);
-router.get('/:id', getTournamentById);
+router.get('/:id', validateGetTournamentById, getTournamentById);
 
 // Rutas POST - requieren autenticación
-router.post('/', cleanupUploadedFileOnFinish, createTournament);
+router.post('/', validateCreateTournament, createTournament);
 
 // Rutas PUT - Requiere autenticación
-router.put('/:id', cleanupUploadedFileOnFinish, updateTournament);
+router.put('/:id', validateUpdateTournamentRequest, updateTournament);
 
-//! Falta verificación <validateTournamentStatusChange>
-router.put('/:id/activate', changeTournamentStatus);
-router.put('/:id/deactivate', changeTournamentStatus);
+router.put(
+  '/:id/activate',
+  validateTournamentStatusChange,
+  changeTournamentStatus
+);
+router.put(
+  '/:id/deactivate',
+  validateTournamentStatusChange,
+  changeTournamentStatus
+);
 
 // Rutas DELETE - Requiere autenticación
-//! Falta verificación < >
-router.delete('/:id', deleteTournament);
+router.delete('/:id', validateDeleteTournament, deleteTournament);
 export default router;
