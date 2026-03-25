@@ -1,22 +1,22 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { COLORS } from "../constants/theme";
+import { COLORS } from "../shared/constants/theme";
 import { MaterialIcons } from "@expo/vector-icons";
 
 // Screen imports
-import FieldsScreen from "../screens/fields/FieldsScreen";
-import FieldDetailScreen from "../screens/fields/FieldDetailScreen";
-import TeamsScreen from "../screens/teams/TeamsScreen";
-import TeamDetailScreen from "../screens/teams/TeamDetailScreen";
-import MyTeamsScreen from "../screens/teams/MyTeamsScreen";
-import CreateTeamScreen from "../screens/teams/CreateTeamScreen";
-import TournamentsScreen from "../screens/tournaments/TournamentsScreen";
-import TournamentDetailScreen from "../screens/tournaments/TournamentDetailScreen";
-import MyTournamentsScreen from "../screens/tournaments/MyTournamentsScreen";
-import ReservationsScreen from "../screens/reservations/ReservationsScreen";
-import CreateReservationScreen from "../screens/reservations/CreateReservationScreen";
-import ProfileScreen from "../screens/profile/ProfileScreen";
+import FieldsScreen from "../features/fields/screens/FieldsScreen";
+import FieldDetailScreen from "../features/fields/screens/FieldDetailScreen";
+import TeamsScreen from "../features/teams/screens/TeamsScreen";
+import TeamDetailScreen from "../features/teams/screens/TeamDetailScreen";
+import MyTeamsScreen from "../features/teams/screens/MyTeamsScreen";
+import CreateTeamScreen from "../features/teams/screens/CreateTeamScreen";
+import TournamentsScreen from "../features/tournaments/screens/TournamentsScreen";
+import TournamentDetailScreen from "../features/tournaments/screens/TournamentDetailScreen";
+import MyTournamentsScreen from "../features/tournaments/screens/MyTournamentsScreen";
+import ReservationsScreen from "../features/reservations/screens/ReservationsScreen";
+import CreateReservationScreen from "../features/reservations/screens/CreateReservationScreen";
+import ProfileScreen from "../features/profile/screens/ProfileScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();

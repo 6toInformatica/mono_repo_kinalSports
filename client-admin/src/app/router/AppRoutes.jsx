@@ -2,15 +2,15 @@ import { Routes, Route } from "react-router-dom";
 import { DashboardPage } from "../layouts/DashboardPage.jsx";
 import { AuthPage } from "../../features/auth/pages/AuthPage.jsx";
 import { VerifyEmailPage } from "../../features/auth/pages/VerifyEmailPage.jsx";
-import { Fields } from "../../features/userAdmin/components/Fields.jsx";
-import { Reservations } from "../../features/userAdmin/components/Reservations.jsx";
-import { ProtectedRoute } from "./ProtectedRoute";
 import { RoleGuard } from "./RoleGuard.jsx";
+import { ProtectedRoute } from "./ProtectedRoute.jsx";
 import { UnauthorizedPage } from "../../features/auth/pages/UnauthorizedPage.jsx";
-import { Settings } from "../../features/userManagement/components/Settings.jsx";
+import { Fields } from "../../features/fields/components/Fields.jsx";
+import { Reservations } from "../../features/reservations/components/Reservations.jsx";
+import { Settings } from "../../features/users/components/Settings.jsx";
 import { ResetPasswordPage } from "../../features/auth/pages/ResetPasswordPage.jsx";
-import { Teams } from "../../features/userAdmin/components/Teams.jsx";
-import { Tournaments } from "../../features/userAdmin/components/Tournaments.jsx";
+import { Teams } from "../../features/teams/components/Teams.jsx";
+import { Tournaments } from "../../features/tournaments/components/Tournaments.jsx";
 
 export const AppRoutes = () => {
   return (
@@ -40,4 +40,4 @@ export const AppRoutes = () => {
       </Route>
     </Routes>
   );
-}
+};

@@ -15,23 +15,25 @@ public class RefreshTokenRepository : IRefreshTokenRepository
 
     public async Task<RefreshToken?> GetByHashAsync(string tokenHash)
     {
-        return await _context.RefreshTokens.FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
+        return await (_context.RefreshTokens ?? throw new InvalidOperationException("RefreshTokens DbSet is null."))
+            .FirstOrDefaultAsync(r => r.TokenHash == tokenHash);
     }
 
     public async Task<IEnumerable<RefreshToken>> GetByFamilyIdAsync(Guid familyId)
     {
-        return await _context.RefreshTokens.Where(r => r.FamilyId == familyId).ToListAsync();
+        return await (_context.RefreshTokens ?? throw new InvalidOperationException("RefreshTokens DbSet is null."))
+            .Where(r => r.FamilyId == familyId).ToListAsync();
     }
 
     public async Task AddAsync(RefreshToken token)
     {
-        await _context.RefreshTokens.AddAsync(token);
+        await (_context.RefreshTokens ?? throw new InvalidOperationException("RefreshTokens DbSet is null.")).AddAsync(token);
     }
 
     public Task RevokeAsync(RefreshToken token)
     {
         token.RevokedAt = DateTime.UtcNow;
-        _context.RefreshTokens.Update(token);
+        (_context.RefreshTokens ?? throw new InvalidOperationException("RefreshTokens DbSet is null.")).Update(token);
         return Task.CompletedTask;
     }
 
@@ -42,7 +44,7 @@ public class RefreshTokenRepository : IRefreshTokenRepository
         {
             token.RevokedAt = DateTime.UtcNow;
         }
-        _context.RefreshTokens.UpdateRange(tokens);
+        (_context.RefreshTokens ?? throw new InvalidOperationException("RefreshTokens DbSet is null.")).UpdateRange(tokens);
     }
 
     public async Task SaveChangesAsync()

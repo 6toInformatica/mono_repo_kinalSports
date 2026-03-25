@@ -10,7 +10,7 @@ public static class DataSeeder
     public static async Task SeedAsync(ApplicationDbContext context)
     {
         // Verificar si ya existen roles
-        if (!context.Roles.Any())
+        if (!(context.Roles?.Any() ?? false))
         {
             var roles = new List<Role>
             {
@@ -24,15 +24,15 @@ public static class DataSeeder
                 }
             };
 
-            await context.Roles.AddRangeAsync(roles);
+            await context.Roles!.AddRangeAsync(roles);
             await context.SaveChangesAsync();
         }
 
         // Seed de un usuario administrador por defecto SOLO si no existen usuarios todavía
-        if (!await context.Users.AnyAsync())
+        if (!(await (context.Users?.AnyAsync() ?? Task.FromResult(false))))
         {
             // Buscar rol admin existente
-            var adminRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == RoleConstants.ADMIN_ROLE);
+            var adminRole = await (context.Roles ?? throw new InvalidOperationException("Roles DbSet is null.")).FirstOrDefaultAsync(r => r.Name == RoleConstants.ADMIN_ROLE);
             if (adminRole != null)
             {
                 var passwordHasher = new PasswordHashService();
@@ -77,7 +77,7 @@ public static class DataSeeder
                     ]
                 };
 
-                await context.Users.AddAsync(adminUser);
+                await context.Users!.AddAsync(adminUser);
                 await context.SaveChangesAsync();
             }
         }

@@ -1,35 +1,31 @@
+// Use subscription pattern to avoid memoization issues
+ 
 import { useForm } from "react-hook-form";
 import { useRegister } from "../hooks/useRegister";
-import { useUIStore } from "../store/uiStore";
+import toast from "react-hot-toast";
 
 export const RegisterForm = ({ onSwitch }) => {
   const {
     register,
     handleSubmit,
-    watch,
+    getValues,
     formState: { errors },
   } = useForm();
-
   const { handleRegister, loading, error } = useRegister();
-  const { openModal } = useUIStore();
 
   const onSubmit = async (data) => {
-    data.profilePicture = data.profilePicture[0];
-
+    data.profilePicture = data.profilePicture?.[0];
     const result = await handleRegister(data);
-
     if (result.success && result.emailVerificationRequired) {
-      openModal(
-        "Registro exitoso",
-        "Se ha enviado un correo de verificación a tu bandeja."
-      );
+      toast.success("Se ha enviado un correo de verificación a tu bandeja.", {
+        duration: 5000,
+      });
       onSwitch();
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {/* Name & Surname */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
@@ -153,8 +149,14 @@ export const RegisterForm = ({ onSwitch }) => {
           <input
             {...register("confirmPassword", {
               required: "Debe confirmar su contraseña",
-              validate: (value) =>
-                value === watch("password") || "Las contraseñas no coinciden",
+              validate: {
+                matchesPassword: (value) => {
+                  const passwordValue = getValues("password");
+                  return (
+                    value === passwordValue || "Las contraseñas no coinciden"
+                  );
+                },
+              },
             })}
             type="password"
             className="w-full px-3 py-2 border rounded-lg"
@@ -186,9 +188,7 @@ export const RegisterForm = ({ onSwitch }) => {
       </div>
 
       {/* Global error */}
-      {error && (
-        <p className="text-red-600 text-sm text-center">{error}</p>
-      )}
+      {error && <p className="text-red-600 text-sm text-center">{error}</p>}
 
       <button
         type="submit"
@@ -210,4 +210,4 @@ export const RegisterForm = ({ onSwitch }) => {
       </p>
     </form>
   );
-}
+};

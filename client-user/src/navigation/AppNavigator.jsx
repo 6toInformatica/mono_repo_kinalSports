@@ -1,10 +1,10 @@
 import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
-import { useAuthStore } from "../store/authStore";
+import { useAuthStore } from "../shared/store/authStore";
 import AuthStack from "./AuthStack";
 import MainTabs from "./MainTabs";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
-import { COLORS } from "../constants/theme";
+import { COLORS } from "../shared/constants/theme";
 
 const AppNavigator = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);

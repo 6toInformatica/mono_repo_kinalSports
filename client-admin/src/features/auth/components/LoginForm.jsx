@@ -1,7 +1,7 @@
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { useUIStore } from "../store/uiStore";
+import toast from "react-hot-toast";
 
 export const LoginForm = ({ onSwitch, onForgot }) => {
   const navigate = useNavigate();
@@ -16,16 +16,11 @@ export const LoginForm = ({ onSwitch, onForgot }) => {
     formState: { errors },
   } = useForm();
 
-  const { openModal } = useUIStore();
-
   const onSubmit = async (data) => {
     const res = await login(data);
     if (res.success) {
       navigate("/dashboard");
-      openModal(
-        "Inicio de sesión exitoso",
-        "¡Bienvenido de nuevo!"
-      );
+      toast.success("¡Bienvenido de nuevo!", { duration: 4000 });
     }
   };
 
@@ -77,9 +72,7 @@ export const LoginForm = ({ onSwitch, onForgot }) => {
         />
 
         {errors.password && (
-          <p className="text-red-600 text-xs mt-1">
-            {errors.password.message}
-          </p>
+          <p className="text-red-600 text-xs mt-1">{errors.password.message}</p>
         )}
       </div>
 
@@ -118,4 +111,4 @@ export const LoginForm = ({ onSwitch, onForgot }) => {
       </p>
     </form>
   );
-}
+};

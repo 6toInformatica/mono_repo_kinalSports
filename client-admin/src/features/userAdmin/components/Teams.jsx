@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
-import { useTeamsStore } from "../store/teamStore";
+import { useTeamsStore } from "../../teams/store/teamStore";
 import { Spinner } from "../../auth/components/Spinner";
 import { TeamModal } from "./TeamModal";
 import { useUIStore } from "../../auth/store/uiStore";
-import { useUserStore } from "../../userManagement/store/userAdminStore";
+import { useUserManagementStore } from "../../users/store/useUserManagementStore";
+import { showError } from "../../../shared/utils/toast.js";
 
 export const Teams = () => {
   const { teams, loading, error, getTeams, deleteTeam } = useTeamsStore();
-  const { users, fetchUsers } = useUserStore();
+  const { users, fetchUsers } = useUserManagementStore();
   const [openModal, setOpenModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState(null);
   const { openConfirm } = useUIStore();
@@ -19,6 +20,11 @@ export const Teams = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Mostrar toast de error si existe
+  useEffect(() => {
+    if (error) showError(error);
+  }, [error]);
 
   if (loading) return <Spinner />;
 
@@ -45,12 +51,6 @@ export const Teams = () => {
           + Agregar Equipo
         </button>
       </div>
-
-      {error && (
-        <div className="alert alert-error mb-4">
-          <span>{error}</span>
-        </div>
-      )}
 
       {/* GRID RESPONSIVE */}
       <div className="grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
