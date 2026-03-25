@@ -6,13 +6,13 @@ namespace AuthService.Persistence.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
-    public DbSet<User> Users { get; set; }
-    public DbSet<UserProfile> UserProfiles { get; set; }
-    public DbSet<Role> Roles { get; set; }
-    public DbSet<UserRole> UserRoles { get; set; }
-    public DbSet<UserEmail> UserEmails { get; set; }
-    public DbSet<UserPasswordReset> UserPasswordResets { get; set; }
-    public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<User>? Users { get; set; }
+    public DbSet<UserProfile>? UserProfiles { get; set; }
+    public DbSet<Role>? Roles { get; set; }
+    public DbSet<UserRole>? UserRoles { get; set; }
+    public DbSet<UserEmail>? UserEmails { get; set; }
+    public DbSet<UserPasswordReset>? UserPasswordResets { get; set; }
+    public DbSet<RefreshToken>? RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
