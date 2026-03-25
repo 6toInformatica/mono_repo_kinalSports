@@ -6,6 +6,11 @@ export default [
   js.configs.recommended,
   prettierConfig,
   {
+    files: [
+      'server-admin/**/*.js',
+      'server-admin/**/*.cjs',
+      'server-admin/**/*.mjs',
+    ],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

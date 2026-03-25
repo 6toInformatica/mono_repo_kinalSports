@@ -45,6 +45,7 @@ export const login = asyncHandler(async (req, res) => {
     const { emailOrUsername, password } = req.body;
     const result = await loginUserHelper(emailOrUsername, password);
 
+    // Nueva respuesta: accessToken, refreshToken, expiresIn, userDetails
     res.status(200).json(result);
   } catch (error) {
     console.error('Error in login controller:', error);

@@ -25,6 +25,8 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICloudinaryService, CloudinaryService>();
         services.AddScoped<IEmailService, EmailService>();
+        services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+        services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
         // Configure health checks
         services.AddHealthChecks();

@@ -151,7 +151,7 @@ pnpm -r --parallel run dev
    git push origin feat/nombre-feature
    ```
 
-## 📋 Convenciones de Commits
+## Commit Conventions
 
 Usamos [Conventional Commits](https://www.conventionalcommits.org/):
 

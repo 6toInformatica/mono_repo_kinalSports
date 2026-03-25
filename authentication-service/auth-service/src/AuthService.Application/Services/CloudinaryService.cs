@@ -79,10 +79,12 @@ public class CloudinaryService(IConfiguration configuration) : ICloudinaryServic
 
     public string GetDefaultAvatarUrl()
     {
-        var defaultFile = configuration["CloudinarySettings:DefaultAvatarPath"]
-                          ?? "default-avatar.png";
-
-        return defaultFile;
+        var baseUrl = configuration["CloudinarySettings:BaseUrl"] ?? "https://res.cloudinary.com/dug3apxt3/image/upload/";
+        var defaultPath = configuration["CloudinarySettings:DefaultAvatarPath"] ?? "auth_service/profiles/avatarDefault-1749508519496_oam3k3";
+        // Asegurar que tenga extensión .png
+        if (!defaultPath.EndsWith(".png"))
+            defaultPath += ".png";
+        return $"{baseUrl}{defaultPath}";
     }
 
     public string GetFullImageUrl(string fileName)
@@ -92,11 +94,17 @@ public class CloudinaryService(IConfiguration configuration) : ICloudinaryServic
 
         if (string.IsNullOrWhiteSpace(fileName))
         {
-            var defaultFile = configuration["CloudinarySettings:DefaultAvatarPath"]
-                              ?? "default-avatar.png";
-            return $"{baseUrl}{defaultFile}";
+            // Avatar por defecto: usar versión y sin carpeta duplicada
+            var version = "v1774318088";
+            var defaultFile = configuration["CloudinarySettings:DefaultAvatarPath"] ?? "avatarDefault-1749508519496_oam3k3";
+            if (!defaultFile.EndsWith(".png"))
+                defaultFile += ".png";
+            // Solo el filename, sin carpeta
+            var fileNameOnly = defaultFile.Split('/').Last();
+            return $"{baseUrl}{version}/{fileNameOnly}";
         }
 
+        // Si el nombre ya tiene extensión, respétala (imagen personalizada)
         return $"{baseUrl}w_400,h_400,c_fill,g_auto,q_auto,f_auto/{fileName}";
     }
 

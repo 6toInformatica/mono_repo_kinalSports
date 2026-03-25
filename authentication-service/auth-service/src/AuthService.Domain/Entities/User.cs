@@ -44,4 +44,7 @@ public class User
     public UserEmail UserEmail { get; set; } = null!;
     public UserPasswordReset UserPasswordReset { get; set; } = null!;
 
+    // Refresh tokens
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
 }

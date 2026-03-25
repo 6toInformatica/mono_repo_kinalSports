@@ -10,6 +10,15 @@ export const fetchTeams = async () => {
 };
 
 /**
+ * Crear un nuevo equipo.
+ */
+export const createTeam = async (data) => {
+  const newTeam = new Team(data);
+  await newTeam.save();
+  return newTeam;
+};
+
+/**
  * Obtener detalle de un equipo por ID.
  */
 export const fetchTeamById = async (id) => {

@@ -12,9 +12,24 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<UserRole> UserRoles { get; set; }
     public DbSet<UserEmail> UserEmails { get; set; }
     public DbSet<UserPasswordReset> UserPasswordResets { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Configuración de RefreshToken
+        modelBuilder.Entity<RefreshToken>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TokenHash).IsRequired();
+            entity.HasIndex(e => e.TokenHash).IsUnique();
+            entity.HasIndex(e => e.FamilyId);
+            entity.Property(e => e.ExpiresAt).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(16);
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.RefreshTokens)
+                .HasForeignKey(e => e.UserId);
+        });
         base.OnModelCreating(modelBuilder);
 
         // Configurar nomenclatura snake_case para todas las tablas y columnas

@@ -12,5 +12,7 @@
     "format:check": "dotnet format --verify-no-changes",
     "clean": "dotnet clean"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "express-async-handler": "^1.2.0"
+  }
 }

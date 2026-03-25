@@ -4,4 +4,4 @@ packages:
   - server-admin
   - server-user
   - client-admin
-  # - client-user  # habilitar cuando exista
+  - client-user

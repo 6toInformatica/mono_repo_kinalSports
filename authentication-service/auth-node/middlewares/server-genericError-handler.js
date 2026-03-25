@@ -10,29 +10,6 @@ export const errorHandler = (err, req, res, _next) => {
   const timestamp = new Date().toISOString();
   const errorCode = err.errorCode || null;
 
-  // Error de validación de Mongoose
-  if (err.name === 'ValidationError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Error de validación',
-      errorCode,
-      traceId,
-      timestamp,
-    });
-  }
-
-  // Error de cast de Mongoose (ID inválido)
-  if (err.name === 'CastError') {
-    return res.status(400).json({
-      success: false,
-      message: 'ID inválido',
-      errorCode,
-      traceId,
-      timestamp,
-    });
-  }
-
-  // Error de duplicado de Mongoose
   if (err.code === 11000) {
     const field = Object.keys(err.keyValue)[0];
     const value = err.keyValue[field];

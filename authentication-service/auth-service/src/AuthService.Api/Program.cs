@@ -80,7 +80,7 @@ app.UseSecurityHeaders(policies => policies
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 // Core middlewares
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseCors("DefaultCorsPolicy");
 app.UseRateLimiter();
 app.UseAuthentication();

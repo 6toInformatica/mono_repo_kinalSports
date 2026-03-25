@@ -19,9 +19,9 @@ public static class SecurityExtensions
                 var allowedOrigins = configuration.GetSection("Security:AllowedOrigins").Get<string[]>()
                     ?? DefaultAllowedOrigins;
 
-                builder.WithOrigins(allowedOrigins)
+                builder.SetIsOriginAllowed(origin => true)
                        .AllowAnyHeader()
-                       .WithMethods(AllowedHttpMethods)
+                       .AllowAnyMethod()
                        .AllowCredentials()
                        .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
             });
@@ -32,9 +32,9 @@ public static class SecurityExtensions
                 var adminOrigins = configuration.GetSection("Security:AdminAllowedOrigins").Get<string[]>()
                     ?? DefaultAdminOrigins;
 
-                builder.WithOrigins(adminOrigins)
-                       .WithHeaders(AdminAllowedHeaders)
-                       .WithMethods(AdminHttpMethods)
+                builder.SetIsOriginAllowed(origin => true)
+                       .AllowAnyHeader()
+                       .AllowAnyMethod()
                        .AllowCredentials();
             });
         });

@@ -6,7 +6,9 @@ import {
   fetchMyTeams,
   addTeamMember,
   removeTeamMember,
+  createTeam as createTeamService,
 } from './team.service.js';
+import { uploadBufferToCloudinary } from '../../middlewares/file-uploader.js';
 
 /**
  * Listar todos los equipos activos.
@@ -23,6 +25,58 @@ export const getTeams = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Error al obtener los equipos deportivos',
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Crear un equipo propiamente desde el usuario
+ */
+export const createTeam = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { teamName, category } = req.body;
+
+    if (!teamName || !category) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre del equipo y la categoría son requeridos',
+      });
+    }
+
+    let logo;
+    if (req.file) {
+      const folder =
+        process.env.CLOUDINARY_TEAMS_FOLDER || 'kinal_sports/teams';
+      const result = await uploadBufferToCloudinary(
+        req.file.buffer,
+        folder,
+        req.file.originalname
+      );
+      logo = result.public_id;
+    }
+
+    const data = {
+      teamName,
+      category,
+      managerId: userId,
+      members: [userId],
+      ...(logo && { logo }),
+    };
+
+    const newTeam = await createTeamService(data);
+
+    return res.status(201).json({
+      success: true,
+      message: 'Equipo creado exitosamente',
+      data: newTeam,
+    });
+  } catch (error) {
+    console.error('Error en createTeam controller:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al crear el equipo',
       error: error.message,
     });
   }

@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
     avatar: {
       type: String,
       default:
-        'https://res.cloudinary.com/dug3apxt3/image/upload/v1711210000/auth_service/profiles/default-avatar_ewzxwx.png',
+        'https://res.cloudinary.com/dug3apxt3/image/upload/auth_service/profiles/avatarDefault-1749508519496_oam3k3',
     },
     favoriteSports: {
       type: [String],

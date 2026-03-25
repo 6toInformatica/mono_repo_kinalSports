@@ -79,13 +79,24 @@ export const getFullImageUrl = (imagePath) => {
   }
 
   const baseUrl = config.cloudinary.baseUrl;
-  const folder = config.cloudinary.folder;
+  let pathToUse = imagePath;
 
-  const pathToUse = !imagePath
-    ? config.cloudinary.defaultAvatarPath
-    : imagePath.includes('/')
-      ? imagePath
-      : `${folder}/${imagePath}`;
+  // Si es el avatar por defecto, devolver con versión y solo filename
+  if (
+    pathToUse === config.cloudinary.defaultAvatarPath ||
+    pathToUse === getDefaultAvatarPath() ||
+    pathToUse === config.cloudinary.defaultAvatarPath.split('/').pop()
+  ) {
+    const version = 'v1774318088';
+    const filename = config.cloudinary.defaultAvatarPath.split('/').pop();
+    pathToUse = `${version}/${filename}.png`;
+    return `${baseUrl}${pathToUse}`;
+  }
+
+  if (!pathToUse.includes('/')) {
+    // Si es solo filename, agregar folder
+    pathToUse = `${config.cloudinary.folder}/${pathToUse}`;
+  }
 
   return `${baseUrl}${pathToUse}`;
 };
@@ -96,19 +107,12 @@ export const getDefaultAvatarUrl = () => {
 };
 
 export const getDefaultAvatarPath = () => {
-  const defaultPath = config.cloudinary.defaultAvatarPath;
-  // If dotenv didn't expand nested vars, build from env pieces
-  if (defaultPath && defaultPath.includes('${')) {
-    const folder = process.env.CLOUDINARY_FOLDER;
-    const filename = process.env.CLOUDINARY_DEFAULT_AVATAR_FILENAME;
-    if (folder || filename) {
-      return [folder, filename].filter(Boolean).join('/');
-    }
-  }
-  if (defaultPath && defaultPath.includes('/')) {
-    return defaultPath.split('/').pop();
-  }
-  return defaultPath;
+  // Siempre devolver la ruta completa (folder/filename, sin extensión)
+  const folder = process.env.CLOUDINARY_FOLDER || config.cloudinary.folder;
+  const filename =
+    process.env.CLOUDINARY_DEFAULT_AVATAR_FILENAME ||
+    config.cloudinary.defaultAvatarPath.split('/').pop();
+  return `${folder}/${filename}`;
 };
 
 export default {

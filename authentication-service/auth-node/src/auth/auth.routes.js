@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import * as refreshController from './refresh.controller.js';
 import * as authController from './auth.controller.js';
 import { validateJWT } from '../../middlewares/validate-JWT.js';
 import {
@@ -16,6 +17,9 @@ import {
 } from '../../middlewares/validation.js';
 
 const router = Router();
+// Refresh token endpoints
+router.post('/refresh', refreshController.refresh);
+router.post('/logout', refreshController.logout);
 
 /**
  * @swagger

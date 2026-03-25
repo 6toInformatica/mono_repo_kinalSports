@@ -15,13 +15,14 @@ using System.Security.Cryptography.X509Certificates;
 namespace AuthService.Application.Services;
 
 public class AuthService(
+        IRefreshTokenService refreshTokenService,
     IUserRepository userRepository,
     IRoleRepository roleRepository,
     IPasswordHashService passwordHashService,
     IJwtTokenService jwtTokenService,
     ICloudinaryService cloudinaryService,
     IEmailService emailService,
-    IConfiguration configuration,
+    // IConfiguration configuration, // Removed unused parameter
     ILogger<AuthService> logger) : IAuthService
 {
     private readonly ICloudinaryService _cloudinaryService = cloudinaryService;
@@ -194,18 +195,18 @@ public class AuthService(
 
         logger.LogUserLoggedIn();
 
-        // Generar token JWT
-        var token = jwtTokenService.GenerateToken(user);
-        var expiryMinutes = int.Parse(configuration["JwtSettings:ExpiryInMinutes"] ?? "30");
+        // Generar accessToken (15 min) y refreshToken (30 días)
+        var accessToken = await jwtTokenService.GenerateTokenAsync(user.Id, expiresInMinutes: 15);
+        var (refreshToken, _) = await refreshTokenService.CreateAsync(user.Id);
 
-        // Crear respuesta compacta
         return new AuthResponseDto
         {
             Success = true,
             Message = "Login exitoso",
-            Token = token,
-            UserDetails = MapToUserDetailsDto(user),
-            ExpiresAt = DateTime.UtcNow.AddMinutes(expiryMinutes)
+            AccessToken = accessToken,
+            RefreshToken = refreshToken,
+            ExpiresIn = 900,
+            UserDetails = MapToUserDetailsDto(user)
         };
     }
 

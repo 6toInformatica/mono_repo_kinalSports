@@ -5,12 +5,16 @@ import {
   joinTeam,
   getMyTeams,
   leaveTeam,
+  createTeam,
 } from './team.controller.js';
+import { uploadTeamImage } from '../../middlewares/file-uploader.js';
 
 const router = Router();
 
 // Listar equipos
 router.get('/', getTeams);
+// Crear un equipo con imagen
+router.post('/', uploadTeamImage.single('logo'), createTeam);
 // Ver detalles de un equipo
 router.get('/:id', getTeamById);
 // Solicitar unirse a un equipo

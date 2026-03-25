@@ -1,9 +1,15 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuthStore } from "../../../features/auth/store/authStore.js";
+import defaultAvatarImg from "../../../assets/img/avatarDefault-1749508519496.png";
 
 export function AvatarUser() {
   const { user, logout } = useAuthStore();
+  // DEBUG: Mostrar el objeto user recibido
+  useEffect(() => {
+     
+    console.log("AvatarUser.jsx user:", user);
+  }, [user]);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -26,19 +32,27 @@ export function AvatarUser() {
     navigate("/", { replace: true });
   };
 
+  // Fallback robusto: si profilePicture es vacío, null o string vacío, usar defaultAvatarImg
+  const avatarSrc =
+    user?.profilePicture && user.profilePicture.trim() !== ""
+      ? user.profilePicture
+      : defaultAvatarImg;
+
   return (
     <div className="relative" ref={dropdownRef}>
-
       <img
         onClick={toggleMenu}
-        src={user?.profilePicture || "/default-avatar.png"}
+        src={avatarSrc}
         alt={user?.username}
         className="w-10 h-10 rounded-full object-cover border cursor-pointer"
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.src = defaultAvatarImg;
+        }}
       />
 
       {open && (
         <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg animate-fadeIn z-50">
-
           <div className="px-4 py-3 border-b">
             <p className="font-semibold text-gray-800">{user?.username}</p>
             <p className="text-sm text-gray-500 truncate">{user?.email}</p>

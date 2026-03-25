@@ -7,19 +7,45 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using AuthService.Domain.Constants;
 
-namespace AuthService.Api.Controllers;
-
-[ApiController]
-[Route("api/v1/[controller]")]
-public class AuthController(IAuthService authService, IUserManagementService userManagementService) : ControllerBase
+namespace AuthService.Api.Controllers
 {
-    private async Task<bool> CurrentUserIsAdmin()
+    [ApiController]
+    [Route("api/v1/[controller]")]
+    public class AuthController : ControllerBase
     {
-        var userId = User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
-        if (string.IsNullOrEmpty(userId)) return false;
-        var roles = await userManagementService.GetUserRolesAsync(userId);
-        return roles.Contains(RoleConstants.ADMIN_ROLE);
-    }
+        private readonly IAuthService _authService;
+        private readonly IUserManagementService _userManagementService;
+        private readonly IRefreshTokenService _refreshTokenService;
+
+        public AuthController(IAuthService authService, IUserManagementService userManagementService, IRefreshTokenService refreshTokenService)
+        {
+            _authService = authService;
+            _userManagementService = userManagementService;
+            _refreshTokenService = refreshTokenService;
+        }
+        [HttpPost("refresh")]
+        [AllowAnonymous]
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto dto)
+        {
+            var result = await _refreshTokenService.RotateAsync(dto.RefreshToken);
+            return Ok(result);
+        }
+
+        [HttpPost("logout")]
+        [Authorize]
+        public async Task<IActionResult> Logout([FromBody] RefreshRequestDto dto)
+        {
+            await _refreshTokenService.RevokeAsync(dto.RefreshToken);
+            return Ok(new { message = "Sesión cerrada" });
+        }
+
+        private async Task<bool> CurrentUserIsAdmin()
+        {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            if (string.IsNullOrEmpty(userId)) return false;
+            var roles = await _userManagementService.GetUserRolesAsync(userId);
+            return roles.Contains(RoleConstants.ADMIN_ROLE);
+        }
 
     [HttpGet("profile")]
     [Authorize]
@@ -31,7 +57,7 @@ public class AuthController(IAuthService authService, IUserManagementService use
             return Unauthorized();
         }
 
-        var user = await authService.GetUserByIdAsync(userIdClaim.Value);
+        var user = await _authService.GetUserByIdAsync(userIdClaim.Value);
         if (user == null)
         {
             return NotFound();
@@ -57,7 +83,7 @@ public class AuthController(IAuthService authService, IUserManagementService use
             });
         }
 
-        var user = await authService.GetUserByIdAsync(request.UserId);
+        var user = await _authService.GetUserByIdAsync(request.UserId);
         if (user == null)
         {
             return NotFound(new
@@ -79,16 +105,17 @@ public class AuthController(IAuthService authService, IUserManagementService use
     [EnableRateLimiting("AuthPolicy")]
     public async Task<ActionResult<RegisterResponseDto>> Register([FromForm] RegisterDto registerDto)
     {
-        var result = await authService.RegisterAsync(registerDto);
+        var result = await _authService.RegisterAsync(registerDto);
         // Devolver 201 Created para registro
         return StatusCode(201, result);
     }
 
     [HttpPost("login")]
+    [IgnoreAntiforgeryToken]
     [EnableRateLimiting("AuthPolicy")]
     public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto loginDto)
     {
-        var result = await authService.LoginAsync(loginDto);
+        var result = await _authService.LoginAsync(loginDto);
         return Ok(result);
     }
 
@@ -96,7 +123,7 @@ public class AuthController(IAuthService authService, IUserManagementService use
     [EnableRateLimiting("ApiPolicy")]
     public async Task<ActionResult<EmailResponseDto>> VerifyEmail([FromBody] VerifyEmailDto verifyEmailDto)
     {
-        var result = await authService.VerifyEmailAsync(verifyEmailDto);
+        var result = await _authService.VerifyEmailAsync(verifyEmailDto);
         return Ok(result);
     }
 
@@ -104,7 +131,7 @@ public class AuthController(IAuthService authService, IUserManagementService use
     [EnableRateLimiting("AuthPolicy")]
     public async Task<ActionResult<EmailResponseDto>> ResendVerification([FromBody] ResendVerificationDto resendDto)
     {
-        var result = await authService.ResendVerificationEmailAsync(resendDto);
+        var result = await _authService.ResendVerificationEmailAsync(resendDto);
 
         // Return appropriate status code based on result
         if (!result.Success)
@@ -129,7 +156,7 @@ public class AuthController(IAuthService authService, IUserManagementService use
     [EnableRateLimiting("AuthPolicy")]
     public async Task<ActionResult<EmailResponseDto>> ForgotPassword([FromBody] ForgotPasswordDto forgotPasswordDto)
     {
-        var result = await authService.ForgotPasswordAsync(forgotPasswordDto);
+        var result = await _authService.ForgotPasswordAsync(forgotPasswordDto);
 
         // ForgotPassword always returns success for security (even if user not found)
         // But if email sending fails, return 503
@@ -145,7 +172,7 @@ public class AuthController(IAuthService authService, IUserManagementService use
     [EnableRateLimiting("AuthPolicy")]
     public async Task<ActionResult<EmailResponseDto>> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
     {
-        var result = await authService.ResetPasswordAsync(resetPasswordDto);
+        var result = await _authService.ResetPasswordAsync(resetPasswordDto);
         return Ok(result);
     }
 
@@ -159,7 +186,8 @@ public class AuthController(IAuthService authService, IUserManagementService use
             return StatusCode(403, new { success = false, message = "Forbidden" });
         }
 
-        var users = await authService.GetAllUsersAsync();
+        var users = await _authService.GetAllUsersAsync();
         return Ok(users);
+    }
     }
 }

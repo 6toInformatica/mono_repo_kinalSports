@@ -1,3 +1,4 @@
+import { saveRefreshToken } from './refresh-token.js';
 import crypto from 'crypto';
 import {
   checkUserExists,
@@ -22,24 +23,6 @@ import { generateJWT } from './generate-jwt.js';
 import path from 'path';
 import { uploadImage } from './cloudinary-service.js';
 import { config } from '../configs/config.js';
-
-const getExpirationTime = (timeString) => {
-  const timeValue = parseInt(timeString);
-  const timeUnit = timeString.replace(timeValue.toString(), '');
-
-  switch (timeUnit) {
-    case 's':
-      return timeValue * 1000;
-    case 'm':
-      return timeValue * 60 * 1000;
-    case 'h':
-      return timeValue * 60 * 60 * 1000;
-    case 'd':
-      return timeValue * 24 * 60 * 60 * 1000;
-    default:
-      return 30 * 60 * 1000; // Default: 30 minutos
-  }
-};
 
 export const registerUserHelper = async (userData) => {
   try {
@@ -180,13 +163,17 @@ export const loginUserHelper = async (emailOrUsername, password) => {
       throw new Error('Tu cuenta está desactivada. Contacta al administrador.');
     }
 
-    // Generate JWT with role claim
+    // Generate JWT with role claim (15m)
     const role = user.UserRoles?.[0]?.Role?.Name || 'USER_ROLE';
-    const token = await generateJWT(user.Id.toString(), { role });
+    const accessToken = await generateJWT(
+      user.Id.toString(),
+      { role },
+      { expiresIn: '15m' }
+    );
 
-    // Calcular fecha de expiración basada en la configuración
-    const expiresInMs = getExpirationTime(process.env.JWT_EXPIRES_IN || '30m');
-    const expiresAt = new Date(Date.now() + expiresInMs);
+    // Generar refresh token
+
+    const { raw: refreshToken } = await saveRefreshToken(user.Id.toString());
 
     // Build compact userDetails object
     const fullUser = buildUserResponse(user);
@@ -197,13 +184,13 @@ export const loginUserHelper = async (emailOrUsername, password) => {
       role: fullUser.role,
     };
 
-    // AuthResponseDto equivalent structure
     return {
       success: true,
       message: 'Login exitoso',
-      token,
+      accessToken,
+      refreshToken,
+      expiresIn: 900,
       userDetails,
-      expiresAt,
     };
   } catch (error) {
     console.error('Error en login:', error);
