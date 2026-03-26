@@ -1,8 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, Image, ScrollView, Alert } from "react-native";
-import { COLORS, SPACING, FONT_SIZE } from "../../constants/theme";
-import Button from "../../components/common/Button";
-import { Card } from "../../components/common/Common";
+import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
+import Button from "../../../shared/components/common/Button.jsx";
+import { Card } from "../../../shared/components/common/Common.jsx";
 
 const FieldDetailScreen = ({ route, navigation }) => {
   const { field } = route.params;

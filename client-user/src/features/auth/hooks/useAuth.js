@@ -1,6 +1,6 @@
 import { useState } from "react";
-import authClient from "../../../shared/api/authClient";
-import { useAuthStore } from "../../../shared/store/authStore";
+import authClient from "../../../shared/api/authClient.js";
+import { useAuthStore } from "../../../shared/store/authStore.js";
 
 export const useAuth = () => {
   const [loading, setLoading] = useState(false);
@@ -13,8 +13,15 @@ export const useAuth = () => {
       setLoading(true);
       setError(null);
       const response = await authClient.post("/login", data);
-      const { token, user } = response.data;
-      login(token, user);
+      // El backend (auth-node) devuelve: accessToken, refreshToken, userDetails
+      // (algunos servicios pueden devolver variantes como token/user)
+      const { accessToken, refreshToken, userDetails, token, user } =
+        response.data;
+
+      const mappedAccessToken = accessToken || token;
+      const mappedUser = userDetails || user;
+
+      await login(mappedAccessToken, mappedUser, refreshToken);
       return response.data;
     } catch (err) {
       setError(err.response?.data?.message || "Error al iniciar sesión");

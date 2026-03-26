@@ -9,11 +9,11 @@ import {
   Platform,
 } from "react-native";
 import { useForm, Controller } from "react-hook-form";
-import { COLORS, SPACING, FONT_SIZE } from "../../constants/theme";
-import Input from "../../components/common/Input";
-import Button from "../../components/common/Button";
-import { Card } from "../../components/common/Common";
-import { useReservations } from "../../hooks/useReservations";
+import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
+import Input from "../../../shared/components/common/Input.jsx";
+import Button from "../../../shared/components/common/Button.jsx";
+import { Card } from "../../../shared/components/common/Common.jsx";
+import { useReservations } from "../hooks/useReservations.js";
 
 const CreateReservationScreen = ({ route, navigation }) => {
   const { field } = route.params;

@@ -1,6 +1,6 @@
 export const COLORS = {
-  primary: "#2563eb", // Blue 600
-  primaryDark: "#1d4ed8", // Blue 700
+  primary: "#08316D", // Azul principal igual que la web
+  primaryDark: "#08316D", // Azul principal igual que la web
   secondary: "#64748b", // Slate 500
   background: "#f8fafc", // Slate 50
   surface: "#ffffff",

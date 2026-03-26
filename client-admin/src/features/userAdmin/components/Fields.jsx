@@ -28,7 +28,7 @@ export const Fields = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-3xl font-bold text-main-blue">
             Gestión de Canchas
           </h1>
           <p className="text-gray-500 text-sm">
@@ -37,7 +37,7 @@ export const Fields = () => {
         </div>
 
         <button
-          className="bg-green-600 px-4 py-2 rounded text-white hover:bg-green-700 transition"
+          className="bg-main-blue px-4 py-2 rounded text-white hover:opacity-90 transition"
           onClick={() => {
             setSelectedField(null);
             setOpenModal(true);
@@ -65,7 +65,7 @@ export const Fields = () => {
 
             {/* CONTENIDO */}
             <div className="p-5">
-              <h2 className="text-xl font-bold text-gray-800">
+              <h2 className="text-xl font-bold text-main-blue">
                 {field.fieldName}
               </h2>
 
@@ -88,7 +88,7 @@ export const Fields = () => {
               {/* BOTONES */}
               <div className="flex gap-3 mt-5">
                 <button
-                  className="flex-1 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
+                  className="flex-1 py-2 rounded-lg bg-main-blue text-white font-medium hover:opacity-90 transition"
                   onClick={() => {
                     setSelectedField(field);
                     setOpenModal(true);

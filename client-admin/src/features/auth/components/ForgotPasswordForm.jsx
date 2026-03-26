@@ -51,7 +51,7 @@ export const ForgotPasswordForm = ({ onSwitch }) => {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-600 text-white py-2 rounded-lg disabled:opacity-50"
+        className="w-full bg-main-blue text-white py-2 rounded-lg disabled:opacity-50 hover:opacity-90"
       >
         {loading ? "Enviando..." : "Enviar correo"}
       </button>
@@ -61,7 +61,7 @@ export const ForgotPasswordForm = ({ onSwitch }) => {
         <button
           type="button"
           onClick={onSwitch}
-          className="text-blue-600 font-medium"
+          className="text-main-blue font-medium hover:opacity-80"
         >
           Iniciar sesión
         </button>

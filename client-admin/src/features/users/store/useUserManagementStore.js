@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import axios from "../../shared/axios";
+import axios from "../../../shared/axios.js";
 
 export const useUserManagementStore = create((set, get) => ({
   /**
@@ -52,8 +52,8 @@ export const useUserManagementStore = create((set, get) => ({
   fetchUsers: async (apiFn) => {
     set({ loading: true, error: null });
     try {
-      const { data } = await apiFn();
-      set({ users: data.users || data, loading: false });
+      const result = await apiFn();
+      set({ users: result.users || result, loading: false });
     } catch (err) {
       set({ error: err.message || "Error al cargar usuarios", loading: false });
     }

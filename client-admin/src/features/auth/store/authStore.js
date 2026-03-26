@@ -6,6 +6,7 @@ import {
   // forgotPassword as forgotPasswordRequest,
   // resetPassword as resetPasswordRequest,
 } from "../../../shared/api";
+import { showError } from "../../../shared/utils/toast.js";
 
 export const useAuthStore = create(
   persist(
@@ -20,15 +21,63 @@ export const useAuthStore = create(
       isAuthenticated: false,
       checkAuth: () => {
         const token = get().token;
+        const role = get().user?.role;
+        const isAdmin = role === "ADMIN_ROLE";
+
+        // Si hay token pero el rol no es admin, limpiamos la sesión.
+        if (token && !isAdmin) {
+          set({
+            user: null,
+            token: null,
+            refreshToken: null,
+            expiresAt: null,
+            isAuthenticated: false,
+            isLoadingAuth: false,
+            error: "No tienes permisos para acceder como administrador.",
+          });
+          return;
+        }
+
         set({
           isLoadingAuth: false,
-          isAuthenticated: Boolean(token),
+          isAuthenticated: Boolean(token) && isAdmin,
+        });
+      },
+
+      logout: () => {
+        set({
+          user: null,
+          token: null,
+          refreshToken: null,
+          expiresAt: null,
+          isAuthenticated: false,
         });
       },
       login: async ({ emailOrUsername, password }) => {
         try {
           set({ loading: true, error: null });
           const { data } = await loginRequest({ emailOrUsername, password });
+
+          // Sólo administradores pueden iniciar sesión en el client-admin.
+          const role = data?.userDetails?.role;
+          if (role !== "ADMIN_ROLE") {
+            const message =
+              "No tienes permisos para acceder como administrador.";
+
+            set({
+              user: null,
+              token: null,
+              refreshToken: null,
+              expiresAt: null,
+              isAuthenticated: false,
+              loading: false,
+              error: message,
+            });
+
+            showError(message);
+            return { success: false, error: message };
+          }
+
           set({
             user: data.userDetails,
             token: data.accessToken || data.token,

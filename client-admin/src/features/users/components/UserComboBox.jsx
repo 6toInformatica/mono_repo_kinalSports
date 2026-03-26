@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useUserStore } from "../store/userStore";
+import { useUserManagementStore } from "../store/useUserManagementStore";
+import { getAllUsers } from "../../../shared/api/auth";
 import {
   MagnifyingGlassIcon,
   ChevronUpDownIcon,
@@ -7,14 +8,14 @@ import {
 } from "@heroicons/react/24/outline";
 
 export const UserComboBox = ({ value, onChange, error, disabled }) => {
-  const { users, fetchUsers, loading } = useUserStore();
+  const { users, fetchUsers, loading } = useUserManagementStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
 
   useEffect(() => {
     if (users.length === 0) {
-      fetchUsers();
+      fetchUsers(getAllUsers);
     }
   }, [users.length, fetchUsers]);
 
@@ -53,10 +54,11 @@ export const UserComboBox = ({ value, onChange, error, disabled }) => {
       </label>
       <div
         className={`flex items-center w-full px-3 py-2 rounded-lg border-2 shadow-sm transition cursor-pointer
-                    ${disabled ? "bg-gray-200 border-gray-200 cursor-not-allowed text-gray-500" : "border-gray-300 bg-gray-50 hover:border-blue-400"}
-                    ${isOpen ? "border-blue-500 ring-2 ring-blue-200" : ""}
+                    ${disabled ? "bg-gray-200 border-gray-200 cursor-not-allowed text-gray-500" : "border-[var(--main-blue)] bg-gray-50 hover:border-[var(--main-blue)]"}
+                    ${isOpen ? "border-[var(--main-blue)] ring-2 ring-[var(--main-blue)/20]" : ""}
                     ${error ? "border-red-500" : ""}
                 `}
+        style={!disabled ? { borderColor: "var(--main-blue)" } : {}}
         onClick={() => !disabled && setIsOpen(!isOpen)}
       >
         <div className="flex-1 truncate">
@@ -98,9 +100,9 @@ export const UserComboBox = ({ value, onChange, error, disabled }) => {
               filteredUsers.map((user) => (
                 <div
                   key={user.id}
-                  className={`flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm hover:bg-blue-50 transition-colors
-                                        ${value === user.id ? "bg-blue-100 text-blue-700 font-medium" : "text-gray-700"}
-                                    `}
+                  className={`flex items-center justify-between px-4 py-2.5 cursor-pointer text-sm transition-colors
+                    ${value === user.id ? "bg-[var(--main-blue)/10] text-[var(--main-blue)] font-medium" : "text-gray-700 hover:bg-[var(--main-blue)/5]"}
+                  `}
                   onClick={() => handleSelect(user)}
                 >
                   <div className="flex flex-col truncate mr-2">
@@ -112,7 +114,10 @@ export const UserComboBox = ({ value, onChange, error, disabled }) => {
                     </span>
                   </div>
                   {value === user.id && (
-                    <CheckIcon className="h-4 w-4 text-blue-600 shrink-0" />
+                    <CheckIcon
+                      className="h-4 w-4"
+                      style={{ color: "var(--main-blue)" }}
+                    />
                   )}
                 </div>
               ))

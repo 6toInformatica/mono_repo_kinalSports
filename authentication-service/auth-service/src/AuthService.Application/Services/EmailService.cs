@@ -11,19 +11,19 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
 {
     public async Task SendEmailVerificationAsync(string email, string username, string token)
     {
-        var subject = "Verify your email address";
+        var subject = "Verifica tu correo electrónico - Kinal Sports";
         var verificationUrl = $"{configuration["AppSettings:FrontendUrl"]}/verify-email?token={token}";
 
         var body = $@"
-            <h2>Welcome {username}!</h2>
-            <p>Please verify your email address by clicking the link below:</p>
+            <h2>¡Bienvenido a Kinal Sports, {username}!</h2>
+            <p>Por favor, verifica tu correo electrónico para tu cuenta de Kinal Sports haciendo clic en el siguiente enlace:</p>
             <a href='{verificationUrl}' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>
-                Verify Email
+                Verificar correo
             </a>
-            <p>If you cannot click the link, copy and paste this URL into your browser:</p>
+            <p>Si no puedes hacer clic en el enlace, copia y pega esta URL en tu navegador:</p>
             <p>{verificationUrl}</p>
-            <p>This link will expire in 24 hours.</p>
-            <p>If you didn't create an account, please ignore this email.</p>
+            <p>Este enlace expirará en 24 horas.</p>
+            <p>Si no creaste una cuenta, ignora este correo.</p>
         ";
 
         await SendEmailAsync(email, subject, body);
@@ -31,20 +31,21 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
 
     public async Task SendPasswordResetAsync(string email, string username, string token)
     {
-        var subject = "Reset your password";
+        var subject = "Restablece tu contraseña - Kinal Sports";
         var resetUrl = $"{configuration["AppSettings:FrontendUrl"]}/reset-password?token={token}";
 
         var body = $@"
-            <h2>Password Reset Request</h2>
-            <p>Hello {username},</p>
-            <p>You requested to reset your password. Click the link below to reset it:</p>
+            <h2>Solicitud de restablecimiento de contraseña - Kinal Sports</h2>
+            <p>Hola {username},</p>
+            <p>Este mensaje es de Kinal Sports.</p>
+            <p>Solicitaste restablecer tu contraseña. Haz clic en el siguiente enlace para restablecerla:</p>
             <a href='{resetUrl}' style='background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>
-                Reset Password
+                Restablecer contraseña
             </a>
-            <p>If you cannot click the link, copy and paste this URL into your browser:</p>
+            <p>Si no puedes hacer clic en el enlace, copia y pega esta URL en tu navegador:</p>
             <p>{resetUrl}</p>
-            <p>This link will expire in 1 hour.</p>
-            <p>If you didn't request this, please ignore this email and your password will remain unchanged.</p>
+            <p>Este enlace expirará en 1 hora.</p>
+            <p>Si no solicitaste esto, ignora este correo y tu contraseña permanecerá sin cambios.</p>
         ";
 
         await SendEmailAsync(email, subject, body);
@@ -52,14 +53,14 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
 
     public async Task SendWelcomeEmailAsync(string email, string username)
     {
-        var subject = "Welcome to AuthDotnet!";
+        var subject = "¡Bienvenido a Kinal Sports!";
 
         var body = $@"
-            <h2>Welcome to AuthDotnet, {username}!</h2>
-            <p>Your account has been successfully verified and activated.</p>
-            <p>You can now enjoy all the features of our platform.</p>
-            <p>If you have any questions, feel free to contact our support team.</p>
-            <p>Thank you for joining us!</p>
+            <h2>¡Bienvenido a Kinal Sports, {username}!</h2>
+            <p>Tu cuenta ha sido verificada y activada exitosamente.</p>
+            <p>Ahora puedes disfrutar de todas las funciones de nuestra plataforma.</p>
+            <p>Si tienes alguna pregunta, no dudes en contactar a nuestro equipo de soporte.</p>
+            <p>¡Gracias por unirte a nosotros!</p>
         ";
 
         await SendEmailAsync(email, subject, body);

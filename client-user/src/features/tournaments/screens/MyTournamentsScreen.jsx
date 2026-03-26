@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect } from "react";
 import { View, Text, FlatList, StyleSheet, RefreshControl } from "react-native";
-import { useTournaments } from "../../hooks/useTournaments";
-import { COLORS, SPACING, FONT_SIZE } from "../../constants/theme";
+import { useTournaments } from "../hooks/useTournaments.js";
+import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
 import {
   LoadingSpinner,
   EmptyState,
   Card,
-} from "../../components/common/Common";
+} from "../../../shared/components/common/Common.jsx";
 
 const MyTournamentsScreen = () => {
   const { myTournaments, loading, getMyTournaments } = useTournaments();

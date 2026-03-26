@@ -9,13 +9,14 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
-import kinalLogo from "../../../assets/kinal_sports.png";
 import { useForm, Controller } from "react-hook-form";
-import { COLORS, SPACING, FONT_SIZE } from "../../constants/theme";
-import Input from "../../components/common/Input";
-import Button from "../../components/common/Button";
-import authClient from "../../api/authClient";
-import { useAuthStore } from "../../store/authStore";
+import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
+import Input from "../../../shared/components/common/Input.jsx";
+import Button from "../../../shared/components/common/Button.jsx";
+import authClient from "../../../shared/api/authClient.js";
+import { useAuthStore } from "../../../shared/store/authStore.js";
+
+const kinalSportsLogo = require("../../../../assets/kinal_sports.png");
 
 const LoginScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
@@ -35,9 +36,14 @@ const LoginScreen = ({ navigation }) => {
     try {
       setLoading(true);
       const response = await authClient.post("/login", data);
-      const { token, user } = response.data;
+      // El backend (auth-node) devuelve: accessToken, refreshToken, userDetails
+      const { accessToken, refreshToken, userDetails, token, user } =
+        response.data;
 
-      login(token, user);
+      const mappedAccessToken = accessToken || token;
+      const mappedUser = userDetails || user;
+
+      await login(mappedAccessToken, mappedUser, refreshToken);
     } catch (error) {
       console.error(error);
       const message =
@@ -55,7 +61,11 @@ const LoginScreen = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Image source={kinalLogo} style={styles.logo} resizeMode="contain" />
+          <Image
+            source={kinalSportsLogo}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.subtitle}>Bienvenido de nuevo</Text>
         </View>
 

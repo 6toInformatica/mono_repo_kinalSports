@@ -10,11 +10,12 @@ import {
   Image,
 } from "react-native";
 import { useForm, Controller } from "react-hook-form";
-import { COLORS, SPACING, FONT_SIZE } from "../../constants/theme";
-import Input from "../../components/common/Input";
-import Button from "../../components/common/Button";
-import authClient from "../../api/authClient";
-import kinalSportsLogo from "../../../assets/kinal_sports.png";
+import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
+import Input from "../../../shared/components/common/Input.jsx";
+import Button from "../../../shared/components/common/Button.jsx";
+import authClient from "../../../shared/api/authClient.js";
+
+const kinalSportsLogo = require("../../../../assets/kinal_sports.png");
 
 const RegisterScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
@@ -25,10 +26,11 @@ const RegisterScreen = ({ navigation }) => {
   } = useForm({
     defaultValues: {
       name: "",
+      surname: "",
       username: "",
       email: "",
       password: "",
-      surname: "",
+      phone: "",
     },
   });
 
@@ -111,6 +113,28 @@ const RegisterScreen = ({ navigation }) => {
               />
             )}
             name="username"
+          />
+
+          <Controller
+            control={control}
+            rules={{
+              required: "Teléfono requerido",
+              pattern: {
+                value: /^\d{8}$/,
+                message: "Debe tener exactamente 8 dígitos",
+              },
+            }}
+            render={({ field: { onChange, value } }) => (
+              <Input
+                label="Teléfono"
+                placeholder="Ej: 12345678"
+                keyboardType="numeric"
+                onChangeText={onChange}
+                value={value}
+                error={errors.phone?.message}
+              />
+            )}
+            name="phone"
           />
 
           <Controller

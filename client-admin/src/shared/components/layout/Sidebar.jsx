@@ -6,7 +6,7 @@ export const Sidebar = () => {
   const items = [
     { label: "Canchas", to: "/dashboard/fields" },
     { label: "Reservaciones", to: "/dashboard/reservations" },
-    { label: "Teams", to: "/dashboard/teams" },
+    { label: "Equipos", to: "/dashboard/teams" },
     { label: "Torneos", to: "/dashboard/tournaments" },
   ];
 
@@ -20,9 +20,8 @@ export const Sidebar = () => {
             <li key={item.to}>
               <Link
                 to={item.to}
-                className={`block px-4 py-2 rounded-lg font-medium transition-colors
-                 ${active ? "bg-blue-100 text-blue-700" : "text-gray-700 hover:bg-gray-100"}
-                `}
+                className={`block px-4 py-2 rounded-lg font-medium transition-colors sidebar-underline${active ? " active text-main-blue" : " text-gray-700 hover:bg-gray-100"}`}
+                style={active ? { fontWeight: 700 } : {}}
               >
                 {item.label}
               </Link>
@@ -32,4 +31,4 @@ export const Sidebar = () => {
       </ul>
     </aside>
   );
-}
+};

@@ -83,7 +83,7 @@ export const LoginForm = ({ onSwitch, onForgot }) => {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm disabled:opacity-50"
+        className="w-full bg-main-blue hover:opacity-90 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm disabled:opacity-50"
       >
         {loading ? "Iniciando..." : "Iniciar Sesión"}
       </button>
@@ -92,7 +92,7 @@ export const LoginForm = ({ onSwitch, onForgot }) => {
         <button
           type="button"
           onClick={onForgot}
-          className="text-blue-600 hover:underline"
+          className="text-main-blue hover:underline"
         >
           ¿Olvidaste tu contraseña?
         </button>
@@ -104,7 +104,7 @@ export const LoginForm = ({ onSwitch, onForgot }) => {
         <button
           type="button"
           onClick={onSwitch}
-          className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+          className="font-medium text-main-blue hover:opacity-80 transition-colors"
         >
           Regístrate
         </button>

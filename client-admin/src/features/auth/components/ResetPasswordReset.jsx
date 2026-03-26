@@ -1,5 +1,3 @@
-// Use subscription pattern to avoid memoization issues
- 
 import { useForm } from "react-hook-form";
 import { useAuthStore } from "../store/authStore"; // Updated path
 import toast from "react-hot-toast";
@@ -107,7 +105,7 @@ export const ResetPasswordForm = () => {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm disabled:opacity-50"
+        className="w-full bg-main-blue hover:opacity-90 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm disabled:opacity-50"
       >
         {loading ? "Actualizando..." : "Actualizar contraseña"}
       </button>
@@ -118,7 +116,7 @@ export const ResetPasswordForm = () => {
         <button
           type="button"
           onClick={() => navigate("/")}
-          className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+          className="font-medium text-main-blue hover:opacity-80 transition-colors"
         >
           Iniciar sesión
         </button>

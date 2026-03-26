@@ -10,37 +10,39 @@ export const refresh = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Refresh token requerido' });
   }
   const tokenHash = hashToken(refreshToken);
-  const doc = await RefreshToken.findOne({ tokenHash });
+  const doc = await RefreshToken.findOne({
+    where: { TokenHash: tokenHash },
+  });
   if (!doc) {
     return res.status(401).json({ message: 'Refresh token inválido' });
   }
-  if (doc.expiresAt < new Date()) {
-    doc.revokedAt = new Date();
+  if (doc.ExpiresAt < new Date()) {
+    doc.RevokedAt = new Date();
     await doc.save();
     return res.status(401).json({ message: 'Refresh token expirado' });
   }
-  if (doc.revokedAt) {
+  if (doc.RevokedAt) {
     // Reutilización detectada: revocar toda la familia
-    await RefreshToken.updateMany(
-      { familyId: doc.familyId },
-      { $set: { revokedAt: new Date() } }
+    await RefreshToken.update(
+      { RevokedAt: new Date() },
+      { where: { FamilyId: doc.FamilyId } }
     );
     return res
       .status(401)
       .json({ message: 'Sesión comprometida. Refresh token reutilizado.' });
   }
   // Revocar el token actual
-  doc.revokedAt = new Date();
+  doc.RevokedAt = new Date();
   await doc.save();
   // Generar nuevo accessToken y refreshToken (misma familia)
   const accessToken = await generateJWT(
-    doc.userId.toString(),
+    doc.UserId.toString(),
     {},
     { expiresIn: '15m' }
   );
   const { raw: newRefreshToken } = await saveRefreshToken(
-    doc.userId.toString(),
-    doc.familyId
+    doc.UserId.toString(),
+    doc.FamilyId
   );
   return res.status(200).json({
     accessToken,
@@ -56,9 +58,11 @@ export const logout = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: 'Refresh token requerido' });
   }
   const tokenHash = hashToken(refreshToken);
-  const doc = await RefreshToken.findOne({ tokenHash });
-  if (doc && !doc.revokedAt) {
-    doc.revokedAt = new Date();
+  const doc = await RefreshToken.findOne({
+    where: { TokenHash: tokenHash },
+  });
+  if (doc && !doc.RevokedAt) {
+    doc.RevokedAt = new Date();
     await doc.save();
   }
   return res.status(200).json({ message: 'Sesión cerrada' });

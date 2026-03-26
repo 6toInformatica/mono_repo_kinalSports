@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "Monorepo para servicios y clientes de KinalSports",
   "author": "Braulio Echeverria",
+  "type": "module",
   "workspaces": [
     "authentication-service/auth-node",
     "authentication-service/auth-service",

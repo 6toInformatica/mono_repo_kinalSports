@@ -29,7 +29,7 @@ export const Reservations = () => {
     <div className="p-4">
       {/* HEADER */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">
+        <h1 className="text-3xl font-bold text-main-blue">
           Gestión de Reservaciones
         </h1>
         <p className="text-gray-500 text-sm">
@@ -94,14 +94,9 @@ export const Reservations = () => {
                         }
                       }
                     }}
-                    className={`
-                                            w-full py-2 rounded-lg text-white font-medium transition
-                                            ${
-                                              isConfirmed
-                                                ? "bg-gray-400 cursor-not-allowed"
-                                                : "bg-green-600 hover:bg-green-700"
-                                            }
-                                        `}
+                    className={`w-full py-2 rounded-lg text-white font-medium transition
+                      ${isConfirmed ? "bg-gray-400 cursor-not-allowed" : "bg-main-blue hover:opacity-90"}
+                    `}
                   >
                     {isConfirmed ? "✔ Confirmada" : "✔ Confirmar"}
                   </button>

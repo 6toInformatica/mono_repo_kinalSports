@@ -1,36 +1,38 @@
-import { useEffect } from "react";
+import { useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useVerifyEmail } from "../hooks/useVerifyEmail";
-import { useUIStore } from "../store/uiStore";
+import logo from "../../../../../client-user/assets/kinal_sports.png";
 
 export const VerifyEmailPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const openModal = useUIStore((state) => state.openModal);
 
   const token = new URLSearchParams(location.search).get("token");
 
-  const { status, message } = useVerifyEmail(token, () => {
-    setTimeout(() => navigate("/"), 3000);
-  });
+  const handleFinish = useCallback(() => {
+    // Esperar a que se perciba el toast antes de redirigir.
+    setTimeout(() => navigate("/"), 2000);
+  }, [navigate]);
 
-  useEffect(() => {
-    if (status === "success") {
-      openModal("¡Verificación exitosa!", message);
-    }
+  const { status, message } = useVerifyEmail(token, handleFinish);
 
-    if (status === "error") {
-      openModal("Error", message);
-    }
-  }, [status, message, openModal]);
+  const displayMessage =
+    status === "loading" ? "Verificando correo, por favor espera..." : message;
 
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      {status === "loading" && (
-        <p className="text-lg font-semibold text-gray-700">
-          Verificando correo, por favor espera...
-        </p>
-      )}
+    <div className="flex flex-col justify-center items-center h-screen bg-gray-100 px-4">
+      <img
+        src={logo}
+        alt="Kinal Sports"
+        className="w-28 h-28 object-contain mb-4"
+      />
+
+      <p
+        className="text-lg font-semibold text-gray-700 text-center max-w-lg"
+        aria-live="polite"
+      >
+        {displayMessage}
+      </p>
     </div>
   );
 };

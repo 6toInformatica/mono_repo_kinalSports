@@ -9,11 +9,14 @@ import {
   FlatList,
   TouchableOpacity,
 } from "react-native";
-import { COLORS, SPACING, FONT_SIZE } from "../../constants/theme";
-import Button from "../../components/common/Button";
-import { Card, LoadingSpinner } from "../../components/common/Common";
-import { useTournaments } from "../../hooks/useTournaments";
-import { useTeams } from "../../hooks/useTeams";
+import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
+import Button from "../../../shared/components/common/Button.jsx";
+import {
+  Card,
+  LoadingSpinner,
+} from "../../../shared/components/common/Common.jsx";
+import { useTournaments } from "../hooks/useTournaments.js";
+import { useTeams } from "../../teams/hooks/useTeams.js";
 
 const TournamentDetailScreen = ({ route }) => {
   const { tournament } = route.params;

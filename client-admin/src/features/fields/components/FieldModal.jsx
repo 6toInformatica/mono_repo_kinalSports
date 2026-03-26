@@ -78,7 +78,13 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
       {/* CONTENEDOR */}
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg md:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* HEADER */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-4 sm:p-5 text-white sticky top-0 z-10">
+        <div
+          className="p-4 sm:p-5 text-white sticky top-0 z-10"
+          style={{
+            background:
+              "linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)",
+          }}
+        >
           <h2 className="text-xl sm:text-2xl font-bold">
             {field ? "Editar Campo" : "Nuevo Campo"}
           </h2>
@@ -252,7 +258,12 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
 
             <button
               type="submit"
-              className="w-full sm:w-auto px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition shadow"
+              className="w-full sm:w-auto px-5 py-2 rounded-lg text-white font-medium transition shadow"
+              style={{
+                background:
+                  "linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)",
+                border: "none",
+              }}
             >
               {loading ? (
                 <Spinner small />

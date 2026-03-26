@@ -23,7 +23,7 @@ export const Tournaments = () => {
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-3xl font-bold text-main-blue">
             Gestión de Torneos
           </h1>
           <p className="text-gray-500 text-sm">
@@ -32,7 +32,7 @@ export const Tournaments = () => {
         </div>
 
         <button
-          className="bg-green-600 px-4 py-2 rounded text-white hover:bg-green-700 transition"
+          className="bg-main-blue px-4 py-2 rounded text-white hover:opacity-90 transition"
           onClick={() => {
             setSelectedTournament(null);
             setOpenModal(true);
@@ -56,7 +56,7 @@ export const Tournaments = () => {
             className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:scale-[1.02]"
           >
             <div className="p-5">
-              <h2 className="text-xl font-bold text-gray-800">
+              <h2 className="text-xl font-bold text-main-blue">
                 {t.tournamentsName}
               </h2>
 
@@ -84,7 +84,7 @@ export const Tournaments = () => {
               {/* BOTONES */}
               <div className="flex gap-3 mt-5">
                 <button
-                  className="flex-1 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                  className="flex-1 py-2 rounded-lg bg-main-blue text-white hover:opacity-90"
                   onClick={() => {
                     setSelectedTournament(t);
                     setOpenModal(true);

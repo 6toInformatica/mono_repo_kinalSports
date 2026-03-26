@@ -8,13 +8,13 @@ import {
   RefreshControl,
   Image,
 } from "react-native";
-import { useTeams } from "../../hooks/useTeams";
-import { COLORS, SPACING, FONT_SIZE } from "../../constants/theme";
+import { useTeams } from "../hooks/useTeams.js";
+import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
 import {
   LoadingSpinner,
   EmptyState,
   Card,
-} from "../../components/common/Common";
+} from "../../../shared/components/common/Common.jsx";
 
 const TeamCard = ({ item, onPress }) => (
   <TouchableOpacity onPress={onPress}>

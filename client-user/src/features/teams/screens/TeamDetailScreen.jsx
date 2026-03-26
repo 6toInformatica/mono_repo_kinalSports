@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Alert, Image } from "react-native";
-import { COLORS, SPACING, FONT_SIZE } from "../../constants/theme";
-import Button from "../../components/common/Button";
-import { Card } from "../../components/common/Common";
-import { useAuthStore } from "../../store/authStore";
-import { useTeams } from "../../hooks/useTeams";
+import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
+import Button from "../../../shared/components/common/Button.jsx";
+import { Card } from "../../../shared/components/common/Common.jsx";
+import { useAuthStore } from "../../../shared/store/authStore.js";
+import { useTeams } from "../hooks/useTeams.js";
 
 const TeamDetailScreen = ({ route }) => {
   const { team } = route.params;

@@ -1,5 +1,3 @@
-// Use subscription pattern to avoid memoization issues
- 
 import { useForm } from "react-hook-form";
 import { useRegister } from "../hooks/useRegister";
 import toast from "react-hot-toast";
@@ -193,7 +191,7 @@ export const RegisterForm = ({ onSwitch }) => {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition"
+        className="w-full bg-main-blue hover:opacity-90 text-white py-2 rounded-lg transition"
       >
         {loading ? "Procesando..." : "Registrarse"}
       </button>
@@ -203,7 +201,7 @@ export const RegisterForm = ({ onSwitch }) => {
         <button
           type="button"
           onClick={onSwitch}
-          className="text-blue-600 font-medium"
+          className="text-main-blue font-medium hover:opacity-80"
         >
           Inicia sesión
         </button>

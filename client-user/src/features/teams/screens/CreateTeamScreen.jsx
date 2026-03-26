@@ -9,11 +9,11 @@ import {
   Image,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { useTeams } from "../../hooks/useTeams";
-import { COLORS, SPACING, FONT_SIZE } from "../../constants/theme";
-import { LoadingSpinner } from "../../components/common/Common";
-import Button from "../../components/common/Button";
-import Input from "../../components/common/Input";
+import { useTeams } from "../hooks/useTeams.js";
+import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
+import { LoadingSpinner } from "../../../shared/components/common/Common.jsx";
+import Button from "../../../shared/components/common/Button.jsx";
+import Input from "../../../shared/components/common/Input.jsx";
 
 const CreateTeamScreen = ({ navigation }) => {
   const { createTeam } = useTeams();

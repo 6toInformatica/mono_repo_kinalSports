@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect } from "react";
 import { View, Text, FlatList, StyleSheet, RefreshControl } from "react-native";
-import { useReservations } from "../../hooks/useReservations";
-import { COLORS, SPACING, FONT_SIZE } from "../../constants/theme";
+import { useReservations } from "../hooks/useReservations.js";
+import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
 import {
   LoadingSpinner,
   EmptyState,
   Card,
-} from "../../components/common/Common";
+} from "../../../shared/components/common/Common.jsx";
 
 const ReservationCard = ({ item }) => {
   const date = new Date(item.date).toLocaleDateString();

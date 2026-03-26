@@ -69,7 +69,13 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
       {/* CONTENEDOR */}
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg md:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
         {/* HEADER */}
-        <div className="bg-linear-to-r from-blue-600 to-blue-500 p-4 sm:p-5 text-white sticky top-0 z-10">
+        <div
+          className="p-4 sm:p-5 text-white sticky top-0 z-10"
+          style={{
+            background:
+              "linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)",
+          }}
+        >
           <h2 className="text-xl sm:text-2xl font-bold">
             {team ? "Editar Equipo" : "Nuevo Equipo"}
           </h2>
@@ -107,8 +113,8 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
                 Nombre del equipo
               </label>
               <input
-                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
-                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+                className="w-full px-3 py-2 rounded-lg border-2 bg-gray-50 shadow-sm transition"
+                style={{ borderColor: "var(--main-blue)", outline: "none" }}
                 placeholder="Ej. Barcelona FC"
                 {...register("teamName", {
                   required: "El nombre es obligatorio",
@@ -150,8 +156,8 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
                 Categoría
               </label>
               <select
-                className="w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
-                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition"
+                className="w-full px-3 py-2 rounded-lg border-2 bg-gray-50 shadow-sm transition"
+                style={{ borderColor: "var(--main-blue)", outline: "none" }}
                 {...register("category", {
                   required: "La categoría es obligatoria",
                 })}
@@ -174,8 +180,8 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
               </label>
               <input
                 type="file"
-                className="w-full px-3 py-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 
-                                hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 transition cursor-pointer"
+                className="w-full px-3 py-2 rounded-lg border-2 border-dashed bg-gray-50 transition cursor-pointer"
+                style={{ borderColor: "var(--main-blue)", outline: "none" }}
                 accept="image/*"
                 {...register("logo", {
                   onChange: (e) => {
@@ -204,7 +210,12 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
 
             <button
               type="submit"
-              className="w-full sm:w-auto px-5 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition shadow"
+              className="w-full sm:w-auto px-5 py-2 rounded-lg text-white font-medium transition shadow"
+              style={{
+                background:
+                  "linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)",
+                border: "none",
+              }}
             >
               {loading ? (
                 <Spinner small />

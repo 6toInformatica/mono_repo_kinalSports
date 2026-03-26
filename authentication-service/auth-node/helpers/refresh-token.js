@@ -14,6 +14,12 @@ export async function saveRefreshToken(userId, familyId = uuidv4()) {
   const raw = generateRefreshToken();
   const hash = hashToken(raw);
   const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 días
-  await RefreshToken.create({ tokenHash: hash, userId, familyId, expiresAt });
+  // Sequelize model uses attribute names: TokenHash/UserId/FamilyId/ExpiresAt
+  await RefreshToken.create({
+    TokenHash: hash,
+    UserId: userId,
+    FamilyId: familyId,
+    ExpiresAt: expiresAt,
+  });
   return { raw, familyId };
 }

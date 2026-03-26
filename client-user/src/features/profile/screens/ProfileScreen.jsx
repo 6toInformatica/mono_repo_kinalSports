@@ -8,14 +8,15 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import avatarDefault from "../../../assets/avatarDefault-1749508519496.png";
 import { useForm, Controller } from "react-hook-form";
-import { COLORS, SPACING, FONT_SIZE } from "../../constants/theme";
-import Input from "../../components/common/Input";
-import Button from "../../components/common/Button";
-import { Card } from "../../components/common/Common";
-import { useAuthStore } from "../../store/authStore";
-import userClient from "../../api/userClient";
+import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
+import Input from "../../../shared/components/common/Input.jsx";
+import Button from "../../../shared/components/common/Button.jsx";
+
+const avatarDefault = require("../../../../assets/avatarDefault-1749508519496.png");
+import { Card } from "../../../shared/components/common/Common.jsx";
+import { useAuthStore } from "../../../shared/store/authStore.js";
+import userClient from "../../../shared/api/userClient.js";
 
 const ProfileScreen = () => {
   const { user, logout, updateUser } = useAuthStore();

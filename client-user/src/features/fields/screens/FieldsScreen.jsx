@@ -8,13 +8,18 @@ import {
   TouchableOpacity,
   RefreshControl,
 } from "react-native";
-import { useFields } from "../../hooks/useFields";
-import { COLORS, SPACING, FONT_SIZE, SHADOWS } from "../../constants/theme";
+import { useFields } from "../hooks/useFields.js";
+import {
+  COLORS,
+  SPACING,
+  FONT_SIZE,
+  SHADOWS,
+} from "../../../shared/constants/theme.js";
 import {
   LoadingSpinner,
   EmptyState,
   Card,
-} from "../../components/common/Common";
+} from "../../../shared/components/common/Common.jsx";
 
 const FieldCard = ({ item, onPress }) => (
   <TouchableOpacity style={styles.cardContainer} onPress={onPress}>

@@ -32,10 +32,23 @@ authClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const requestUrl = originalRequest?.url || "";
+
+    // Esta app usa `authClient` para endpoints de auth (`/login`, etc).
+    // Si esos endpoints responden 401, no tiene sentido intentar refresh.
+    const isAuthEndpoint =
+      requestUrl.includes("/login") ||
+      requestUrl.includes("/register") ||
+      requestUrl.includes("/forgot-password") ||
+      requestUrl.includes("/reset-password") ||
+      requestUrl.includes("/verify-email") ||
+      requestUrl.includes("/resend-verification");
+
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      !originalRequest.url.includes("/auth/refresh")
+      !requestUrl.includes("/auth/refresh") &&
+      !isAuthEndpoint
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import userClient from "../../../shared/api/userClient";
+import userClient from "../../../shared/api/userClient.js";
 
 export const useFields = () => {
   const [fields, setFields] = useState([]);

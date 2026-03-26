@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import userClient from "../../../shared/api/userClient";
-import { useAuthStore } from "../../../shared/store/authStore";
+import userClient from "../../../shared/api/userClient.js";
+import { useAuthStore } from "../../../shared/store/authStore.js";
 
 export const useTeams = () => {
   const [teams, setTeams] = useState([]);

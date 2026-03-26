@@ -1,70 +1,8 @@
-export const getTournaments = async () => {
-  return await axiosAdmin.get("/tournaments");
-};
-
-export const createTournament = async (data) => {
-  return await axiosAdmin.post("/tournaments", data);
-};
-
-export const updateTournament = async (id, data) => {
-  return await axiosAdmin.put(`/tournaments/${id}`, data);
-};
-
-export const deleteTournament = async (id) => {
-  return await axiosAdmin.put(`/tournaments/${id}/deactivate`);
-};
-export const getTeams = async () => {
-  return await axiosAdmin.get("/teams");
-};
-
-export const createTeam = async (data) => {
-  return await axiosAdmin.post("/teams", data, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-};
-
-export const updateTeam = async (id, data) => {
-  return await axiosAdmin.put(`/teams/${id}`, data, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-};
-
-export const deleteTeam = async (id) => {
-  return await axiosAdmin.put(`/teams/${id}/deactivate`);
-};
-export const getFields = async () => {
-  return await axiosAdmin.get("/fields");
-};
-
-export const createField = async (data) => {
-  return await axiosAdmin.post("/fields", data, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-};
-
-export const updateField = async (id, data) => {
-  return await axiosAdmin.put(`/fields/${id}`, data, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-};
-
-export const deleteField = async (id) => {
-  return await axiosAdmin.put(`/fields/${id}/deactivate`);
-};
-
-export const getAllReservations = async () => {
-  return await axiosAdmin.get("/reservations");
-};
-
-export const confirmReservation = async (id) => {
-  return await axiosAdmin.put(`/reservations/${id}/confirm`);
-};
-export const verifyEmail = async (token) => {
-  return await axiosAuth.post("/auth/verify-email", { token });
-};
+// ================= IMPORTS =================
 import axios from "axios";
 import { useAuthStore } from "../../features/auth/store/authStore.js";
 
+// ================= AXIOS INSTANCES =================
 const axiosAuth = axios.create({
   baseURL: import.meta.env.VITE_AUTH_URL,
   timeout: 8000,
@@ -81,7 +19,11 @@ const axiosAdmin = axios.create({
   },
 });
 
+// ================= REQUEST INTERCEPTORS =================
 axiosAuth.interceptors.request.use((config) => {
+  // Tag del cliente para que el interceptor de refresh reintente
+  // en el mismo "backend" (auth vs admin).
+  config._axiosClient = "auth";
   const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -90,6 +32,9 @@ axiosAuth.interceptors.request.use((config) => {
 });
 
 axiosAdmin.interceptors.request.use((config) => {
+  // Tag del cliente para que el interceptor de refresh reintente
+  // en el mismo "backend" (auth vs admin).
+  config._axiosClient = "admin";
   const token = useAuthStore.getState().token;
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -97,8 +42,7 @@ axiosAdmin.interceptors.request.use((config) => {
   return config;
 });
 
-// Refresh token logic
-
+// ================= REFRESH TOKEN LOGIC =================
 let _isRefreshing = false;
 let failedQueue = [];
 
@@ -109,30 +53,81 @@ function _processQueue(_error, token = null) {
   failedQueue = [];
 }
 
-axiosAuth.interceptors.response.use(
-  (res) => res,
-  async (_error) => {
-    const _original = _error.config;
-    // ...rest of logic
-  },
-);
+const handleRefreshToken = async function (_error) {
+  const _original = _error.config;
+  if (!_original || _original._retry) {
+    // Ya se reintentó o no hay config
+    return Promise.reject(_error);
+  }
+  const status = _error.response?.status;
+  const errorCode = _error.response?.data?.error;
+  const requestUrl = _original.url || "";
+  const isRefreshEndpoint = requestUrl.includes("/auth/refresh");
+  const shouldAttemptRefresh =
+    !isRefreshEndpoint &&
+    // La mayoría de casos es 401 (TokenExpiredError)
+    status === 401;
 
+  // Algunos servicios pueden responder 403 con `error: TOKEN_EXPIRED`
+  const shouldAttemptRefreshFrom403 =
+    !isRefreshEndpoint && status === 403 && errorCode === "TOKEN_EXPIRED";
+
+  const shouldRefresh = shouldAttemptRefresh || shouldAttemptRefreshFrom403;
+
+  if (shouldRefresh) {
+    const retryClient =
+      _original._axiosClient === "admin" ? axiosAdmin : axiosAuth;
+    if (_isRefreshing) {
+      // Si ya hay un refresh en curso, encola la petición
+      return new Promise(function (resolve, reject) {
+        failedQueue.push({ resolve, reject });
+      })
+        .then((token) => {
+          _original.headers["Authorization"] = "Bearer " + token;
+          return retryClient(_original);
+        })
+        .catch((err) => Promise.reject(err));
+    }
+    _original._retry = true;
+    _isRefreshing = true;
+    const refreshToken = useAuthStore.getState().refreshToken;
+    if (!refreshToken) {
+      useAuthStore.getState().logout();
+      return Promise.reject(_error);
+    }
+    try {
+      const response = await axiosAuth.post("/auth/refresh", { refreshToken });
+      const {
+        accessToken,
+        refreshToken: newRefreshToken,
+        expiresIn,
+        userDetails,
+      } = response.data;
+      useAuthStore.setState({
+        token: accessToken,
+        refreshToken: newRefreshToken,
+        expiresAt: expiresIn,
+        user: userDetails || useAuthStore.getState().user,
+        isAuthenticated: true,
+      });
+      _processQueue(null, accessToken);
+      _original.headers["Authorization"] = "Bearer " + accessToken;
+      return retryClient(_original);
+    } catch (err) {
+      _processQueue(err, null);
+      useAuthStore.getState().logout();
+      return Promise.reject(err);
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+  return Promise.reject(_error);
+};
+
+axiosAuth.interceptors.response.use((res) => res, handleRefreshToken);
+
+axiosAdmin.interceptors.response.use((res) => res, handleRefreshToken);
+
+// ================= EXPORT AXIOS =================
 export { axiosAuth, axiosAdmin };
-
-export const login = async (data) => {
-  return await axiosAuth.post("/auth/login", data);
-};
-
-export const register = async (data) => {
-  return await axiosAuth.post("/auth/register", data, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-};
-
-export const forgotPassword = async (email) => {
-  return await axiosAuth.post("/auth/forgot-password", { email });
-};
-
-export const resetPassword = async (token, newPassword) => {
-  return await axiosAuth.post("/auth/reset-password", { token, newPassword });
-};
+export { handleRefreshToken };

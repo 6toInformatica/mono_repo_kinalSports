@@ -3,13 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuthStore } from "../../../features/auth/store/authStore.js";
 import defaultAvatarImg from "../../../assets/img/avatarDefault-1749508519496.png";
 
-export function AvatarUser() {
+export const AvatarUser = () => {
   const { user, logout } = useAuthStore();
-  // DEBUG: Mostrar el objeto user recibido
-  useEffect(() => {
-     
-    console.log("AvatarUser.jsx user:", user);
-  }, [user]);
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -32,7 +27,6 @@ export function AvatarUser() {
     navigate("/", { replace: true });
   };
 
-  // Fallback robusto: si profilePicture es vacío, null o string vacío, usar defaultAvatarImg
   const avatarSrc =
     user?.profilePicture && user.profilePicture.trim() !== ""
       ? user.profilePicture
@@ -90,4 +84,4 @@ export function AvatarUser() {
       )}
     </div>
   );
-}
+};
