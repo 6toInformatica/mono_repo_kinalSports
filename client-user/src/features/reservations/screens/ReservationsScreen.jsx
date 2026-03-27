@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect } from "react";
-import { View, Text, FlatList, StyleSheet, RefreshControl } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  RefreshControl,
+  Alert,
+  TouchableOpacity,
+} from "react-native";
 import { useReservations } from "../hooks/useReservations.js";
 import { COLORS, SPACING, FONT_SIZE } from "../../../shared/constants/theme.js";
 import {
@@ -8,24 +16,32 @@ import {
   Card,
 } from "../../../shared/components/common/Common.jsx";
 
-const ReservationCard = ({ item }) => {
-  const date = new Date(item.date).toLocaleDateString();
-  const time = item.time;
+const ReservationCard = ({ item, onCancel }) => {
+  const start = item.startTime ? new Date(item.startTime) : null;
+  const end = item.endTime ? new Date(item.endTime) : null;
+  const date = start ? start.toLocaleDateString() : "Fecha no disponible";
+  const time =
+    start && end
+      ? `${start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - ${end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+      : "Hora no disponible";
+  const status = item.normalizedStatus || (item.status || "").toUpperCase();
+  const isConfirmed = status === "CONFIRMED";
+  const canCancel = !["CANCELLED", "COMPLETED", "NO_SHOW"].includes(status);
 
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.fieldName}>
-          {item.field?.name || "Cancha Eliminada"}
+          {item.field?.name || "Cancha no disponible"}
         </Text>
         <View
           style={[
             styles.statusBadge,
-            item.status === "confirmed" ? styles.confirmed : styles.pending,
+            isConfirmed ? styles.confirmed : styles.pending,
           ]}
         >
           <Text style={styles.statusText}>
-            {item.status === "confirmed" ? "Confirmada" : "Pendiente"}
+            {isConfirmed ? "Confirmada" : status}
           </Text>
         </View>
       </View>
@@ -34,12 +50,46 @@ const ReservationCard = ({ item }) => {
         <Text style={styles.info}>⏰ {time}</Text>
         <Text style={styles.price}>Q{item.totalPrice || 0}</Text>
       </View>
+      {canCancel && (
+        <TouchableOpacity
+          style={styles.cancelButton}
+          onPress={() => onCancel(item)}
+        >
+          <Text style={styles.cancelButtonText}>Cancelar reserva</Text>
+        </TouchableOpacity>
+      )}
     </Card>
   );
 };
 
 const ReservationsScreen = () => {
-  const { reservations, loading, getReservations } = useReservations();
+  const { reservations, loading, getReservations, cancelReservation } =
+    useReservations();
+  const handleCancelReservation = (reservation) => {
+    Alert.alert(
+      "Cancelar reserva",
+      "¿Seguro que deseas cancelar esta reserva?",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Sí, cancelar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await cancelReservation(reservation._id);
+              Alert.alert("Éxito", "La reserva fue cancelada correctamente.");
+            } catch (err) {
+              Alert.alert(
+                "Error",
+                err.response?.data?.message ||
+                  "No se pudo cancelar la reserva.",
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
 
   useEffect(() => {
     getReservations();
@@ -56,7 +106,9 @@ const ReservationsScreen = () => {
       <FlatList
         data={reservations}
         keyExtractor={(item) => item._id}
-        renderItem={({ item }) => <ReservationCard item={item} />}
+        renderItem={({ item }) => (
+          <ReservationCard item={item} onCancel={handleCancelReservation} />
+        )}
         refreshControl={
           <RefreshControl
             refreshing={loading}
@@ -126,6 +178,19 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZE.md,
     fontWeight: "700",
     color: COLORS.primary,
+  },
+  cancelButton: {
+    marginTop: SPACING.md,
+    alignSelf: "flex-end",
+    backgroundColor: COLORS.error,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  cancelButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: FONT_SIZE.sm,
   },
 });
 

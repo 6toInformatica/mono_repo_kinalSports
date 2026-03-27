@@ -15,6 +15,9 @@ import Button from "../../../shared/components/common/Button.jsx";
 import { Card } from "../../../shared/components/common/Common.jsx";
 import { useReservations } from "../hooks/useReservations.js";
 
+const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_REGEX = /^\d{2}:\d{2}$/;
+
 const CreateReservationScreen = ({ route, navigation }) => {
   const { field } = route.params;
   const { createReservation, loading } = useReservations();
@@ -32,12 +35,32 @@ const CreateReservationScreen = ({ route, navigation }) => {
 
   const onSubmit = async (data) => {
     try {
+      if (!DATE_REGEX.test(data.date) || !TIME_REGEX.test(data.time)) {
+        Alert.alert(
+          "Formato inválido",
+          "Ingresa fecha YYYY-MM-DD y hora HH:MM válidas.",
+        );
+        return;
+      }
+
+      const durationHours = parseInt(data.duration, 10);
+      if (Number.isNaN(durationHours) || durationHours <= 0) {
+        Alert.alert("Duración inválida", "La duración debe ser mayor a 0.");
+        return;
+      }
+
+      const start = new Date(`${data.date}T${data.time}:00`);
+      if (Number.isNaN(start.getTime())) {
+        Alert.alert("Fecha inválida", "No se pudo interpretar fecha y hora.");
+        return;
+      }
+
+      const end = new Date(start.getTime() + durationHours * 60 * 60 * 1000);
+
       const reservationData = {
         fieldId: field._id,
-        date: data.date,
-        time: data.time,
-        duration: parseInt(data.duration),
-        totalPrice: field.pricePerHour * parseInt(data.duration),
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
       };
 
       await createReservation(reservationData);
@@ -67,7 +90,7 @@ const CreateReservationScreen = ({ route, navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Card style={styles.fieldCard}>
-          <Text style={styles.fieldName}>{field.name}</Text>
+          <Text style={styles.fieldName}>{field.name || field.fieldName}</Text>
           <Text style={styles.fieldPrice}>Q{field.pricePerHour} / hora</Text>
         </Card>
 

@@ -1,7 +1,6 @@
 export const ENDPOINTS = {
-  AUTH:
-    process.env.EXPO_PUBLIC_AUTH_URL ||
-    "http://localhost:3000/kinal-sports/v1/auth",
+  AUTH: process.env.EXPO_PUBLIC_AUTH_URL || "http://localhost:3007/api/v1/auth",
   USER:
-    process.env.EXPO_PUBLIC_USER_URL || "http://localhost:3001/kinal-sports/v1",
+    process.env.EXPO_PUBLIC_USER_URL ||
+    "http://localhost:3008/kinalSportsUser/v1",
 };

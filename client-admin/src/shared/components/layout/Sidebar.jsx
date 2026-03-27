@@ -8,6 +8,7 @@ export const Sidebar = () => {
     { label: "Reservaciones", to: "/dashboard/reservations" },
     { label: "Equipos", to: "/dashboard/teams" },
     { label: "Torneos", to: "/dashboard/tournaments" },
+    { label: "Usuarios", to: "/dashboard/users" },
   ];
 
   return (

@@ -2,9 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import {
   login as loginRequest,
-  // register as registerRequest,
-  // forgotPassword as forgotPasswordRequest,
-  // resetPassword as resetPasswordRequest,
+  register as registerRequest,
+  forgotPassword as forgotPasswordRequest,
+  resetPassword as resetPasswordRequest,
 } from "../../../shared/api";
 import { showError } from "../../../shared/utils/toast.js";
 
@@ -91,6 +91,48 @@ export const useAuthStore = create(
           console.error("Login error:", err);
           const message =
             err.response?.data?.message || "Error de autenticación";
+          set({ error: message, loading: false });
+          return { success: false, error: message };
+        }
+      },
+      register: async (formData) => {
+        try {
+          set({ loading: true, error: null });
+          const { data } = await registerRequest(formData);
+          set({ loading: false });
+          return {
+            success: true,
+            emailVerificationRequired: data?.emailVerificationRequired,
+            data,
+          };
+        } catch (err) {
+          const message = err.response?.data?.message || "Error al registrarse";
+          set({ error: message, loading: false });
+          return { success: false, error: message };
+        }
+      },
+      forgotPassword: async (email) => {
+        try {
+          set({ loading: true, error: null });
+          const { data } = await forgotPasswordRequest(email);
+          set({ loading: false });
+          return { success: true, data };
+        } catch (err) {
+          const message =
+            err.response?.data?.message || "Error al enviar el correo";
+          set({ error: message, loading: false });
+          return { success: false, error: message };
+        }
+      },
+      resetPassword: async ({ token, newPassword }) => {
+        try {
+          set({ loading: true, error: null });
+          const { data } = await resetPasswordRequest(token, newPassword);
+          set({ loading: false });
+          return { success: true, data };
+        } catch (err) {
+          const message =
+            err.response?.data?.message || "Error al restablecer contraseña";
           set({ error: message, loading: false });
           return { success: false, error: message };
         }

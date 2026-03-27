@@ -1,9 +1,9 @@
 import { useEffect } from "react";
-// import { useUIStore } from "../../auth/store/uiStore.js";
 import { useFieldsStore } from "../../users/store/adminStore";
 import { formatDate, formatTime } from "../../../shared/utils/formatters";
 import { Spinner } from "../../auth/components/Spinner.jsx";
-import { showError } from "../../../shared/utils/toast.js";
+import { showError, showSuccess } from "../../../shared/utils/toast.js";
+import { showConfirmToast } from "../../auth/components/ConfirmModal.jsx";
 
 export const Reservations = () => {
   const {
@@ -84,14 +84,20 @@ export const Reservations = () => {
                 <div className="mt-5">
                   <button
                     disabled={isConfirmed}
-                    onClick={async () => {
+                    onClick={() => {
                       if (!isConfirmed) {
-                        const confirmed = window.confirm(
-                          "¿Estás seguro de confirmar esta reserva?",
-                        );
-                        if (confirmed) {
-                          await confirmReservation(reservation._id);
-                        }
+                        showConfirmToast({
+                          title: "Confirmar reserva",
+                          message: "¿Estás seguro de confirmar esta reserva?",
+                          onConfirm: async () => {
+                            try {
+                              await confirmReservation(reservation._id);
+                              showSuccess("Reserva confirmada correctamente");
+                            } catch {
+                              showError("No se pudo confirmar la reserva");
+                            }
+                          },
+                        });
                       }
                     }}
                     className={`w-full py-2 rounded-lg text-white font-medium transition

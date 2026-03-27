@@ -23,6 +23,10 @@ export const verifyEmail = async (token) => {
   return await axiosAuth.post("/auth/verify-email", { token });
 };
 
+export const updateUserRole = async (userId, roleName) => {
+  return await axiosAuth.put(`/users/${userId}/role`, { roleName });
+};
+
 // ================= USERS =================
 export const getAllUsers = async () => {
   const { data } = await axiosAuth.get("/auth/users");

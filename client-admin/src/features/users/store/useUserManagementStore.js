@@ -1,5 +1,8 @@
 import { create } from "zustand";
-import axios from "../../../shared/axios.js";
+import * as authApi from "../../../shared/api/auth.js";
+
+const getAllUsers = authApi.getAllUsers;
+const updateUserRoleRequest = authApi.updateUserRole;
 
 export const useUserManagementStore = create((set, get) => ({
   /**
@@ -8,21 +11,18 @@ export const useUserManagementStore = create((set, get) => ({
    * @param {string} newRole "ADMIN_ROLE" o "USER_ROLE"
    * @param {string} token JWT de autenticación
    */
-  updateUserRole: async (userId, newRole, token) => {
+  updateUserRole: async (userId, newRole) => {
     set({ loading: true, error: null });
     try {
-      const response = await axios.put(
-        `${import.meta.env.VITE_AUTH_SERVICE_URL || "http://localhost:5000"}/api/v1/Users/${userId}/role`,
-        { roleName: newRole },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        },
+      if (typeof updateUserRoleRequest !== "function") {
+        throw new Error("La función updateUserRole no está disponible");
+      }
+      const { data: updatedUser } = await updateUserRoleRequest(
+        userId,
+        newRole,
       );
+
       // Actualizar el usuario en el estado local
-      const updatedUser = response.data;
       const users = get().users.map((u) =>
         u.id === updatedUser.id ? { ...u, role: updatedUser.role } : u,
       );
@@ -49,10 +49,19 @@ export const useUserManagementStore = create((set, get) => ({
 
   setUsers: (users) => set({ users }),
 
-  fetchUsers: async (apiFn) => {
+  fetchUsers: async (apiFn = getAllUsers, options = {}) => {
+    const { force = false } = options;
+    const state = get();
+
+    // Evita llamadas duplicadas (por ejemplo, doble ejecución en StrictMode).
+    if (state.loading) return;
+    // Si ya están cargados, no volver a pedir a menos que se fuerce.
+    if (!force && state.users.length > 0) return;
+
     set({ loading: true, error: null });
     try {
-      const result = await apiFn();
+      const fetcher = typeof apiFn === "function" ? apiFn : getAllUsers;
+      const result = await fetcher();
       set({ users: result.users || result, loading: false });
     } catch (err) {
       set({ error: err.message || "Error al cargar usuarios", loading: false });

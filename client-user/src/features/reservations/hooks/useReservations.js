@@ -1,6 +1,21 @@
 import { useState, useCallback } from "react";
 import userClient from "../../../shared/api/userClient.js";
 
+const mapReservationToViewModel = (reservation) => {
+  const field = reservation.fieldId;
+  return {
+    ...reservation,
+    field: field
+      ? {
+          id: field._id,
+          name: field.fieldName,
+          image: field.photo,
+        }
+      : null,
+    normalizedStatus: (reservation.status || "").toUpperCase(),
+  };
+};
+
 export const useReservations = () => {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -10,8 +25,9 @@ export const useReservations = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await userClient.get("/reservations/my-reservations");
-      setReservations(response.data.data || response.data);
+      const response = await userClient.get("/reservations/me/history");
+      const rawReservations = response.data.data || response.data || [];
+      setReservations(rawReservations.map(mapReservationToViewModel));
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Error al obtener reservaciones");
@@ -34,5 +50,32 @@ export const useReservations = () => {
     }
   };
 
-  return { reservations, loading, error, getReservations, createReservation };
+  const cancelReservation = async (reservationId) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await userClient.put(
+        `/reservations/${reservationId}/cancel`,
+      );
+      await getReservations();
+      return response.data;
+    } catch (err) {
+      console.error(err);
+      setError(
+        err.response?.data?.message || "Error al cancelar la reservación",
+      );
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    reservations,
+    loading,
+    error,
+    getReservations,
+    createReservation,
+    cancelReservation,
+  };
 };

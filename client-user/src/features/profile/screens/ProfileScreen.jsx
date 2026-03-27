@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -22,25 +22,68 @@ const ProfileScreen = () => {
   const { user, logout, updateUser } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [profile, setProfile] = useState(null);
   const {
     control,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      name: user?.name || "",
-      surname: user?.surname || "",
-      email: user?.email || "",
-      username: user?.username || "",
+      displayName: "",
+      phone: "",
+      favoriteSports: "",
     },
   });
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await userClient.get("/users/profile");
+        const profileData = response.data?.data || {};
+        setProfile(profileData);
+        reset({
+          displayName: profileData.displayName || "",
+          phone: profileData.phone || "",
+          favoriteSports: (profileData.favoriteSports || []).join(", "),
+        });
+      } catch (err) {
+        console.error(err);
+        Alert.alert(
+          "Error",
+          err.response?.data?.message || "Error al cargar perfil",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [reset]);
 
   const onSubmit = async (data) => {
     try {
       setLoading(true);
-      const response = await userClient.put(`/users/${user._id}`, data);
+      const payload = {
+        displayName: data.displayName?.trim() || "",
+        phone: data.phone?.trim() || "",
+        favoriteSports: data.favoriteSports
+          ? data.favoriteSports
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : [],
+      };
+      const response = await userClient.put("/users/profile", payload);
 
-      updateUser(response.data.data || response.data);
+      const updatedProfile = response.data.data || response.data;
+      setProfile(updatedProfile);
+      // Mantiene datos básicos del auth-user y mezcla avatar/displayName para UI.
+      updateUser({
+        profilePicture: updatedProfile.avatar || user?.profilePicture,
+        displayName: updatedProfile.displayName,
+      });
       setIsEditing(false);
       Alert.alert("Éxito", "Perfil actualizado correctamente");
     } catch (err) {
@@ -66,16 +109,16 @@ const ProfileScreen = () => {
       <View style={styles.header}>
         <Image
           source={
-            user?.profilePicture?.startsWith("http")
-              ? { uri: user.profilePicture }
+            (profile?.avatar || user?.profilePicture)?.startsWith("http")
+              ? { uri: profile?.avatar || user?.profilePicture }
               : avatarDefault
           }
           style={styles.avatarImage}
         />
         <Text style={styles.userName}>
-          {user?.name} {user?.surname}
+          {profile?.displayName || user?.displayName || user?.username}
         </Text>
-        <Text style={styles.userHandle}>@{user?.username}</Text>
+        <Text style={styles.userHandle}>@{user?.username || "usuario"}</Text>
       </View>
 
       <View style={styles.content}>
@@ -91,51 +134,55 @@ const ProfileScreen = () => {
 
           <Controller
             control={control}
-            rules={{ required: "Nombre requerido" }}
+            rules={{ required: "Nombre para mostrar requerido" }}
             render={({ field: { onChange, value } }) => (
               <Input
-                label="Nombre"
+                label="Nombre para mostrar"
                 onChangeText={onChange}
                 value={value}
                 editable={isEditing}
-                error={errors.name?.message}
+                error={errors.displayName?.message}
                 style={!isEditing && styles.readOnly}
               />
             )}
-            name="name"
+            name="displayName"
           />
 
           <Controller
             control={control}
-            rules={{ required: "Apellido requerido" }}
+            rules={{
+              pattern: {
+                value: /^[0-9]*$/,
+                message: "El teléfono solo puede contener números",
+              },
+            }}
             render={({ field: { onChange, value } }) => (
               <Input
-                label="Apellido"
+                label="Teléfono"
                 onChangeText={onChange}
                 value={value}
                 editable={isEditing}
-                error={errors.surname?.message}
+                error={errors.phone?.message}
                 style={!isEditing && styles.readOnly}
+                keyboardType="phone-pad"
               />
             )}
-            name="surname"
+            name="phone"
           />
 
           <Controller
             control={control}
-            rules={{ required: "Email requerido" }}
             render={({ field: { onChange, value } }) => (
               <Input
-                label="Email"
+                label="Deportes favoritos (separados por coma)"
                 onChangeText={onChange}
                 value={value}
                 editable={isEditing}
-                error={errors.email?.message}
+                error={errors.favoriteSports?.message}
                 style={!isEditing && styles.readOnly}
-                keyboardType="email-address"
               />
             )}
-            name="email"
+            name="favoriteSports"
           />
 
           {isEditing && (

@@ -45,7 +45,12 @@ export const cancelUserReservation = async (reservationId, userId) => {
  * Obtener historial de reservaciones del usuario.
  */
 export const fetchUserReservationHistory = async (userId) => {
-  return await Reservation.find({ userId }).sort({ startTime: -1 });
+  return await Reservation.find({ userId })
+    .populate(
+      'fieldId',
+      'fieldName photo pricePerHour fieldType capacity isActive'
+    )
+    .sort({ startTime: -1 });
 };
 
 /**

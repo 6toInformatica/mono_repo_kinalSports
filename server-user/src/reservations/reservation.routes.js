@@ -18,6 +18,8 @@ router.get('/availability', checkAvailability);
 
 // Ver historial de reservaciones del usuario autenticado
 router.get('/me/history', getUserHistory);
+// Compatibilidad con clientes que aún llaman el endpoint anterior
+router.get('/my-reservations', getUserHistory);
 
 // Crear reservación (POST /)
 router.post(

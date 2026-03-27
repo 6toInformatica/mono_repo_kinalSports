@@ -64,10 +64,10 @@ export const AvatarUser = () => {
 
             <li>
               <Link
-                to="/dashboard/settings"
+                to="/dashboard/users"
                 className="block w-full p-2 rounded-md hover:bg-gray-100"
               >
-                Settings
+                Usuarios
               </Link>
             </li>
 

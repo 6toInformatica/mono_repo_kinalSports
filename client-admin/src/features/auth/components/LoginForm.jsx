@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 
-export const LoginForm = ({ onSwitch, onForgot }) => {
+export const LoginForm = ({ onForgot }) => {
   const navigate = useNavigate();
 
   const login = useAuthStore((state) => state.login);
@@ -95,18 +95,6 @@ export const LoginForm = ({ onSwitch, onForgot }) => {
           className="text-main-blue hover:underline"
         >
           ¿Olvidaste tu contraseña?
-        </button>
-      </p>
-
-      {/* Switch a Register */}
-      <p className="text-center text-sm text-gray-600">
-        ¿No tienes cuenta?{" "}
-        <button
-          type="button"
-          onClick={onSwitch}
-          className="font-medium text-main-blue hover:opacity-80 transition-colors"
-        >
-          Regístrate
         </button>
       </p>
     </form>
