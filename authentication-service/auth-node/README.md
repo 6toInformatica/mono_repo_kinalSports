@@ -1,277 +1,163 @@
-# Auth Node - Servicio de Autenticación
+# Auth Node - Servicio de Autenticacion (Node.js)
 
-API RESTful de autenticación robusta construida con Node.js, Express y PostgreSQL.
+API RESTful de autenticacion construida con Node.js, Express y PostgreSQL.
 
-## 📋 Descripción
+## Rol en la arquitectura
 
-Servicio de autenticación que proporciona registro, login, gestión de perfiles, verificación de email, recuperación de contraseñas y administración de roles de usuario. Utiliza JWT para autenticación stateless y Argon2 para hashing seguro de contraseñas.
+Servicio de autenticacion del **stack movil/usuario**:
 
-## 🛠️ Tech Stack
+- Consumido por **client-user** (login, registro, refresh)
+- Validado por **server-user** (JWT)
+- Paralelo a **auth-service** (.NET), que atiende el stack admin
 
-- **Runtime**: Node.js 18+ (ESM)
-- **Framework**: Express 5.x
-- **Base de Datos**: PostgreSQL 14+
-- **ORM**: Sequelize 6.x
-- **Autenticación**: JWT (jsonwebtoken)
-- **Hashing**: Argon2
-- **Validación**: express-validator
-- **Storage**: Cloudinary (perfiles de usuario)
-- **Email**: Nodemailer
-- **Seguridad**: Helmet, CORS, Rate Limiting
+Ambos servicios comparten PostgreSQL y emiten JWT con configuracion compatible.
 
-## 🚀 Instalación
+## Descripcion
+
+Registro, login, gestion de perfiles, verificacion de email, recuperacion de contrasenas y administracion de roles. Usa JWT stateless y Argon2 para hashing.
+
+## Tech Stack
+
+- **Node.js** 18+ (ESM), **Express** 5.x
+- **PostgreSQL** + **Sequelize** 6.x
+- **JWT**, **Argon2**, **Cloudinary**, **Nodemailer**
+- **Helmet**, **CORS**, **Rate Limiting**
+
+## Instalacion
 
 ```bash
-# Desde la raíz del monorepo
 pnpm install
-
-# O específicamente este servicio
-pnpm --filter auth-node install
+cd authentication-service/auth-node
+cp .env.example .env
+pnpm dev
 ```
 
-## ⚙️ Variables de Entorno
+Desde la raiz:
 
-Crear archivo `.env` en `authentication-service/auth-node/`:
+```bash
+pnpm --filter auth-node dev
+```
+
+## Variables de Entorno
+
+Ver `.env.example`. Valores clave:
 
 ```env
-# Server
 NODE_ENV=development
-PORT=3001
-
-# Database PostgreSQL
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=kinalsports_auth
-DB_USERNAME=postgres
-DB_PASSWORD=tu_password
-DB_SQL_LOGGING=false
-
-# JWT Configuration
-JWT_SECRET=tu-secret-key-super-segura
-JWT_EXPIRES_IN=30m
-JWT_REFRESH_EXPIRES_IN=7d
-JWT_ISSUER=KinalSportsAuth
-JWT_AUDIENCE=KinalSportsAPI
-
-# SMTP Configuration
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_ENABLE_SSL=true
-SMTP_USERNAME=tu-email@gmail.com
-SMTP_PASSWORD=tu-app-password
-EMAIL_FROM=noreply@kinalsports.com
-EMAIL_FROM_NAME=KinalSports
-
-# Cloudinary (upload de perfiles)
-CLOUDINARY_CLOUD_NAME=tu_cloud_name
-CLOUDINARY_API_KEY=tu_api_key
-CLOUDINARY_API_SECRET=tu_api_secret
-CLOUDINARY_BASE_URL=https://res.cloudinary.com
-CLOUDINARY_FOLDER=kinalSports/profiles
-CLOUDINARY_DEFAULT_AVATAR_FILENAME=default-avatar.png
-
-# File Upload
-UPLOAD_PATH=./uploads
-
-# Frontend URL
+PORT=3000                    # local; Docker usa 3007
+DATABASE_URL=postgresql://user:pass@localhost:5432/kinal_sports
+JWT_SECRET=MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!
+JWT_ISSUER=AuthService
+JWT_AUDIENCE=AuthService
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_EXPIRES_IN=30d
+SMTP_HOST=smtp.example.com
+CLOUDINARY_CLOUD_NAME=your-cloud-name
 FRONTEND_URL=http://localhost:5173
-
-# Security
-ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
-ADMIN_ALLOWED_ORIGINS=http://localhost:5173
-
-# Verification Tokens (en horas)
-VERIFICATION_EMAIL_EXPIRY_HOURS=24
-PASSWORD_RESET_EXPIRY_HOURS=1
+ALLOWED_ORIGINS=http://localhost:5173
 ```
 
-## 📂 Estructura
+## Estructura
 
 ```
 auth-node/
 ├── configs/
-│   ├── app.js                    # Configuración principal del servidor
-│   ├── db.js                     # Conexión PostgreSQL + Sequelize
-│   ├── cors-configuration.js     # Configuración CORS
-│   └── helmet-configuration.js   # Headers de seguridad
 ├── helpers/
-│   ├── auth-operations.js        # Lógica de autenticación
-│   ├── profile-operations.js     # Gestión de perfiles
-│   ├── generate-jwt.js           # Generación de tokens
-│   ├── cloudinary-service.js     # Servicio de upload
-│   ├── email-service.js          # Envío de emails
-│   └── user-db.js                # Operaciones de BD
 ├── middlewares/
-│   ├── validate-JWT.js           # Verificación de tokens
-│   ├── validation.js             # Validadores personalizados
-│   └── request-limit.js          # Rate limiting
 ├── src/
-│   ├── auth/
-│   │   ├── auth.controller.js    # Controladores de autenticación
-│   │   ├── auth.routes.js        # Rutas de autenticación
-│   │   └── role.model.js         # Modelo de roles
-│   └── users/
-│       ├── user.controller.js    # Controladores de usuarios
-│       ├── user.routes.js        # Rutas de usuarios
-│       └── user.model.js         # Modelo de usuario
-└── index.js                      # Punto de entrada
+│   ├── auth/          # auth.routes.js, auth.controller.js
+│   └── users/         # user.routes.js (roles admin)
+└── index.js
 ```
 
-## 🎯 Scripts Disponibles
+## Scripts
 
 ```bash
-# Desarrollo con auto-reload
 pnpm --filter auth-node dev
-
-# Producción
 pnpm --filter auth-node start
-
-# Lint
 pnpm --filter auth-node lint
 pnpm --filter auth-node lint:fix
-
-# Format
 pnpm --filter auth-node format
-pnpm --filter auth-node format:check
 ```
 
-## 🔌 Endpoints Principales
+## Endpoints
 
-### Autenticación
+**Prefijo:** `/api/v1`  
+**Puerto Docker:** `3007`  
+**Health:** `GET /api/v1/health`
 
-| Método | Endpoint                        | Descripción                    | Auth     |
-| ------ | ------------------------------- | ------------------------------ | -------- |
-| POST   | `/api/auth/register`            | Registrar nuevo usuario        | No       |
-| POST   | `/api/auth/login`               | Iniciar sesión                 | No       |
-| POST   | `/api/auth/verify-email`        | Verificar email con token      | No       |
-| POST   | `/api/auth/resend-verification` | Reenviar email de verificación | No       |
-| POST   | `/api/auth/forgot-password`     | Solicitar reset de contraseña  | No       |
-| POST   | `/api/auth/reset-password`      | Resetear contraseña con token  | No       |
-| GET    | `/api/auth/profile`             | Obtener perfil del usuario     | Sí (JWT) |
+### Autenticacion (`/api/v1/auth`)
 
-### Gestión de Usuarios (Admin)
+| Metodo | Endpoint                       | Descripcion                       | Auth |
+| ------ | ------------------------------ | --------------------------------- | ---- |
+| POST   | `/auth/refresh`                | Renovar access token              | No   |
+| POST   | `/auth/logout`                 | Cerrar sesion (invalidar refresh) | No   |
+| POST   | `/auth/register`               | Registrar usuario (multipart)     | No   |
+| POST   | `/auth/login`                  | Iniciar sesion                    | No   |
+| POST   | `/auth/verify-email`           | Verificar email                   | No   |
+| POST   | `/auth/resend-verification`    | Reenviar verificacion             | No   |
+| POST   | `/auth/forgot-password`        | Solicitar reset                   | No   |
+| POST   | `/auth/reset-password`         | Resetear contrasena               | No   |
+| GET    | `/auth/profile`                | Perfil del usuario autenticado    | JWT  |
+| POST   | `/auth/profile/picture`        | Actualizar foto (multipart)       | JWT  |
+| POST   | `/auth/profile/picture/avatar` | Alias de avatar (multipart)       | JWT  |
+| POST   | `/auth/profile/by-id`          | Perfil por userId                 | No   |
+| POST   | `/auth/profile/by-username`    | Perfil por username               | No   |
 
-| Método | Endpoint                       | Descripción               | Auth       |
-| ------ | ------------------------------ | ------------------------- | ---------- |
-| PUT    | `/api/users/:userId/role`      | Actualizar rol de usuario | Sí (Admin) |
-| GET    | `/api/users/:userId/roles`     | Obtener roles de usuario  | Sí (Admin) |
-| GET    | `/api/users/by-role/:roleName` | Listar usuarios por rol   | Sí (Admin) |
+### Usuarios / roles (`/api/v1/users`)
 
-### Ejemplo de Request
+| Metodo | Endpoint                   | Descripcion      | Auth  |
+| ------ | -------------------------- | ---------------- | ----- |
+| PUT    | `/users/:userId/role`      | Actualizar rol   | Admin |
+| GET    | `/users/:userId/roles`     | Roles de usuario | Admin |
+| GET    | `/users/by-role/:roleName` | Usuarios por rol | Admin |
+
+## Ejemplos
 
 **Registro:**
 
 ```bash
-POST http://localhost:3001/api/auth/register
-Content-Type: application/json
-
-{
-  "username": "johndoe",
-  "email": "john@example.com",
-  "password": "SecurePass123!",
-  "firstName": "John",
-  "lastName": "Doe"
-}
+curl -X POST http://localhost:3007/api/v1/auth/register \
+  -F "username=johndoe" \
+  -F "email=john@example.com" \
+  -F "password=SecurePass123!" \
+  -F "name=John" \
+  -F "surname=Doe" \
+  -F "phone=12345678"
 ```
 
 **Login:**
 
 ```bash
-POST http://localhost:3001/api/auth/login
-Content-Type: application/json
-
-{
-  "email": "john@example.com",
-  "password": "SecurePass123!"
-}
+curl -X POST http://localhost:3007/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"emailOrUsername":"john@example.com","password":"SecurePass123!"}'
 ```
 
-**Perfil (con token):**
+**Perfil:**
 
 ```bash
-GET http://localhost:3001/api/auth/profile
-Authorization: Bearer <tu-jwt-token>
+curl http://localhost:3007/api/v1/auth/profile \
+  -H "Authorization: Bearer <token>"
 ```
 
-## 🔐 Roles y Permisos
+## Roles
 
-- **USER**: Usuario estándar (default al registrarse)
-- **ADMIN**: Administrador del sistema
-- **MODERATOR**: Moderador de contenido
-- **SUPER_ADMIN**: Super administrador
+- **USER** (default al registrarse)
+- **ADMIN_ROLE** (administrador)
+- Otros roles segun seeds en PostgreSQL
 
-Los roles se configuran automáticamente mediante seeds en la base de datos.
+## Dependencias
 
-## 🗄️ Modelos de Base de Datos
+| Consumidor  | Uso                                        |
+| ----------- | ------------------------------------------ |
+| client-user | Login, registro, refresh                   |
+| server-user | Validacion JWT y enriquecimiento de perfil |
 
-### User
-
-- `id` (UUID, PK)
-- `username` (unique)
-- `email` (unique)
-- `passwordHash`
-- `emailVerified`
-- `isActive`
-- `createdAt`, `updatedAt`
-
-### UserProfile
-
-- `userId` (FK)
-- `firstName`
-- `lastName`
-- `phone`
-- `avatar` (URL Cloudinary)
-- `bio`
-
-### UserEmail
-
-- `userId` (FK)
-- `verificationToken`
-- `verificationTokenExpires`
-
-### UserPasswordReset
-
-- `userId` (FK)
-- `resetToken`
-- `resetTokenExpires`
-
-### Role
-
-- `id` (UUID, PK)
-- `name` (USER, ADMIN, etc.)
-- `description`
-
-### UserRole (Tabla intermedia many-to-many)
-
-- `userId` (FK)
-- `roleId` (FK)
-
-## 🔗 Dependencias con Otros Servicios
-
-- **server-admin**: Consume este servicio para validar tokens JWT de administradores
-- **server-user**: Consume este servicio para validar tokens JWT de usuarios
-- **client-admin**: Frontend que consume endpoints de autenticación y gestión de usuarios
-
-## 🧪 Testing
-
-```bash
-# Ejecutar tests (cuando estén implementados)
-pnpm --filter auth-node test
-```
-
-## 📝 Notas de Desarrollo
-
-- El servidor escucha en el puerto definido en `.env` (default: 3001)
-- Las rutas están prefijadas con `/api`
-- Los tokens JWT expiran según configuración en `.env`
-- Los emails de verificación y reset de contraseña son válidos por 24 horas
-- Las imágenes de perfil se suben a Cloudinary automáticamente
-- Rate limiting configurado: 100 requests por 15 minutos por IP
-
-## 👤 Autor
+## Autor
 
 **Braulio Echeverria**
 
-## 📄 Licencia
+## Licencia
 
 MIT

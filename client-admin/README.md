@@ -2,11 +2,16 @@
 
 Frontend web para administradores de la plataforma KinalSports construido con React 19 y Vite.
 
-## 📋 Descripción
+## Descripcion
 
-Aplicación web SPA (Single Page Application) que permite a administradores gestionar campos deportivos, confirmar/rechazar reservas, administrar usuarios, torneos y equipos. Consume los servicios de autenticación y management API.
+Aplicacion web SPA (Single Page Application) que permite a administradores gestionar campos deportivos, confirmar/rechazar reservas, administrar usuarios, torneos y equipos.
 
-## 🛠️ Tech Stack
+Consume:
+
+- **auth-service** (.NET) para autenticacion, registro y gestion de usuarios/roles
+- **server-admin** para operaciones de negocio (campos, reservas, equipos, torneos)
+
+## Tech Stack
 
 - **Framework**: React 19.2
 - **Build Tool**: Vite 7.x
@@ -19,124 +24,110 @@ Aplicación web SPA (Single Page Application) que permite a administradores gest
 - **Formularios**: React Hook Form 7.x
 - **Notificaciones**: React Hot Toast 2.x
 
-## 🚀 Instalación
+## Instalacion
 
 ```bash
-# Clonar e instalar dependencias
 pnpm install
-
-# Configurar variables de entorno
 cp .env.example .env
-
-# Iniciar servidor de desarrollo
 pnpm dev
 ```
 
-> **pnpm 11:** si `pnpm install` falla con `ERR_PNPM_IGNORED_BUILDS` (esbuild), asegúrate de que `pnpm-workspace.yaml` tenga `allowBuilds: esbuild: true`, o ejecuta `pnpm approve-builds esbuild`.
+> **pnpm 11:** si `pnpm install` falla con `ERR_PNPM_IGNORED_BUILDS` (esbuild), asegurate de que `pnpm-workspace.yaml` tenga `allowBuilds: esbuild: true`, o ejecuta `pnpm approve-builds esbuild`.
 
-## ⚙️ Variables de Entorno
+## Variables de Entorno
 
-El proyecto usa variables de entorno con prefijo `VITE_`. Copia el archivo de ejemplo y ajusta los valores:
+El proyecto usa variables con prefijo `VITE_`. Copia el archivo de ejemplo:
 
 ```bash
 cp .env.example .env
 ```
 
-| Variable                   | Requerida | Descripción                                                             |
-| -------------------------- | --------- | ----------------------------------------------------------------------- |
-| `VITE_AUTH_URL`            | Sí        | URL base de la API de autenticación                                     |
-| `VITE_ADMIN_URL`           | Sí        | URL base de la API de administración                                    |
-| `VITE_CLOUDINARY_BASE_URL` | No        | Base de Cloudinary para imágenes (tiene valor por defecto en el código) |
+| Variable                   | Requerida | Descripcion                      |
+| -------------------------- | --------- | -------------------------------- |
+| `VITE_AUTH_URL`            | Si        | URL base de auth-service (.NET)  |
+| `VITE_ADMIN_URL`           | Si        | URL base de server-admin         |
+| `VITE_CLOUDINARY_BASE_URL` | No        | Base de Cloudinary para imagenes |
 
 ```env
-VITE_AUTH_URL=http://localhost:6156/api/v1
-VITE_ADMIN_URL=http://localhost:6309/kinalSportsAdmin/v1
-VITE_CLOUDINARY_BASE_URL=https://res.cloudinary.com/dug3apxt3/image/upload/
+VITE_AUTH_URL=http://localhost:5156/api/v1
+VITE_ADMIN_URL=http://localhost:3009/kinalSportsAdmin/v1
+VITE_CLOUDINARY_BASE_URL=https://res.cloudinary.com/<tu-cloud-name>/image/upload/
 ```
 
-> El archivo `.env` no debe versionarse. Mantén actualizado `.env.example` cuando agregues nuevas variables.
+El archivo `.env` no debe versionarse.
 
 ## Estructura
 
-El proyecto sigue una organización por **features** (feature-based):
+Organizacion por features:
 
 ```
 client-admin/
 ├── public/
-│   └── img/
-│       └── kinal_sports.png
 ├── src/
-│   ├── app/                      # Bootstrap de la aplicación
+│   ├── app/
 │   │   ├── App.jsx
 │   │   ├── main.jsx
-│   │   ├── layouts/              # DashboardPage y layouts
-│   │   └── router/               # AppRoutes, ProtectedRoute, RoleGuard
-│   ├── features/                 # Módulos de dominio
-│   │   ├── auth/                 # login, registro, verificación, reset
-│   │   │   ├── components/
-│   │   │   ├── hooks/
-│   │   │   ├── pages/
-│   │   │   └── store/            # authStore, uiStore (Zustand)
-│   │   ├── fields/               # campos deportivos
-│   │   ├── reservations/         # reservas
-│   │   ├── teams/                # equipos
-│   │   ├── tournaments/          # torneos
-│   │   └── users/                # gestión de usuarios
-│   ├── shared/                   # Código transversal
-│   │   ├── api/                  # instancia axios y endpoints
-│   │   ├── components/           # layout y UI reutilizable
-│   │   └── utils/                # toast, formatters, helpers
+│   │   ├── layouts/
+│   │   └── router/               # AppRoutes.jsx (router activo)
+│   ├── features/
+│   │   ├── auth/
+│   │   ├── fields/
+│   │   ├── reservations/
+│   │   ├── teams/
+│   │   ├── tournaments/
+│   │   └── users/
+│   ├── shared/
+│   │   ├── api/
+│   │   ├── components/
+│   │   └── utils/
 │   └── styles/
-│       └── index.css
 ├── .env.example
-├── index.html
 ├── vite.config.js
 └── package.json
 ```
 
-## Scripts Disponibles
+Nota de mantenimiento: existen archivos de router duplicados no usados (`AppRouter.jsx`, `routes/AppRoutes.jsx`). El router activo es `src/app/router/AppRoutes.jsx`.
+
+## Scripts
 
 ```bash
-pnpm dev       # Desarrollo con HMR (http://localhost:6173)
-pnpm build     # Build para producción → dist/
+pnpm dev       # Desarrollo con HMR (http://localhost:5173)
+pnpm build     # Build para produccion -> dist/
 pnpm preview   # Vista previa del build
 pnpm lint      # ESLint
 ```
 
-## Páginas y Rutas
+## Paginas y Rutas
 
-### Rutas públicas
+Router activo: `src/app/router/AppRoutes.jsx`
 
-| Ruta              | Componente        | Descripción            |
+### Rutas publicas
+
+| Ruta              | Componente        | Descripcion            |
 | ----------------- | ----------------- | ---------------------- |
 | `/`               | AuthPage          | Login y registro       |
-| `/verify-email`   | VerifyEmailPage   | Verificación de correo |
-| `/reset-password` | ResetPasswordPage | Restablecer contraseña |
+| `/verify-email`   | VerifyEmailPage   | Verificacion de correo |
+| `/reset-password` | ResetPasswordPage | Restablecer contrasena |
 | `/unauthorized`   | UnauthorizedPage  | Acceso denegado        |
 
 ### Rutas protegidas (`ADMIN_ROLE`)
 
-| Ruta                      | Componente   | Descripción                  |
+| Ruta                      | Componente   | Descripcion                  |
 | ------------------------- | ------------ | ---------------------------- |
-| `/dashboard/fields`       | Fields       | Gestión de campos deportivos |
+| `/dashboard/fields`       | Fields       | Gestion de campos deportivos |
 | `/dashboard/reservations` | Reservations | Reservas                     |
 | `/dashboard/teams`        | Teams        | Equipos                      |
 | `/dashboard/tournaments`  | Tournaments  | Torneos                      |
-| `/dashboard/users`        | Users        | Gestión de usuarios          |
+| `/dashboard/users`        | Users        | Gestion de usuarios          |
 
-Las rutas del dashboard están protegidas por `ProtectedRoute` y `RoleGuard` (solo `ADMIN_ROLE`).
+Protegidas por `ProtectedRoute` y `RoleGuard` (solo `ADMIN_ROLE`).
 
-## Autenticación
+## Autenticacion
 
-### Flujo
-
-1. El usuario inicia sesión en `LoginForm`
-2. POST a `{VITE_AUTH_URL}/auth/login`
-3. La respuesta incluye el JWT
-4. El token se persiste con **Zustand** (`authStore`, middleware `persist`)
-5. Las peticiones a la API admin llevan el header `Authorization: Bearer <token>`
-
-### Rutas protegidas
+1. Login en `LoginForm`
+2. POST a `{VITE_AUTH_URL}/auth/login` (auth-service)
+3. JWT persistido en Zustand (`authStore`, middleware `persist`)
+4. Peticiones a server-admin con `Authorization: Bearer <token>`
 
 ```jsx
 <ProtectedRoute>
@@ -146,67 +137,43 @@ Las rutas del dashboard están protegidas por `ProtectedRoute` y `RoleGuard` (so
 </ProtectedRoute>
 ```
 
-## UI Components
-
-### Material Tailwind
-
-Usa componentes pre-construidos de Material Tailwind:
-
-```javascript
-import { Card, CardHeader, CardBody, Typography, Button, Input } from '@material-tailwind/react';
-```
-
-### Heroicons
-
-```javascript
-import { PlusIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-```
-
 ## Servicios API
 
-Las llamadas HTTP están en `src/shared/api/`:
+En `src/shared/api/`:
 
-- **`api.js`** — instancias Axios (`authApi`, `adminApi`) con `baseURL` desde `VITE_AUTH_URL` y `VITE_ADMIN_URL`, interceptores para token y manejo de errores
-- **`auth.js`** — login, registro, verificación de email, usuarios
-- **`admin.js`** — campos, reservas, equipos, torneos
-
-```javascript
-// Ejemplo: login (src/shared/api/auth.js)
-export const login = (credentials) => authApi.post('/auth/login', credentials);
-```
+- **`api.js`** — instancias Axios (`authApi`, `adminApi`) con interceptores
+- **`auth.js`** — login, registro, verificacion, usuarios (auth-service)
+- **`admin.js`** — campos, reservas, equipos, torneos (server-admin)
 
 ## Dependencias con Otros Servicios
 
-- **auth-node / auth-service**: Login, registro, gestión de perfil
-- **server-admin**: Gestión de campos, reservas, torneos
-- Ambos servicios deben estar corriendo para funcionalidad completa
+| Servicio     | Rol                                        |
+| ------------ | ------------------------------------------ |
+| auth-service | Autenticacion y gestion de usuarios/roles  |
+| server-admin | CRUD de campos, reservas, equipos, torneos |
 
-## Estilos
-
-Tailwind CSS 4 se integra vía `@tailwindcss/vite` en `vite.config.js`. Los estilos globales están en `src/styles/index.css`.
+Ambos deben estar corriendo para funcionalidad completa.
 
 ## Build y Deployment
 
 ```bash
-pnpm build    # Genera dist/
-pnpm preview  # Sirve dist/ localmente
+pnpm build
+pnpm preview
 ```
 
 Configura en el hosting las mismas variables `VITE_*` que en `.env` (Vite las embebe en build time).
 
 ## Notas de Desarrollo
 
-- Vite dev server corre en `http://localhost:6173` por defecto en Docker
-- HMR (Hot Module Replacement) activado
-- Fast Refresh para React
-- Variables de entorno deben prefijarse con `VITE_`
-- Assets en `public/` se sirven desde raíz
-- ESLint configurado con reglas para React Hooks y React Refresh
+- Puerto dev: **5173** (default de Vite; Docker usa el mismo)
+- HMR y Fast Refresh activados
+- Variables deben prefijarse con `VITE_`
+- Assets en `public/` se sirven desde la raiz
 
-## 👤 Autor
+## Autor
 
 **Braulio Echeverria**
 
-## 📄 Licencia
+## Licencia
 
 MIT

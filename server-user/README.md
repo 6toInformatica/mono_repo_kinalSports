@@ -1,258 +1,197 @@
-# Server User - API Pública de Usuarios
+# Server User - API Publica de Usuarios
 
-API RESTful para que usuarios finales consulten campos disponibles y gestionen sus reservas en la plataforma KinalSports.
+API RESTful para usuarios finales de la plataforma KinalSports. Consumida por **client-user** (app movil Expo).
 
-## 📋 Descripción
+## Descripcion
 
-Servicio backend público que permite a usuarios autenticados explorar campos deportivos disponibles, crear reservas, consultar su historial y cancelar reservas. Comparte la base de datos MongoDB con `server-admin`.
+Permite a usuarios autenticados explorar campos, crear y gestionar reservas, administrar equipos, inscribirse en torneos y editar su perfil. Comparte la base de datos MongoDB con `server-admin`.
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Runtime**: Node.js 18+ (ESM)
 - **Framework**: Express 5.x
-- **Base de Datos**: MongoDB 6.0+ (compartida con server-admin)
+- **Base de Datos**: MongoDB (compartida con server-admin)
 - **ODM**: Mongoose 8.x
-- **Autenticación**: JWT (validación contra auth-service)
+- **Autenticacion**: JWT (emitido por auth-node)
 - **Seguridad**: Helmet, CORS, Rate Limiting
 
-## 🚀 Instalación
+## Instalacion
 
 ```bash
-# Desde la raíz del monorepo
+# Desde la raiz del monorepo
 pnpm install
 
-# O específicamente este servicio
+# O este servicio
 pnpm --filter server-user install
+cp server-user/.env.example server-user/.env
 ```
 
-## ⚙️ Variables de Entorno
-
-Crear archivo `.env` en `server-user/`:
+## Variables de Entorno
 
 ```env
-# Server
-NODE_ENV=development
-PORT=3003
-
-# MongoDB (comparte base de datos con server-admin)
-URI_MONGODB=mongodb://localhost:27017/kinalsports
-
-# JWT Configuration
-JWT_SECRET=tu-secret-key-aqui
-JWT_ISSUER=KinalSportsAuth
-JWT_AUDIENCE=KinalSportsAPI
+PORT=3008
+URI_MONGODB=mongodb://localhost:27017/kinalSports
+JWT_SECRET=MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!
+JWT_ISSUER=AuthService
+JWT_AUDIENCE=AuthService
+AUTH_NODE_URL=http://localhost:3007/api/v1
+ADMIN_SERVICE_URL=http://localhost:3009/kinalSportsAdmin/v1
+INTERNAL_SERVICE_TOKEN=your-internal-token
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 ```
 
-## 📂 Estructura
+## Estructura
 
 ```
 server-user/
 ├── configs/
-│   ├── app.js                    # Configuración principal del servidor
-│   ├── db.js                     # Conexión MongoDB
-│   ├── cors-configuration.js     # Configuración CORS
-│   └── helmet-configuration.js   # Headers de seguridad
 ├── helpers/
-│   └── validation-helpers.js     # Helpers de validación
+│   ├── profile-enrichment.js
+│   ├── team-enrichment.js
+│   └── team-helpers.js
 ├── middlewares/
-│   ├── validate-JWT.js           # Verificación de tokens JWT
-│   ├── reservation-validators.js # Validadores de reservas
-│   ├── reservation-conflict.js   # Validación de conflictos
-│   └── handle-errors.js          # Manejo centralizado de errores
 ├── src/
+│   ├── auth/
 │   ├── fields/
-│   │   ├── field.controller.js   # Controladores de campos (solo lectura)
-│   │   ├── field.model.js        # Modelo Field (compartido con admin)
-│   │   └── field.routes.js       # Rutas de campos
 │   ├── reservations/
-│   │   ├── reservation.controller.js # Controladores de reservas
-│   │   ├── reservation.model.js      # Modelo Reservation (compartido)
-│   │   └── reservation.routes.js     # Rutas de reservas
-│   ├── teams/                    # ⚠️ Carpeta vacía - no implementado
-│   └── tournaments/              # ⚠️ Carpeta vacía - no implementado
+│   ├── teams/           # Implementado
+│   ├── tournaments/     # Implementado
+│   └── users/
 ├── utils/
-│   └── validation-utils.js       # Utilidades de validación
-└── index.js                      # Punto de entrada
+│   └── authClient.js    # Cliente hacia auth-node
+└── index.js
 ```
 
-## 🎯 Scripts Disponibles
+## Scripts
 
 ```bash
-# Desarrollo con auto-reload
 pnpm --filter server-user dev
-
-# Producción
 pnpm --filter server-user start
-
-# Lint
 pnpm --filter server-user lint
 pnpm --filter server-user lint:fix
 ```
 
-## 🔌 Endpoints Principales
+## Endpoints
 
-**Base Path**: `/kinalSportsUser/v1`
+**Base path:** `/kinalSportsUser/v1`  
+**Puerto por defecto:** `3008`
 
-### Campos Deportivos (Solo Lectura)
+Las rutas de negocio (excepto fields GET y health) requieren `Authorization: Bearer <token>`.
 
-| Método | Endpoint                         | Descripción               | Auth |
-| ------ | -------------------------------- | ------------------------- | ---- |
-| GET    | `/kinalSportsUser/v1/fields`     | Listar campos disponibles | No   |
-| GET    | `/kinalSportsUser/v1/fields/:id` | Ver detalles de un campo  | No   |
+### Campos (publico)
 
-### Reservas
+| Metodo | Endpoint      | Descripcion               |
+| ------ | ------------- | ------------------------- |
+| GET    | `/fields`     | Listar campos disponibles |
+| GET    | `/fields/:id` | Detalle de un campo       |
 
-| Método | Endpoint                                           | Descripción                 | Auth |
-| ------ | -------------------------------------------------- | --------------------------- | ---- |
-| POST   | `/kinalSportsUser/v1/reservations`                 | Crear nueva reserva         | Sí   |
-| GET    | `/kinalSportsUser/v1/reservations/:id`             | Ver detalles de una reserva | Sí   |
-| DELETE | `/kinalSportsUser/v1/reservations/:id/cancel`      | Cancelar reserva            | Sí   |
-| GET    | `/kinalSportsUser/v1/reservations/my-reservations` | Listar reservas del usuario | Sí   |
+### Perfil de usuario (JWT)
 
-### Torneos
+| Metodo | Endpoint                | Descripcion                            |
+| ------ | ----------------------- | -------------------------------------- |
+| GET    | `/users/profile`        | Obtener perfil del usuario autenticado |
+| PUT    | `/users/profile`        | Actualizar perfil                      |
+| POST   | `/users/profile/avatar` | Subir avatar (multipart)               |
 
-**Nota**: Los endpoints de torneos aún no están implementados (carpeta `tournaments/` vacía).
+### Reservas (JWT)
 
-### Equipos
+| Metodo | Endpoint                        | Descripcion              |
+| ------ | ------------------------------- | ------------------------ |
+| GET    | `/reservations/availability`    | Consultar disponibilidad |
+| GET    | `/reservations/my-reservations` | Mis reservas             |
+| GET    | `/reservations/me/history`      | Historial de reservas    |
+| POST   | `/reservations`                 | Crear reserva            |
+| PUT    | `/reservations/:id/cancel`      | Cancelar reserva         |
 
-**Nota**: Los endpoints de equipos aún no están implementados (carpeta `teams/` vacía).
+### Equipos (JWT)
+
+| Metodo | Endpoint                             | Descripcion                         |
+| ------ | ------------------------------------ | ----------------------------------- |
+| GET    | `/teams`                             | Listar equipos                      |
+| GET    | `/teams/me/mis-equipos`              | Mis equipos                         |
+| POST   | `/teams`                             | Crear equipo (con logo)             |
+| GET    | `/teams/:id`                         | Detalle de equipo                   |
+| POST   | `/teams/:id/join`                    | Unirse a equipo                     |
+| POST   | `/teams/:id/leave`                   | Abandonar equipo                    |
+| POST   | `/teams/:id/members`                 | Agregar miembro (capitan)           |
+| DELETE | `/teams/:id/members/:userId`         | Eliminar miembro (capitan)          |
+| POST   | `/teams/:id/named-members`           | Agregar miembro nombrado (capitan)  |
+| DELETE | `/teams/:id/named-members/:memberId` | Eliminar miembro nombrado (capitan) |
+
+### Torneos (JWT)
+
+| Metodo | Endpoint                      | Descripcion                |
+| ------ | ----------------------------- | -------------------------- |
+| GET    | `/tournaments`                | Listar torneos             |
+| GET    | `/tournaments/me/mis-torneos` | Mis torneos                |
+| GET    | `/tournaments/:id`            | Detalle de torneo          |
+| POST   | `/tournaments/:id/register`   | Inscribir equipo en torneo |
 
 ### Health Check
 
-| Método | Endpoint                     | Descripción         |
-| ------ | ---------------------------- | ------------------- |
-| GET    | `/kinalSportsUser/v1/health` | Estado del servicio |
+| Metodo | Endpoint  | Descripcion         |
+| ------ | --------- | ------------------- |
+| GET    | `/health` | Estado del servicio |
 
-### Ejemplo de Requests
+## Ejemplos
 
-**Listar Campos Disponibles:**
-
-```bash
-GET http://localhost:3003/kinalSportsUser/v1/fields
-```
-
-**Crear Reserva:**
+**Listar campos:**
 
 ```bash
-POST http://localhost:3003/kinalSportsUser/v1/reservations
-Authorization: Bearer <user-jwt-token>
-Content-Type: application/json
-
-{
-  "fieldId": "507f1f77bcf86cd799439011",
-  "startTime": "2025-11-21T10:00:00.000Z",
-  "endTime": "2025-11-21T12:00:00.000Z"
-}
+curl http://localhost:3008/kinalSportsUser/v1/fields
 ```
 
-**Mis Reservas:**
+**Crear reserva:**
 
 ```bash
-GET http://localhost:3003/kinalSportsUser/v1/reservations/my-reservations
-Authorization: Bearer <user-jwt-token>
+curl -X POST http://localhost:3008/kinalSportsUser/v1/reservations \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"fieldId":"...","startTime":"2026-06-16T10:00:00.000Z","endTime":"2026-06-16T12:00:00.000Z"}'
 ```
 
-**Cancelar Reserva:**
+**Cancelar reserva:**
 
 ```bash
-DELETE http://localhost:3003/kinalSportsUser/v1/reservations/507f1f77bcf86cd799439011/cancel
-Authorization: Bearer <user-jwt-token>
+curl -X PUT http://localhost:3008/kinalSportsUser/v1/reservations/<id>/cancel \
+  -H "Authorization: Bearer <token>"
 ```
 
-## 🗄️ Modelos de Base de Datos
+## Autenticacion
 
-### Field (Campo Deportivo) - Compartido con server-admin
+1. El usuario obtiene JWT desde **auth-node** (via client-user)
+2. Middleware `validate-JWT.js` verifica token, issuer y audience
+3. Perfil enriquecido consultando auth-node via `authClient.js`
 
-```javascript
-{
-  _id: ObjectId,
-  fieldName: String (required, max 100),
-  description: String (max 500),
-  fieldType: String (enum: 'NATURAL', 'SINTETICA', 'CONCRETO'),
-  capacity: String (enum: 'FUTBOL_5', 'FUTBOL_7', 'FUTBOL_11'),
-  pricePerHour: Number (required, min 0),
-  photo: String (Cloudinary URL),
-  isActive: Boolean (default: true),
-  createdAt: Date,
-  updatedAt: Date
-}
-```
+Rutas publicas: `GET /fields`, `GET /fields/:id`, `GET /health`
 
-### Reservation (Reserva) - Compartido con server-admin
+## Dependencias con Otros Servicios
 
-```javascript
-{
-  _id: ObjectId,
-  userId: String (UUID del auth-service),
-  fieldId: ObjectId (ref: Field),
-  startTime: Date (required),
-  endTime: Date (required),
-  status: String (enum: 'PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'NO_SHOW'),
-  confirmation: {
-    confirmedAt: Date,
-    confirmedBy: String
-  },
-  lastModifiedBy: String,
-  createdAt: Date,
-  updatedAt: Date
-}
-```
+| Servicio     | Rol                                                               |
+| ------------ | ----------------------------------------------------------------- |
+| auth-node    | Emision y validacion de JWT; datos de perfil                      |
+| server-admin | Fuente de datos compartida en MongoDB; lecturas via token interno |
+| client-user  | Frontend movil principal                                          |
 
-## 🔐 Autenticación
+## Validaciones y Seguridad
 
-Este servicio valida tokens JWT emitidos por `auth-service`:
+- Conflictos de reservas (horarios superpuestos)
+- Validacion de ownership al cancelar
+- Rate limiting y CORS configurados
+- Comunicacion interna con server-admin via `INTERNAL_SERVICE_TOKEN`
 
-1. **Middleware `validate-JWT.js`**: Verifica token en header `Authorization: Bearer <token>`
-2. Decodifica el token y extrae información del usuario
-3. Valida `JWT_SECRET`, `JWT_ISSUER`, y `JWT_AUDIENCE`
+## Proximas Funcionalidades
 
-**Rutas públicas** (sin auth):
-
-- GET `/kinalSportsUser/v1/fields`
-- GET `/kinalSportsUser/v1/fields/:id`
-- GET `/kinalSportsUser/v1/health`
-
-**Rutas protegidas** (requieren JWT):
-
-- POST `/kinalSportsUser/v1/reservations`
-- GET `/kinalSportsUser/v1/reservations/:id`
-- DELETE `/kinalSportsUser/v1/reservations/:id/cancel`
-- GET `/kinalSportsUser/v1/reservations/my-reservations`
-
-## 🔗 Dependencias con Otros Servicios
-
-- **auth-node / auth-service**: Valida tokens JWT
-- **server-admin**: Comparte modelos Field y Reservation en MongoDB
-- **client-user** (futuro): Frontend móvil que consumirá estos endpoints
-
-## 🛡️ Validaciones y Seguridad
-
-- **Validación de conflictos**: No permite reservas superpuestas
-- **Validación de horarios**: `startTime` < `endTime`
-- **Validación de ownership**: Solo el dueño puede cancelar su reserva
-- **Rate limiting**: Configurado en middlewares
-- **CORS**: Configurado en `cors-configuration.js`
-
-## 📝 Notas de Desarrollo
-
-- El servidor escucha en puerto 3003 (configurable en `.env`)
-- Base path: `/kinalSportsUser/v1`
-- Comparte MongoDB con `server-admin`
-- Los modelos Field y Reservation son los mismos que en server-admin
-- Carpetas `teams/` y `tournaments/` están vacías (pendiente implementación)
-
-## 🚀 Próximas Funcionalidades
-
-- [ ] CRUD de equipos
-- [ ] Consulta de torneos
-- [ ] Sistema de notificaciones
-- [ ] Historial de reservas con paginación
+- [ ] Sistema de notificaciones push
 - [ ] Ratings y reviews de campos
+- [ ] Paginacion avanzada en historial
 
-## 👤 Autor
+## Autor
 
 **Braulio Echeverria**
 
-## 📄 Licencia
+## Licencia
 
 MIT

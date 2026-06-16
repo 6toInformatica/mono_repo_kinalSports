@@ -1,5 +1,11 @@
 # FLUJO LÓGICO PASO A PASO PARA RECREAR LA API
 
+> **Tipo de documento:** tutorial educativo paso a paso para reconstruir AuthService manualmente.
+>
+> **Para operar el monorepo existente** usa [README.md](./README.md), [GUIA_RAPIDA.md](./GUIA_RAPIDA.md) y [README raiz](../../README.md).
+>
+> **Runtime actual:** puerto `5156`, prefijo `/api/v1`, PostgreSQL en Docker puerto `5435`.
+
 > Una guía explícita, archivo por archivo, comando por comando, para recrear AuthService desde cero
 
 ---
@@ -31,8 +37,8 @@
 ### 1.1 Crear la solución
 
 ```bash
-# Ubicarse en la raíz del monorepo
-cd /home/brau-dev/Documentos/kinalSports/authentication-service/auth-service
+# Ubicarse en la raiz del servicio auth-service
+cd authentication-service/auth-service
 
 # Crear la solución principal
 dotnet new sln -n AuthService
@@ -3006,7 +3012,7 @@ cd ../..
 
 ---
 
-## PASO 🔟: EJECUTAR Y PROBAR
+## PASO 10: EJECUTAR Y PROBAR
 
 app.UseHttpsRedirection();
 app.UseCors("DefaultCorsPolicy");
@@ -3062,7 +3068,7 @@ dotnet run
 
 ---
 
-## 📋 RESUMEN DE RELACIONES ENTRE CAPAS
+## RESUMEN DE RELACIONES ENTRE CAPAS
 
 ```
 ┌─────────────────────────────────────────────────┐

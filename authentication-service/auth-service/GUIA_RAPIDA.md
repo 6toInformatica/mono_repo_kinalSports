@@ -1,5 +1,11 @@
 # GUÍA RÁPIDA - RECREAR AuthService
 
+> **Tipo de documento:** tutorial educativo para recrear AuthService desde cero (curso IN6AV).
+>
+> **Para operar el monorepo existente** usa [README.md](./README.md), [README raiz](../../README.md) y `docker-compose.yml`.
+>
+> **Runtime actual:** puerto `5156`, prefijo `/api/v1`, controllers activos `AuthController` y `UsersController`.
+
 > Versión resumida del flujo de recreación (sin código completo)
 
 ---
@@ -462,26 +468,33 @@ app.Run();
 # Compilar
 dotnet build
 
-# Ejecutar
+# Ejecutar (puerto 5156 segun launchSettings.json)
 dotnet run --project src/AuthService.Api
 
 # Probar endpoints en Swagger
-# https://localhost:7000/swagger
+# http://localhost:5156/swagger
 ```
 
-### 9.2 Endpoints disponibles
+### 9.2 Endpoints disponibles (runtime actual)
+
+Ver [README.md](./README.md) para la lista completa. Resumen:
 
 - POST /api/v1/auth/register
 - POST /api/v1/auth/login
+- POST /api/v1/auth/refresh
+- POST /api/v1/auth/logout
 - GET /api/v1/auth/profile (requiere token)
-- GET /api/v1/auth/profile/{userId} (requiere token)
+- POST /api/v1/auth/profile/by-id
+- POST /api/v1/auth/profile/by-username
+- POST /api/v1/auth/profile/picture (requiere token)
 - POST /api/v1/auth/verify-email
 - POST /api/v1/auth/resend-verification
 - POST /api/v1/auth/forgot-password
 - POST /api/v1/auth/reset-password
-- PUT /api/v1/users/update-role (requiere admin)
-- GET /api/v1/users/roles?userId={id} (requiere token)
-- GET /api/v1/users/by-role/{roleName} (requiere token)
+- GET /api/v1/auth/users (requiere admin)
+- PUT /api/v1/users/{userId}/role (requiere admin)
+- GET /api/v1/users/{userId}/roles
+- GET /api/v1/users/by-role/{roleName}
 - GET /health
 - GET /api/v1/health
 
