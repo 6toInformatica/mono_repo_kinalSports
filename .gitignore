@@ -2,6 +2,7 @@
 # Node.js dependencies (any subproject)
 **/node_modules/
 **/.pnpm-store/
+**/.github/
 
 # Build / dist outputs
 **/dist/
