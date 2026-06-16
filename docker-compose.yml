@@ -1,4 +1,4 @@
-name: kinal-sports-in6av
+name: kinal-sports
 
 services:
   postgres:
