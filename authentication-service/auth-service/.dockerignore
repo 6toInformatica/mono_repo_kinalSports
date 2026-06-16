@@ -1,0 +1,16 @@
+**/bin
+**/obj
+**/.vs
+**/.vscode
+**/.idea
+**/logs
+*.user
+*.suo
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+README.md
+*.md
+node_modules

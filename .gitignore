@@ -1,0 +1,48 @@
+# Monorepo aggregated ignore file for KinalSports
+# Node.js dependencies (any subproject)
+**/node_modules/
+**/.pnpm-store/
+
+# Build / dist outputs
+**/dist/
+**/build/
+**/.vite/
+
+# Coverage & test output
+**/coverage/
+**/TestResults/
+
+# Logs
+**/logs/
+*.log
+npm-debug.log*
+
+# Environment files (root or any package)
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Uploads (keep structure, use .gitkeep where needed)
+**/uploads/*
+!**/uploads/**/.gitkeep
+
+# .NET build artifacts
+**/bin/
+**/obj/
+.vs/
+
+# IDE/editor metadata
+.vscode/
+.idea/
+*.user
+
+# ESLint / tooling caches
+**/.eslintcache
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Misc
+*.swp
