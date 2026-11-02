@@ -1,3 +1,5 @@
+import { resolveRemoteImage } from "./imageUri.js";
+
 export const CATEGORY_LABELS = {
   FUTBOL_7: "Fútbol 7",
   FUTBOL_11: "Fútbol 11",
@@ -47,10 +49,8 @@ export const formatTournamentStatus = (status) => {
 export const resolveTournamentLogo = (logo) => {
   const trimmed = logo?.trim();
   if (!trimmed || PLACEHOLDER_LOGOS.has(trimmed)) return null;
-  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
-    return trimmed;
-  }
-  return trimmed;
+  // Solo URLs completas son cargables; cualquier otro valor usa el fallback de la pantalla
+  return resolveRemoteImage(trimmed);
 };
 
 export const getTournamentTeamsCount = (tournament) =>

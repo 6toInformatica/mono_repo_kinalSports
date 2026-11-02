@@ -1,6 +1,7 @@
 // src/features/fields/hooks/useFields.js
 import { useState, useCallback, useEffect } from "react";
 import userClient from "../../../shared/api/userClient.js";
+import { resolveRemoteImage } from "../../../shared/utils/imageUri.js";
 
 export default function useFields() {
   const [fields, setFields] = useState([]);
@@ -17,7 +18,7 @@ export default function useFields() {
         ? raw.map((f) => ({
             ...f,
             name: f.fieldName ?? f.name,
-            image: f.photo ?? f.image ?? null,
+            image: resolveRemoteImage(f.photo ?? f.image),
             location: `${f.fieldType ?? ""} • ${f.capacity ?? ""}`.trim(),
             isAvailable: Boolean(f.isActive ?? f.isAvailable),
             price: f.pricePerHour ?? f.price ?? null,

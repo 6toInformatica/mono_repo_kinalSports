@@ -20,6 +20,7 @@ import {
 } from "../../../shared/components/common/Common.jsx";
 import { COLORS, FONT_SIZE, SPACING } from "../../../shared/constants/theme.js";
 import useTeams from "../hooks/useTeams.js";
+import { resolveRemoteImage } from "../../../shared/utils/imageUri.js";
 import useAuthStore from "../../../shared/store/authStore.js";
 import { getAuthUserId } from "../../../shared/utils/authUser.js";
 import {
@@ -154,7 +155,9 @@ export default function TeamDetail({ navigation, route }) {
             try {
               await leaveTeam(teamId);
               navigation.goBack();
-            } catch (_) {}
+            } catch {
+              // useTeams guarda el error y la pantalla lo muestra
+            }
           },
         },
       ],
@@ -168,7 +171,9 @@ export default function TeamDetail({ navigation, route }) {
       const updated = await addAppMember(teamId, trimmed);
       setTeam(updated);
       setNewAppUsername("");
-    } catch (_) {}
+    } catch {
+      // useTeams guarda el error y la pantalla lo muestra
+    }
   };
 
   const handleRemoveAppMember = (memberUserId, displayName) => {
@@ -181,7 +186,9 @@ export default function TeamDetail({ navigation, route }) {
           try {
             const updated = await removeAppMember(teamId, memberUserId);
             setTeam(updated);
-          } catch (_) {}
+          } catch {
+            // useTeams guarda el error y la pantalla lo muestra
+          }
         },
       },
     ]);
@@ -194,7 +201,9 @@ export default function TeamDetail({ navigation, route }) {
       const updated = await addNamedMember(teamId, trimmed);
       setTeam(updated);
       setNewMemberName("");
-    } catch (_) {}
+    } catch {
+      // useTeams guarda el error y la pantalla lo muestra
+    }
   };
 
   const handleRemoveNamedMember = (memberId, name) => {
@@ -207,7 +216,9 @@ export default function TeamDetail({ navigation, route }) {
           try {
             const updated = await removeNamedMember(teamId, memberId);
             setTeam(updated);
-          } catch (_) {}
+          } catch {
+            // useTeams guarda el error y la pantalla lo muestra
+          }
         },
       },
     ]);
@@ -220,9 +231,9 @@ export default function TeamDetail({ navigation, route }) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          {(team.logo ?? team.photo) ? (
+          {resolveRemoteImage(team.logo ?? team.photo) ? (
             <Image
-              source={{ uri: team.logo ?? team.photo }}
+              source={{ uri: resolveRemoteImage(team.logo ?? team.photo) }}
               style={styles.logo}
             />
           ) : (
