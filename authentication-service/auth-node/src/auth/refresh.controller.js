@@ -2,6 +2,8 @@ import { RefreshToken } from './refreshToken.model.js';
 import { hashToken, saveRefreshToken } from '../../helpers/refresh-token.js';
 import { generateJWT } from '../../helpers/generate-jwt.js';
 import { asyncHandler } from '../../helpers/async-handler.js';
+import { getUserRoleNames } from '../../helpers/role-db.js';
+import { USER_ROLE } from '../../helpers/role-constants.js';
 
 // POST /auth/refresh
 export const refresh = asyncHandler(async (req, res) => {
@@ -35,9 +37,11 @@ export const refresh = asyncHandler(async (req, res) => {
   doc.RevokedAt = new Date();
   await doc.save();
   // Generar nuevo accessToken y refreshToken (misma familia)
+  // El rol se vuelve a leer de BD para que el token renovado conserve el claim `role`
+  const [role = USER_ROLE] = await getUserRoleNames(doc.UserId.toString());
   const accessToken = await generateJWT(
     doc.UserId.toString(),
-    {},
+    { role },
     { expiresIn: '15m' }
   );
   const { raw: newRefreshToken } = await saveRefreshToken(
