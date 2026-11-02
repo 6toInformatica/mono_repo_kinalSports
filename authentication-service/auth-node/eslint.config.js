@@ -2,7 +2,7 @@ import js from '@eslint/js';
 export default [
   js.configs.recommended,
   {
-    files: ['**/*.js'],
+    files: ['authentication-service/auth-node/**/*.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
