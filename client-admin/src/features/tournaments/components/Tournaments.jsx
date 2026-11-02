@@ -17,7 +17,8 @@ export const Tournaments = () => {
     getTournaments();
   }, [getTournaments]);
 
-  if (loading) return <Spinner />;
+  // Con el modal abierto no se reemplaza la vista: así el formulario no se desmonta al guardar
+  if (loading && !openModal) return <Spinner />;
 
   return (
     <div className='p-4'>
@@ -66,7 +67,7 @@ export const Tournaments = () => {
               {/* BADGES */}
               <div className='flex gap-2 mt-2 flex-wrap'>
                 <span className='px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium'>
-                  {t.category.replace('_', ' ')}
+                  {t.category?.replace('_', ' ')}
                 </span>
 
                 <span className='px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium'>
@@ -75,7 +76,7 @@ export const Tournaments = () => {
               </div>
 
               {/* INFO */}
-              <p className='text-sm text-gray-400 mt-2'>Equipos: {t.teams.length}</p>
+              <p className='text-sm text-gray-400 mt-2'>Equipos: {t.teams?.length ?? 0}</p>
 
               <p className='text-sm text-gray-400'>
                 {new Date(t.startDate).toLocaleDateString()} -{' '}

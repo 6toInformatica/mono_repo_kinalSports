@@ -5,6 +5,8 @@ import { FieldModal } from './FieldModal.jsx';
 import { useUIStore } from '../../auth/store/uiStore.js';
 import { useEffect as useToastEffect } from 'react';
 import { showError } from '../../../shared/utils/toast.js';
+import { resolveCloudinaryUrl } from '../../../shared/utils/cloudinary.js';
+import defaultFieldImg from '../../../assets/img/kinal_sports.png';
 
 export const Fields = () => {
   const { fields, loading, error, getFields, deleteField } = useFieldsStore();
@@ -21,7 +23,8 @@ export const Fields = () => {
     if (error) showError(error);
   }, [error]);
 
-  if (loading) return <Spinner />;
+  // Con el modal abierto no se reemplaza la vista: así el formulario no se desmonta al guardar
+  if (loading && !openModal) return <Spinner />;
 
   return (
     <div className='p-4'>
@@ -53,7 +56,7 @@ export const Fields = () => {
             {/* IMAGEN */}
             <div className='w-full h-52 bg-gray-100 flex items-center justify-center'>
               <img
-                src={field.photo}
+                src={resolveCloudinaryUrl(field.photo, defaultFieldImg)}
                 alt={field.fieldName}
                 className='max-h-full max-w-full object-contain rounded-t-xl'
               />
@@ -66,7 +69,7 @@ export const Fields = () => {
               {/* BADGES */}
               <div className='flex gap-2 mt-2 flex-wrap'>
                 <span className='px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium'>
-                  {field.capacity.replace('_', ' ')}
+                  {field.capacity?.replace('_', ' ')}
                 </span>
 
                 <span className='px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium'>
