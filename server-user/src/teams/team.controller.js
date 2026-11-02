@@ -60,7 +60,8 @@ export const createTeam = async (req, res) => {
         folder,
         req.file.originalname
       );
-      logo = result.public_id;
+      // Se guarda la URL completa, igual que server-admin, para que ambos clientes la usen directamente
+      logo = result.secure_url;
     }
 
     const data = {

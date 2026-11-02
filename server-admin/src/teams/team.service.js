@@ -5,6 +5,9 @@ import {
   ensureManagerInMembers,
 } from '../../helpers/team-helpers.js';
 
+const TEAM_LOGO_FOLDER =
+  process.env.CLOUDINARY_TEAMS_FOLDER || 'kinal_sports/teams';
+
 export const fetchTeams = async ({
   page = 1,
   limit = 10,
@@ -80,6 +83,12 @@ export const updateTeamRecord = async ({ id, updateData, file }) => {
     delete data.managerId;
   }
 
+  // Los miembros registrados se gestionan con join/leave y los endpoints de capitán,
+  // no a través de la edición general del equipo
+  if (Object.prototype.hasOwnProperty.call(data, 'members')) {
+    delete data.members;
+  }
+
   if (Object.prototype.hasOwnProperty.call(data, 'namedMembers')) {
     data.namedMembers = parseNamedMembers(data.namedMembers);
   }
@@ -93,7 +102,7 @@ export const updateTeamRecord = async ({ id, updateData, file }) => {
         const url = currentTeam.logo; // URL actual en Cloudinary
         const parts = url.split('/');
         const fileNameWithExt = parts[parts.length - 1]; // ej: team123.jpg
-        const publicId = `kinal_sports/teams/${fileNameWithExt.split('.')[0]}`; // quitar extensión
+        const publicId = `${TEAM_LOGO_FOLDER}/${fileNameWithExt.split('.')[0]}`; // quitar extensión
         await cloudinary.uploader.destroy(publicId);
       } catch (deleteError) {
         console.error(

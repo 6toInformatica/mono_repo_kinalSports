@@ -78,7 +78,7 @@ export const registerTeamToTournament = async (req, res) => {
     });
   } catch (error) {
     const isClientError =
-      error.message.includes('No encontrado') ||
+      error.message.includes('no encontrado') ||
       error.message.includes('Solo el capitán') ||
       error.message.includes('no está disponible') ||
       error.message.includes('ya está inscrito');

@@ -1,4 +1,9 @@
-export const errorHandler = (err, req, res) => {
+// Express solo reconoce un middleware de errores si declara los 4 parámetros
+export const errorHandler = (err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
   console.error(`Error in Admin Server: ${err.message}`);
   console.error(`Stack trace: ${err.stack}`);
   console.error(`Request: ${req.method} ${req.path}`);
