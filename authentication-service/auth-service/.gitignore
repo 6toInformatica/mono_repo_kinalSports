@@ -22,7 +22,8 @@
 *.suo
 
 ## [Configuration Files - SENSITIVE]
-**/appsettings.json
+# appsettings.json se versiona sin secretos; los valores reales van en
+# appsettings.Development.json (ver appsettings.Development.example.json) o en variables de entorno
 **/appsettings.Development.json
 **/appsettings.Production.json
 **/appsettings.*.local.json

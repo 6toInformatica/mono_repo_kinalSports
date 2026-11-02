@@ -89,12 +89,18 @@ pnpm install
 
 Levantar todos los servicios con los puertos por defecto:
 
-```bash
-# Opcional: copiar y ajustar variables de entorno para Docker
-cp .env.docker .env.docker.local  # o editar .env.docker directamente
+Las credenciales (PostgreSQL, JWT, SMTP, Cloudinary, token interno) se definen en `.env.docker` en la raiz (no se versiona).
 
-docker compose up --build
+```bash
+pnpm docker:up            # equivale a: docker compose --env-file .env.docker up --build
+pnpm docker:up:detached   # igual, en segundo plano
+pnpm docker:logs          # seguir logs
+pnpm docker:down          # detener
 ```
+
+> Importante: `docker compose up` sin `--env-file .env.docker` NO usa ese archivo para resolver
+> las variables `${...}` del compose (Compose solo lee `.env` automaticamente), por lo que se
+> aplicarian los valores por defecto y las credenciales de SMTP/Cloudinary quedarian vacias.
 
 | Servicio           | Puerto host       | URL base                                    |
 | ------------------ | ----------------- | ------------------------------------------- |
@@ -123,7 +129,7 @@ Cada servicio tiene su propio `.env.example`. Copialo a `.env` y ajusta valores:
 | Servicio     | Archivo                                                                                |
 | ------------ | -------------------------------------------------------------------------------------- |
 | auth-node    | `authentication-service/auth-node/.env.example`                                        |
-| auth-service | `authentication-service/auth-service/src/AuthService.Api/appsettings.Development.json` |
+| auth-service | `authentication-service/auth-service/src/AuthService.Api/appsettings.Development.example.json` (copiar a `appsettings.Development.json`) |
 | server-admin | `server-admin/.env.example`                                                            |
 | server-user  | `server-user/.env.example`                                                             |
 | client-admin | `client-admin/.env.example`                                                            |
