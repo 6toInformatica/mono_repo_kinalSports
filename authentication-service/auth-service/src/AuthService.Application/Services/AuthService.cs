@@ -236,6 +236,9 @@ public class AuthService(
         {
             Id = user.Id,
             Username = user.Username,
+            Email = user.Email,
+            Name = user.Name,
+            Surname = user.Surname,
             ProfilePicture = _cloudinaryService.GetFullImageUrl(user.UserProfile?.ProfilePicture ?? string.Empty),
             Role = user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE
         };
@@ -358,6 +361,7 @@ public class AuthService(
         {
             user.UserPasswordReset = new UserPasswordReset
             {
+                Id = UuidGenerator.GenerateUserId(),
                 UserId = user.Id,
                 PasswordResetToken = resetToken,
                 PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1)

@@ -7,7 +7,16 @@ import {
 import { UserRole, Role } from '../src/auth/role.model.js';
 import { USER_ROLE } from './role-constants.js';
 import { hashPassword } from '../utils/password-utils.js';
-import { Op } from 'sequelize';
+import { Op, fn, col, where as sqlWhere } from 'sequelize';
+
+/**
+ * Comparación case-insensitive exacta (lower(columna) = valor).
+ * auth-service (.NET) guarda el username tal como se escribió y busca con ILIKE,
+ * por lo que aquí también se debe ignorar mayúsculas para que ambos servicios
+ * encuentren a los mismos usuarios.
+ */
+const equalsIgnoreCase = (column, value) =>
+  sqlWhere(fn('lower', col(`User.${column}`)), value.toLowerCase());
 
 /**
  * Helper para buscar un usuario por email o username
@@ -20,7 +29,7 @@ export const findUserByEmailOrUsername = async (emailOrUsername) => {
       where: {
         [Op.or]: [
           { Email: emailOrUsername.toLowerCase() },
-          { Username: emailOrUsername.toLowerCase() },
+          equalsIgnoreCase('username', emailOrUsername),
         ],
       },
       include: [
@@ -70,7 +79,7 @@ export const checkUserExists = async (email, username) => {
       where: {
         [Op.or]: [
           { Email: email.toLowerCase() },
-          { Username: username.toLowerCase() },
+          equalsIgnoreCase('username', username),
         ],
       },
     });
@@ -136,10 +145,10 @@ export const createNewUser = async (userData) => {
     );
 
     // Asignar rol USER_ROLE por defecto (matching .NET DataSeeder)
-    const userRole = await Role.findOne(
-      { where: { Name: USER_ROLE } },
-      { transaction }
-    );
+    const userRole = await Role.findOne({
+      where: { Name: USER_ROLE },
+      transaction,
+    });
     if (userRole) {
       await UserRole.create(
         {
@@ -221,7 +230,7 @@ export const markEmailAsVerified = async (userId) => {
 
 export const updatePasswordResetToken = async (userId, token, expiry) => {
   try {
-    await UserPasswordReset.update(
+    const [updatedRows] = await UserPasswordReset.update(
       {
         PasswordResetToken: token,
         PasswordResetTokenExpiry: expiry,
@@ -230,6 +239,15 @@ export const updatePasswordResetToken = async (userId, token, expiry) => {
         where: { UserId: userId },
       }
     );
+
+    // Usuarios creados fuera de este servicio (ej. admin sembrado por .NET) pueden no tener la fila
+    if (updatedRows === 0) {
+      await UserPasswordReset.create({
+        UserId: userId,
+        PasswordResetToken: token,
+        PasswordResetTokenExpiry: expiry,
+      });
+    }
   } catch (error) {
     console.error('Error actualizando token de reset:', error);
     throw new Error('Error al actualizar token de reset');

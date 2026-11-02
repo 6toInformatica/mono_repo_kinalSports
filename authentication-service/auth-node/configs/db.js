@@ -39,10 +39,12 @@ export const dbConnection = async () => {
     console.log('PostgreSQL | Connection to database established');
 
     // Sincronizar modelos en desarrollo
+    // Solo crea las tablas que falten: el esquema se comparte con auth-service (.NET),
+    // por lo que `alter` no debe modificar en cada arranque las tablas que crea EF Core
     if (process.env.NODE_ENV === 'development') {
       const syncLogging =
         process.env.DB_SQL_LOGGING === 'true' ? console.log : false;
-      await sequelize.sync({ alter: true, logging: syncLogging });
+      await sequelize.sync({ logging: syncLogging });
       console.log('PostgreSQL | Models synchronized with database');
     }
   } catch (error) {
