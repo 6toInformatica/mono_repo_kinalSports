@@ -26,6 +26,13 @@ export const createReservation = async (req, res) => {
       data: reservation,
     });
   } catch (error) {
+    if (error.statusCode === 409) {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
     console.error('Error en createReservation controller:', error);
     return res.status(500).json({
       success: false,

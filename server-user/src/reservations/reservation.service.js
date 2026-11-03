@@ -15,6 +15,27 @@ export const registerReservation = async (reservationData, userId) => {
   });
 
   await reservation.save();
+
+  // Verificación posterior al insert: MongoDB standalone no tiene transacciones, así que
+  // dos solicitudes simultáneas pueden pasar el chequeo previo. Si ahora existe otra reserva
+  // solapada creada antes (ObjectId menor), esta se descarta y solo sobrevive la primera.
+  const conflicts = await Reservation.findConflictingReservations(
+    reservation.fieldId,
+    reservation.startTime,
+    reservation.endTime,
+    reservation._id
+  );
+  const lostRace = conflicts.some(
+    (other) => other._id.toString() < reservation._id.toString()
+  );
+
+  if (lostRace) {
+    await Reservation.deleteOne({ _id: reservation._id });
+    const error = new Error('Conflicto de horario con otras reservas');
+    error.statusCode = 409;
+    throw error;
+  }
+
   return reservation;
 };
 

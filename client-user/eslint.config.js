@@ -31,6 +31,8 @@ export default [
       sourceType: "module",
       globals: {
         __dirname: "readonly",
+        // React Native carga imágenes con require()
+        require: "readonly",
         process: "readonly",
       },
       parserOptions: {
