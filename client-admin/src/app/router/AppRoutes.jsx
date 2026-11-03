@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { DashboardPage } from '../layouts/DashboardPage.jsx';
 import { AuthPage } from '../../features/auth/pages/AuthPage.jsx';
 import { VerifyEmailPage } from '../../features/auth/pages/VerifyEmailPage.jsx';
@@ -32,12 +32,18 @@ export const AppRoutes = () => {
           </ProtectedRoute>
         }
       >
+        {/* /dashboard abre la primera sección en lugar de un área vacía */}
+        <Route index element={<Navigate to='fields' replace />} />
         <Route path='fields' element={<Fields />} />
         <Route path='reservations' element={<Reservations />} />
         <Route path='teams' element={<Teams />} />
         <Route path='tournaments' element={<Tournaments />} />
         <Route path='users' element={<Users />} />
+        <Route path='*' element={<Navigate to='fields' replace />} />
       </Route>
+
+      {/* Cualquier otra URL vuelve al inicio */}
+      <Route path='*' element={<Navigate to='/' replace />} />
     </Routes>
   );
 };

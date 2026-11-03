@@ -17,6 +17,7 @@ import {
 } from "../../../shared/components/common/Common.jsx";
 import { COLORS, FONT_SIZE, SPACING } from "../../../shared/constants/theme.js";
 import useTournaments from "../hooks/useTournaments.js";
+import useRefreshOnFocus from "../../../shared/hooks/useRefreshOnFocus.js";
 
 const STATUS_COLORS = {
   OPEN: COLORS.success,
@@ -31,6 +32,7 @@ const STATUS_COLORS = {
 
 export default function TournamentsList({ navigation }) {
   const { tournaments, loading, error, refetch } = useTournaments();
+  useRefreshOnFocus(refetch);
 
   if (loading && tournaments.length === 0) return <LoadingSpinner />;
 

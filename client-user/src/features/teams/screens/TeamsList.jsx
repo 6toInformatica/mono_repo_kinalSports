@@ -17,6 +17,7 @@ import {
 } from "../../../shared/components/common/Common.jsx";
 import { COLORS, FONT_SIZE, SPACING } from "../../../shared/constants/theme.js";
 import useTeams from "../hooks/useTeams.js";
+import useRefreshOnFocus from "../../../shared/hooks/useRefreshOnFocus.js";
 import { resolveRemoteImage } from "../../../shared/utils/imageUri.js";
 
 const CATEGORY_LABELS = {
@@ -26,6 +27,7 @@ const CATEGORY_LABELS = {
 
 export default function TeamsList({ navigation }) {
   const { teams, listLoading, error, refetch } = useTeams();
+  useRefreshOnFocus(refetch);
 
   if (listLoading && teams.length === 0) return <LoadingSpinner />;
 

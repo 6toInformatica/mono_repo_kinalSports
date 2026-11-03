@@ -1,4 +1,5 @@
 import { ResetPasswordForm } from '../components/ResetPasswordReset.jsx';
+import logoImg from '../../../assets/img/kinal_sports.png';
 
 export const ResetPasswordPage = () => {
   return (
@@ -6,7 +7,7 @@ export const ResetPasswordPage = () => {
       <div className='w-full max-w-xl bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-10'>
         {/* Logo */}
         <div className='flex justify-center mb-6'>
-          <img src='/src/assets/img/kinal_sports.png' alt='Kinal Sports' className='h-20 w-auto' />
+          <img src={logoImg} alt='Kinal Sports' className='h-20 w-auto' />
         </div>
 
         {/* Header */}

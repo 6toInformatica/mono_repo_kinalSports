@@ -1,5 +1,6 @@
 // src/features/teams/screens/MyTeams.jsx
-import { useEffect } from "react";
+import { useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   FlatList,
   View,
@@ -22,9 +23,12 @@ import { resolveRemoteImage } from "../../../shared/utils/imageUri.js";
 export default function MyTeams({ navigation }) {
   const { myTeams, listLoading, error, fetchMyTeams } = useTeams();
 
-  useEffect(() => {
-    fetchMyTeams();
-  }, [fetchMyTeams]);
+  // Recarga cada vez que se entra a la pantalla (ej. tras crear un equipo o inscribirse)
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyTeams();
+    }, [fetchMyTeams]),
+  );
 
   if (listLoading && myTeams.length === 0) return <LoadingSpinner />;
 

@@ -1,5 +1,6 @@
 // src/features/tournaments/screens/MyTournaments.jsx
-import { useEffect } from "react";
+import { useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   FlatList,
   View,
@@ -33,9 +34,12 @@ export default function MyTournaments() {
   const { myTournaments, loading, error, fetchMyTournaments } =
     useTournaments();
 
-  useEffect(() => {
-    fetchMyTournaments();
-  }, [fetchMyTournaments]);
+  // Recarga cada vez que se entra a la pantalla (ej. tras crear un equipo o inscribirse)
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyTournaments();
+    }, [fetchMyTournaments]),
+  );
 
   if (loading && myTournaments.length === 0) return <LoadingSpinner />;
 
