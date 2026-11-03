@@ -37,7 +37,9 @@ Rama por defecto: `master`
 | Admin   | client-admin       | auth-service (.NET) | server-admin   |
 | Usuario | client-user (Expo) | auth-node (Node)    | server-user    |
 
-Ambos servicios de autenticacion comparten PostgreSQL y emiten JWT compatibles con sus respectivos backends.
+Ambos servicios de autenticacion comparten PostgreSQL (mismas tablas, mismo hash Argon2id, mismos claims JWT `sub`/`role`
+y mismo secreto/issuer/audience), por lo que son **intercambiables**: si uno cae, el otro puede atender a cualquier usuario.
+El esquema lo crea auth-service (EF Core `EnsureCreated`); auth-node solo crea tablas faltantes y no altera las existentes.
 
 ## Alcance funcional
 
@@ -45,6 +47,15 @@ Ambos servicios de autenticacion comparten PostgreSQL y emiten JWT compatibles c
 | ------- | ------------ | -------------------------------------------- |
 | Admin   | client-admin | Campos, reservas, equipos, torneos, usuarios |
 | Usuario | client-user  | Campos, reservas, equipos, torneos, perfil   |
+
+### Reglas de negocio
+
+| Modulo   | Regla                                                                                                                                                    |
+| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Reservas | Inicio en el futuro, cancha existente y activa, duracion de 1 a 3 horas, horario 06:00-22:00 (`America/Guatemala`, configurable con `BUSINESS_TIMEZONE`) |
+| Reservas | El usuario cancela solo reservas `PENDING`/`CONFIRMED` que aun no inician; el admin no confirma reservas ya iniciadas                                    |
+| Equipos  | No se puede unir a equipos inactivos; cupo de miembros: 12 (`FUTBOL_7`) y 18 (`FUTBOL_11`)                                                               |
+| Torneos  | Inscripcion solo por el capitan, con equipo activo, torneo activo en `PENDIENTE` sin iniciar y misma categoria                                           |
 
 ## Estructura del Monorepo
 
@@ -126,14 +137,14 @@ curl http://localhost:3008/kinalSportsUser/v1/health
 
 Cada servicio tiene su propio `.env.example`. Copialo a `.env` y ajusta valores:
 
-| Servicio     | Archivo                                                                                |
-| ------------ | -------------------------------------------------------------------------------------- |
-| auth-node    | `authentication-service/auth-node/.env.example`                                        |
+| Servicio     | Archivo                                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| auth-node    | `authentication-service/auth-node/.env.example`                                                                                          |
 | auth-service | `authentication-service/auth-service/src/AuthService.Api/appsettings.Development.example.json` (copiar a `appsettings.Development.json`) |
-| server-admin | `server-admin/.env.example`                                                            |
-| server-user  | `server-user/.env.example`                                                             |
-| client-admin | `client-admin/.env.example`                                                            |
-| client-user  | `client-user/.env.example`                                                             |
+| server-admin | `server-admin/.env.example`                                                                                                              |
+| server-user  | `server-user/.env.example`                                                                                                               |
+| client-admin | `client-admin/.env.example`                                                                                                              |
+| client-user  | `client-user/.env.example`                                                                                                               |
 
 Ejemplo minimo para desarrollo local (sin Docker):
 
@@ -142,10 +153,14 @@ Ejemplo minimo para desarrollo local (sin Docker):
 VITE_AUTH_URL=http://localhost:5156/api/v1
 VITE_ADMIN_URL=http://localhost:3009/kinalSportsAdmin/v1
 
-# client-user/.env
-EXPO_PUBLIC_AUTH_URL=http://localhost:3007/api/v1/auth
-EXPO_PUBLIC_USER_URL=http://localhost:3008/kinalSportsUser/v1
+# client-user/.env (emulador Android: 10.0.2.2 apunta al localhost del host;
+# en un dispositivo fisico usa la IP LAN de tu computadora)
+EXPO_PUBLIC_AUTH_URL=http://10.0.2.2:3007/api/v1/auth
+EXPO_PUBLIC_USER_URL=http://10.0.2.2:3008/kinalSportsUser/v1
 ```
+
+`INTERNAL_SERVICE_TOKEN` debe tener el mismo valor en auth-node, server-admin y server-user, y en auth-service
+como `InternalServiceToken` (en `appsettings.Development.json` o variable de entorno).
 
 ## Scripts Disponibles
 
@@ -247,13 +262,15 @@ Guías de recreacion del auth-service (.NET):
 
 ## Seguridad
 
-- Argon2 (auth-node) y PBKDF2 (auth-service) para hashing de contrasenas
-- JWT para autenticacion stateless
+- Argon2id (mismos parametros en auth-node y auth-service) para hashing de contrasenas
+- JWT HS256 de 15 minutos validando issuer y audience, con refresh tokens rotativos de 30 dias
+- El reset de contrasena cierra todas las sesiones; un usuario desactivado no puede renovar su sesion
 - Rate limiting en endpoints sensibles
-- Helmet.js para headers de seguridad
-- Validacion con express-validator / FluentValidation
-- CORS configurado por entorno
-- Token interno (`x-internal-token`) para comunicacion entre server-admin y server-user
+- Helmet.js / NetEscapades para headers de seguridad
+- Validacion con express-validator y DataAnnotations
+- Token interno (`x-internal-token`) entre servicios: server-user -> server-admin, y server-admin/server-user ->
+  `profile/by-id` / `profile/by-username` de los servicios de auth
+- Los secretos no se versionan: van en `.env.docker` o en `appsettings.Development.json` (ambos ignorados por git)
 
 ## Autor
 
