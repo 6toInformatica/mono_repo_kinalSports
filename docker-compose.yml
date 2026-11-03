@@ -202,7 +202,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 20s
+      # El contenedor ejecuta pnpm install al arrancar (puede tardar ~2 min)
+      start_period: 180s
     networks:
       - kinal-network
 
