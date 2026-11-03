@@ -63,6 +63,7 @@ services:
       JwtSettings__SecretKey: ${JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
       JwtSettings__Issuer: ${JWT_ISSUER:-AuthService}
       JwtSettings__Audience: ${JWT_AUDIENCE:-AuthService}
+      InternalServiceToken: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
       SmtpSettings__Enabled: "true"
       SmtpSettings__Host: ${SMTP_HOST:-smtp.gmail.com}
       SmtpSettings__Port: ${SMTP_PORT:-465}
@@ -125,6 +126,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
       JWT_ISSUER: ${JWT_ISSUER:-AuthService}
       JWT_AUDIENCE: ${JWT_AUDIENCE:-AuthService}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-465}

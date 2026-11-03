@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using AuthService.Domain.Constants;
+using AuthService.Api.Filters;
 
 namespace AuthService.Api.Controllers
 {
@@ -72,8 +73,9 @@ namespace AuthService.Api.Controllers
             });
         }
 
+        // Solo servicios internos: expone email y teléfono
         [HttpPost("profile/by-username")]
-        [EnableRateLimiting("ApiPolicy")]
+        [InternalServiceToken]
         public async Task<ActionResult<object>> GetProfileByUsername([FromBody] GetProfileByUsernameDto request)
         {
             if (string.IsNullOrWhiteSpace(request.Username))
@@ -103,8 +105,9 @@ namespace AuthService.Api.Controllers
             });
         }
 
+        // Solo servicios internos: expone email y teléfono
         [HttpPost("profile/by-id")]
-        [EnableRateLimiting("ApiPolicy")]
+        [InternalServiceToken]
         public async Task<ActionResult<object>> GetProfileById([FromBody] GetProfileByIdDto request)
         {
             if (string.IsNullOrEmpty(request.UserId))
