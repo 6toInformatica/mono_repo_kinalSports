@@ -15,9 +15,11 @@ const TAB_BAR_BASE_HEIGHT = 56;
 
 /** Devuelve un componente de ícono MaterialIcons para la tabBar. */
 function makeIcon(name) {
-  return ({ color, size }) => (
+  const TabIcon = ({ color, size }) => (
     <MaterialIcons name={name} size={size} color={color} />
   );
+  TabIcon.displayName = `TabIcon(${name})`;
+  return TabIcon;
 }
 
 export default function MainTabs() {

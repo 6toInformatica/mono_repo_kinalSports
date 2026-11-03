@@ -91,7 +91,9 @@ export default function TournamentDetail({ route }) {
         "Tu equipo ha sido registrado en el torneo.",
       );
       setSelectedTeamId(null);
-    } catch (_) {}
+    } catch {
+      // El hook guarda el error y la pantalla lo muestra
+    }
   };
 
   return (

@@ -1,6 +1,6 @@
 // src/features/fields/screens/CreateReservation.jsx
 import { useState, useCallback, useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView, Alert } from "react-native";
+import { Text, StyleSheet, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
 import Button from "../../../shared/components/common/Button.jsx";

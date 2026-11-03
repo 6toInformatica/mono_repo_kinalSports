@@ -100,7 +100,9 @@ export default function CreateTeam({ navigation }) {
           "Tu equipo fue registrado exitosamente.",
           [{ text: "Aceptar", onPress: () => navigation.goBack() }],
         );
-      } catch (_) {}
+      } catch {
+        // El hook guarda el error y la pantalla lo muestra
+      }
     },
     [createTeam, imageUri, namedMembers, navigation],
   );
