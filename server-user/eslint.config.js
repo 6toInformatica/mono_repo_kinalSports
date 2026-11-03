@@ -14,6 +14,10 @@ export default [
         __dirname: 'readonly',
         __filename: 'readonly',
         global: 'readonly',
+        // APIs web nativas de Node 18+
+        fetch: 'readonly',
+        FormData: 'readonly',
+        Blob: 'readonly',
       },
     },
   },
