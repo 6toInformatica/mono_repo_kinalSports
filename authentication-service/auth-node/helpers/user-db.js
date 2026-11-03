@@ -5,6 +5,7 @@ import {
   UserPasswordReset,
 } from '../src/users/user.model.js';
 import { UserRole, Role } from '../src/auth/role.model.js';
+import { RefreshToken } from '../src/auth/refreshToken.model.js';
 import { USER_ROLE } from './role-constants.js';
 import { hashPassword } from '../utils/password-utils.js';
 import { Op, fn, col, where as sqlWhere } from 'sequelize';
@@ -364,6 +365,12 @@ export const updateUserPassword = async (userId, hashedPassword) => {
         where: { Id: userId },
         transaction,
       }
+    );
+
+    // Cerrar todas las sesiones abiertas con la contraseña anterior
+    await RefreshToken.update(
+      { RevokedAt: new Date() },
+      { where: { UserId: userId, RevokedAt: null }, transaction }
     );
 
     // Limpiar token de reset

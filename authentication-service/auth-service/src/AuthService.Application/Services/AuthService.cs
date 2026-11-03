@@ -414,6 +414,9 @@ public class AuthService(
 
         await userRepository.UpdateAsync(user);
 
+        // Cerrar todas las sesiones abiertas con la contraseña anterior
+        await refreshTokenService.RevokeAllForUserAsync(user.Id);
+
         logger.LogInformation("Password reset successfully for user {Username}", user.Username);
 
         return new EmailResponseDto

@@ -47,6 +47,18 @@ public class RefreshTokenRepository : IRefreshTokenRepository
         (_context.RefreshTokens ?? throw new InvalidOperationException("RefreshTokens DbSet is null.")).UpdateRange(tokens);
     }
 
+    public async Task RevokeAllForUserAsync(string userId)
+    {
+        var tokens = await (_context.RefreshTokens ?? throw new InvalidOperationException("RefreshTokens DbSet is null."))
+            .Where(r => r.UserId == userId && r.RevokedAt == null)
+            .ToListAsync();
+        foreach (var token in tokens)
+        {
+            token.RevokedAt = DateTime.UtcNow;
+        }
+        _context.RefreshTokens.UpdateRange(tokens);
+    }
+
     public async Task SaveChangesAsync()
     {
         await _context.SaveChangesAsync();

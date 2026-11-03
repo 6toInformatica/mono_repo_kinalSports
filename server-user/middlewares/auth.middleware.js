@@ -17,8 +17,13 @@ export const authMiddleware = (req, res, next) => {
 
     const token = authHeader.replace('Bearer ', '');
 
-    // Verificar token con el secreto compartido
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Verificar token con el secreto compartido, emisor y audiencia (igual que server-admin)
+    const verifyOptions = { algorithms: ['HS256'] };
+    if (process.env.JWT_ISSUER) verifyOptions.issuer = process.env.JWT_ISSUER;
+    if (process.env.JWT_AUDIENCE)
+      verifyOptions.audience = process.env.JWT_AUDIENCE;
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET, verifyOptions);
 
     // Guardar payload decodificado en req.user
     // Soporta múltiples formatos de payload (sub/id/role)
