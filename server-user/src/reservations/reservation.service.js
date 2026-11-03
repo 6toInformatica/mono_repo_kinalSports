@@ -1,6 +1,7 @@
 'use strict';
 
 import Reservation from './reservation.model.js';
+import { getBusinessDayRange } from '../../helpers/validation-helpers.js';
 
 /**
  * Guardar nueva reservación.
@@ -28,9 +29,15 @@ export const cancelUserReservation = async (reservationId, userId) => {
 
   if (!reservation) return null;
 
-  if (['CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(reservation.status)) {
+  if (!['PENDING', 'CONFIRMED'].includes(reservation.status)) {
     throw new Error(
       `No se puede cancelar una reserva con estado ${reservation.status}`
+    );
+  }
+
+  if (reservation.startTime <= new Date()) {
+    throw new Error(
+      'No se puede cancelar una reserva que ya inició o finalizó'
     );
   }
 
@@ -57,16 +64,14 @@ export const fetchUserReservationHistory = async (userId) => {
  * Consultar lapsos de tiempo ocupados para un campo en una fecha.
  */
 export const fetchOccupiedSlots = async (fieldId, date) => {
-  const searchDate = new Date(date);
-  const nextDay = new Date(date);
-  nextDay.setDate(searchDate.getDate() + 1);
+  // El día se interpreta en la zona horaria del negocio, no en UTC
+  const { start, end } = getBusinessDayRange(date);
 
+  // Incluye reservas que se traslapan con el día (no solo las que inician en él)
   return await Reservation.find({
     fieldId,
     status: { $nin: ['CANCELLED', 'NO_SHOW'] },
-    startTime: {
-      $gte: searchDate,
-      $lt: nextDay,
-    },
+    startTime: { $lt: end },
+    endTime: { $gt: start },
   }).select('startTime endTime -_id');
 };

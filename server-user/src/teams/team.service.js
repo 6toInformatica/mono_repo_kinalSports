@@ -4,6 +4,7 @@ import Team from './team.model.js';
 import {
   parseNamedMembers,
   ensureManagerInMembers,
+  getMaxMembers,
 } from '../../helpers/team-helpers.js';
 import { getUserByUsername } from '../auth/auth.service.js';
 
@@ -57,8 +58,19 @@ export const addTeamMember = async (teamId, userId) => {
   const team = await Team.findById(teamId);
   if (!team) return null;
 
+  if (!team.isActive) {
+    throw new Error('El equipo no está disponible');
+  }
+
   if (team.members.some((memberId) => String(memberId) === String(userId))) {
     throw new Error('Ya eres miembro de este equipo');
+  }
+
+  const maxMembers = getMaxMembers(team.category);
+  if (team.members.length >= maxMembers) {
+    throw new Error(
+      `El equipo alcanzó el cupo máximo de ${maxMembers} miembros`
+    );
   }
 
   team.members.push(String(userId));

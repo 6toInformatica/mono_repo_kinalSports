@@ -99,6 +99,13 @@ export const confirmReservation = async (req, res) => {
       });
     }
 
+    if (new Date(reservation.startTime) <= new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se puede confirmar una reserva que ya inició o finalizó',
+      });
+    }
+
     const confirmedReservation = await confirmReservationById({
       reservation,
       adminId,

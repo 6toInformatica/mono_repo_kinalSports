@@ -10,10 +10,7 @@ import { corsOptions } from './cors-configuration.js';
 import { helmetConfiguration } from './helmet-configuration.js';
 import { errorHandler } from '../middlewares/handle-errors.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
-import {
-  generalUserLimit,
-  reservationLimit,
-} from '../middlewares/rate-limit-user.js';
+import { generalUserLimit } from '../middlewares/rate-limit-user.js';
 
 import fieldRoutes from '../src/fields/field.routes.js';
 
@@ -50,7 +47,8 @@ const routes = (app) => {
 
   // Rutas protegidas (Requieren token)
   app.use(`${BASE_PATH}/users`, userRoutes);
-  app.use(`${BASE_PATH}/reservations`, reservationLimit, reservationRoutes);
+  // reservationLimit (10/hora) se aplica en el router solo a crear/cancelar, no a las consultas
+  app.use(`${BASE_PATH}/reservations`, generalUserLimit, reservationRoutes);
   app.use(`${BASE_PATH}/teams`, generalUserLimit, teamRoutes);
   app.use(`${BASE_PATH}/tournaments`, generalUserLimit, tournamentRoutes);
 

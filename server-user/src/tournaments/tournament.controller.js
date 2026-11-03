@@ -81,7 +81,8 @@ export const registerTeamToTournament = async (req, res) => {
       error.message.includes('no encontrado') ||
       error.message.includes('Solo el capitán') ||
       error.message.includes('no está disponible') ||
-      error.message.includes('ya está inscrito');
+      error.message.includes('ya está inscrito') ||
+      error.message.includes('no coincide');
 
     return res.status(isClientError ? 400 : 500).json({
       success: false,

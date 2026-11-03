@@ -1,5 +1,6 @@
 'use strict';
 
+import mongoose from 'mongoose';
 import Tournament from './tournament.model.js';
 import Team from '../teams/team.model.js';
 import adminClient from '../../utils/adminClient.js';
@@ -36,6 +37,11 @@ export const fetchMyTournaments = async (userId) => {
  * Valida permisos del capitán y estado del torneo contra admin-service.
  */
 export const registerTeam = async (tournamentId, teamId, userId) => {
+  // Un teamId que no es ObjectId (o un objeto) no debe llegar a la consulta
+  if (!mongoose.isValidObjectId(teamId)) {
+    throw new Error('Equipo no encontrado');
+  }
+
   const team = await Team.findById(teamId);
   if (!team) throw new Error('Equipo no encontrado');
 
@@ -43,16 +49,34 @@ export const registerTeam = async (tournamentId, teamId, userId) => {
     throw new Error('Solo el capitán del equipo puede inscribirlo.');
   }
 
+  if (!team.isActive) {
+    throw new Error('El equipo no está disponible para inscripción.');
+  }
+
   // 1. Validar torneo con el servicio administrativo
-  const adminResponse = await adminClient.get(`/tournaments/${tournamentId}`);
+  let adminResponse;
+  try {
+    adminResponse = await adminClient.get(`/tournaments/${tournamentId}`);
+  } catch (error) {
+    if ([400, 404].includes(error.response?.status)) {
+      throw new Error('Torneo no encontrado');
+    }
+    throw error;
+  }
+
+  const externalData = adminResponse.data?.data;
   if (
-    !adminResponse.data.success ||
-    adminResponse.data.data.status !== 'PENDIENTE'
+    !adminResponse.data?.success ||
+    !externalData?.isActive ||
+    externalData.status !== 'PENDIENTE' ||
+    new Date(externalData.startDate) <= new Date()
   ) {
     throw new Error('El torneo no está disponible para inscripción.');
   }
 
-  const externalData = adminResponse.data.data;
+  if (externalData.category !== team.category) {
+    throw new Error('La categoría del equipo no coincide con la del torneo.');
+  }
 
   // 2. Sincronizar (Caché local) si no existe
   let localTournament = await Tournament.findById(tournamentId);
