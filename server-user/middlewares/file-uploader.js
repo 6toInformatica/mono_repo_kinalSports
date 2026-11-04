@@ -32,7 +32,14 @@ const createMemoryUploader = () =>
       if (MIMETYPES.includes(file.mimetype)) {
         cb(null, true);
       } else {
-        cb(new Error(`Solo se permiten imágenes: ${MIMETYPES.join(', ')}`));
+        cb(
+          Object.assign(
+            new Error(`Solo se permiten imágenes: ${MIMETYPES.join(', ')}`),
+            {
+              statusCode: 400,
+            }
+          )
+        );
       }
     },
     limits: { fileSize: MAX_FILE_SIZE },

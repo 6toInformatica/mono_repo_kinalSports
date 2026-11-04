@@ -77,6 +77,15 @@ export const errorHandler = (err, req, res, next) => {
     });
   }
 
+  // Errores de subida (por ejemplo, archivo demasiado grande)
+  if (err.name === 'MulterError') {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+      error: err.code,
+    });
+  }
+
   // Error personalizado con status
   if (err.statusCode) {
     return res.status(err.statusCode).json({
