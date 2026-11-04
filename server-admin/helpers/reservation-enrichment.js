@@ -26,7 +26,7 @@ export const enrichReservation = async (reservation) => {
   let profile = null;
   try {
     profile = await getUserById(reservationData.userId);
-  } catch (_) {
+  } catch {
     return reservationData;
   }
 
@@ -62,7 +62,9 @@ export const enrichReservations = async (reservations) => {
         if (profile) {
           userCache.set(String(userId), profile);
         }
-      } catch (_) {}
+      } catch {
+        // Si el perfil no se puede obtener, la reserva se muestra sin datos del usuario
+      }
     })
   );
 

@@ -6,7 +6,6 @@ using AuthService.Application.Validators;
 using AuthService.Domain.Constants;
 using AuthService.Domain.Entities;
 using AuthService.Domain.Interfaces;
-using AuthService.Domain.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using AuthService.Application.DTOs.Email;
@@ -236,6 +235,9 @@ public class AuthService(
         {
             Id = user.Id,
             Username = user.Username,
+            Email = user.Email,
+            Name = user.Name,
+            Surname = user.Surname,
             ProfilePicture = _cloudinaryService.GetFullImageUrl(user.UserProfile?.ProfilePicture ?? string.Empty),
             Role = user.UserRoles.FirstOrDefault()?.Role?.Name ?? RoleConstants.USER_ROLE
         };
@@ -358,6 +360,7 @@ public class AuthService(
         {
             user.UserPasswordReset = new UserPasswordReset
             {
+                Id = UuidGenerator.GenerateUserId(),
                 UserId = user.Id,
                 PasswordResetToken = resetToken,
                 PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(1)
@@ -409,6 +412,9 @@ public class AuthService(
         user.UserPasswordReset.PasswordResetTokenExpiry = null;
 
         await userRepository.UpdateAsync(user);
+
+        // Cerrar todas las sesiones abiertas con la contraseña anterior
+        await refreshTokenService.RevokeAllForUserAsync(user.Id);
 
         logger.LogInformation("Password reset successfully for user {Username}", user.Username);
 

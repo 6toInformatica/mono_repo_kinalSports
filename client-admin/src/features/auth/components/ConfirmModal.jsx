@@ -15,6 +15,8 @@ export const UiConfirmHost = () => {
   const handleConfirm = async () => {
     try {
       await Promise.resolve(confirm.onConfirm?.());
+    } catch {
+      // Los stores registran el error y cada vista lo muestra por toast
     } finally {
       closeConfirm();
     }

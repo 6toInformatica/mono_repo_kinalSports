@@ -10,6 +10,7 @@ import {
   validateCancelReservation,
 } from '../../middlewares/reservation-validators.js';
 import { checkReservationConflict } from '../../middlewares/reservation-conflict.js';
+import { reservationLimit } from '../../middlewares/rate-limit-user.js';
 
 const router = Router();
 
@@ -24,12 +25,18 @@ router.get('/my-reservations', getUserHistory);
 // Crear reservación (POST /)
 router.post(
   '/',
+  reservationLimit,
   validateCreateReservation,
   checkReservationConflict,
   createReservation
 );
 
 // Cancelar reservación (PUT /:id/cancel)
-router.put('/:id/cancel', validateCancelReservation, cancelReservation);
+router.put(
+  '/:id/cancel',
+  reservationLimit,
+  validateCancelReservation,
+  cancelReservation
+);
 
 export default router;

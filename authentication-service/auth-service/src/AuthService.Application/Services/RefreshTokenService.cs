@@ -11,10 +11,18 @@ public class RefreshTokenService : IRefreshTokenService
 {
     private readonly IRefreshTokenRepository _refreshTokenRepository;
     private readonly IJwtTokenService _jwtTokenService;
-    public RefreshTokenService(IRefreshTokenRepository refreshTokenRepository, IJwtTokenService jwtTokenService)
+    private readonly IUserRepository _userRepository;
+    public RefreshTokenService(IRefreshTokenRepository refreshTokenRepository, IJwtTokenService jwtTokenService, IUserRepository userRepository)
     {
         _refreshTokenRepository = refreshTokenRepository;
         _jwtTokenService = jwtTokenService;
+        _userRepository = userRepository;
+    }
+
+    public async Task RevokeAllForUserAsync(string userId)
+    {
+        await _refreshTokenRepository.RevokeAllForUserAsync(userId);
+        await _refreshTokenRepository.SaveChangesAsync();
     }
 
     public static string HashToken(string token)
@@ -62,6 +70,12 @@ public class RefreshTokenService : IRefreshTokenService
         }
         await _refreshTokenRepository.RevokeAsync(token);
         await _refreshTokenRepository.SaveChangesAsync();
+
+        // Un usuario desactivado no puede seguir renovando su sesión
+        var user = await _userRepository.GetByIdAsync(token.UserId);
+        if (!user.Status)
+            throw new UnauthorizedAccessException("La cuenta está desactivada");
+
         var (newRaw, famId) = await CreateAsync(token.UserId, token.FamilyId);
         var accessToken = await _jwtTokenService.GenerateTokenAsync(token.UserId, expiresInMinutes: 15);
         return new RefreshResponseDto(accessToken, newRaw, 900);

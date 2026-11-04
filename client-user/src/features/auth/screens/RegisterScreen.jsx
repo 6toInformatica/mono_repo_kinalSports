@@ -44,10 +44,10 @@ export default function RegisterScreen({ navigation }) {
       await handleRegister(data);
       Alert.alert(
         "Registro exitoso",
-        "Tu cuenta ha sido creada. Ya puedes iniciar sesión.",
+        "Tu cuenta ha sido creada. Revisa tu correo y verifica tu cuenta antes de iniciar sesión.",
         [{ text: "Aceptar", onPress: () => navigation.navigate("Login") }],
       );
-    } catch (_) {
+    } catch {
       // error ya gestionado en el hook, se muestra en pantalla
     }
   };

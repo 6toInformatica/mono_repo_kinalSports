@@ -63,5 +63,38 @@ export default function useAuth() {
     }
   };
 
-  return { handleLogin, handleRegister, loading, error, logout };
+  /**
+   * Envía un correo de la cuenta (recuperar contraseña o verificar email).
+   * Los enlaces del correo se completan en la web de KinalSports.
+   * @param {"forgot" | "verify"} type
+   * @param {string} email
+   * @returns {Promise<string>} mensaje de confirmación del servidor
+   */
+  const requestAccountEmail = async (type, email) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const path =
+        type === "verify" ? "/resend-verification" : "/forgot-password";
+      const { data } = await authClient.post(path, { email: email.trim() });
+      return data?.message ?? "Revisa tu correo electrónico.";
+    } catch (err) {
+      const message =
+        err.response?.data?.message ??
+        "No se pudo enviar el correo. Intenta de nuevo.";
+      setError(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return {
+    handleLogin,
+    handleRegister,
+    requestAccountEmail,
+    loading,
+    error,
+    logout,
+  };
 }

@@ -1,4 +1,9 @@
-export const errorHandler = (err, req, res) => {
+// Express solo reconoce un middleware de errores si declara los 4 parámetros
+export const errorHandler = (err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
   console.error(`Error in Admin Server: ${err.message}`);
   console.error(`Stack trace: ${err.stack}`);
   console.error(`Request: ${req.method} ${req.path}`);
@@ -50,6 +55,15 @@ export const errorHandler = (err, req, res) => {
       success: false,
       message: 'Token expirado',
       error: 'TOKEN_EXPIRED',
+    });
+  }
+
+  // Errores de subida (por ejemplo, archivo demasiado grande)
+  if (err.name === 'MulterError') {
+    return res.status(400).json({
+      success: false,
+      message: err.message,
+      error: err.code,
     });
   }
 

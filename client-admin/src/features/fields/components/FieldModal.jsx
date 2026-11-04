@@ -4,6 +4,7 @@ import { useFieldsStore } from '../../users/store/adminStore';
 import { Spinner } from '../../auth/components/Spinner.jsx';
 import { useSaveField } from '../../fields/hooks/useSaveField';
 import { showSuccess, showError } from '../../../shared/utils/toast.js';
+import { resolveCloudinaryUrl } from '../../../shared/utils/cloudinary.js';
 
 export const FieldModal = ({ isOpen, onClose, field }) => {
   const {
@@ -29,7 +30,7 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
           pricePerHour: field.pricePerHour,
           description: field.description,
         });
-        setPreview(field.photo);
+        setPreview(resolveCloudinaryUrl(field.photo));
       } else {
         reset({
           fieldName: '',

@@ -17,12 +17,12 @@ export const findOrCreateProfile = async (authId) => {
 };
 
 /**
- * Actualizar datos del perfil del usuario.
+ * Actualizar datos del perfil del usuario. Si aún no existe, lo crea (upsert).
  */
 export const updateProfile = async (authId, updateData) => {
   return await UserProfile.findOneAndUpdate(
     { authId },
     { $set: updateData },
-    { new: true, runValidators: true }
+    { new: true, runValidators: true, upsert: true, setDefaultsOnInsert: true }
   );
 };

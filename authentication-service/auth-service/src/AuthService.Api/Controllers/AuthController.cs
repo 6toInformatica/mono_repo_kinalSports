@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using AuthService.Domain.Constants;
+using AuthService.Api.Filters;
 
 namespace AuthService.Api.Controllers
 {
@@ -31,8 +32,10 @@ namespace AuthService.Api.Controllers
             return Ok(result);
         }
 
+        // El refresh token es la credencial (igual que en /refresh y en auth-node),
+        // así se puede cerrar sesión aunque el access token ya haya expirado
         [HttpPost("logout")]
-        [Authorize]
+        [AllowAnonymous]
         public async Task<IActionResult> Logout([FromBody] RefreshRequestDto dto)
         {
             await _refreshTokenService.RevokeAsync(dto.RefreshToken);
@@ -70,8 +73,9 @@ namespace AuthService.Api.Controllers
             });
         }
 
+        // Solo servicios internos: expone email y teléfono
         [HttpPost("profile/by-username")]
-        [EnableRateLimiting("ApiPolicy")]
+        [InternalServiceToken]
         public async Task<ActionResult<object>> GetProfileByUsername([FromBody] GetProfileByUsernameDto request)
         {
             if (string.IsNullOrWhiteSpace(request.Username))
@@ -101,8 +105,9 @@ namespace AuthService.Api.Controllers
             });
         }
 
+        // Solo servicios internos: expone email y teléfono
         [HttpPost("profile/by-id")]
-        [EnableRateLimiting("ApiPolicy")]
+        [InternalServiceToken]
         public async Task<ActionResult<object>> GetProfileById([FromBody] GetProfileByIdDto request)
         {
             if (string.IsNullOrEmpty(request.UserId))
@@ -155,6 +160,13 @@ namespace AuthService.Api.Controllers
         public async Task<ActionResult<EmailResponseDto>> VerifyEmail([FromBody] VerifyEmailDto verifyEmailDto)
         {
             var result = await _authService.VerifyEmailAsync(verifyEmailDto);
+
+            // Token inválido o expirado: 400 como en auth-node (los clientes evalúan el status HTTP)
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
             return Ok(result);
         }
 
@@ -204,6 +216,13 @@ namespace AuthService.Api.Controllers
         public async Task<ActionResult<EmailResponseDto>> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
         {
             var result = await _authService.ResetPasswordAsync(resetPasswordDto);
+
+            // Token inválido o expirado: 400 como en auth-node (los clientes evalúan el status HTTP)
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
             return Ok(result);
         }
 

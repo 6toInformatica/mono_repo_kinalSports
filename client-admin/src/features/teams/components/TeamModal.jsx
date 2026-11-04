@@ -25,13 +25,23 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
 
   const displayPreview = filePreview || resolveCloudinaryUrl(team?.logo, defaultTeamImg);
 
+  // Estado local derivado de las props: se ajusta durante el render (patrón recomendado por React)
   const [prevOpen, setPrevOpen] = useState(isOpen);
-  if (isOpen !== prevOpen) {
+  const [prevTeam, setPrevTeam] = useState(team);
+  if (isOpen !== prevOpen || team !== prevTeam) {
+    if (isOpen !== prevOpen) {
+      if (filePreview) URL.revokeObjectURL(filePreview);
+      setFilePreview(null);
+    }
     setPrevOpen(isOpen);
-    if (filePreview) URL.revokeObjectURL(filePreview);
-    setFilePreview(null);
+    setPrevTeam(team);
+    if (isOpen) {
+      setNamedMembers(team?.namedMembers?.map((m) => m.name) ?? []);
+      setMemberName('');
+    }
   }
 
+  // El formulario de react-hook-form se sincroniza en un efecto (reset no es estado de React)
   useEffect(() => {
     if (isOpen) {
       if (team) {
@@ -40,7 +50,6 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
           managerId: team.managerId,
           category: team.category,
         });
-        setNamedMembers(team.namedMembers?.map((m) => m.name) ?? []);
       } else {
         reset({
           teamName: '',
@@ -48,9 +57,7 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
           category: '',
           logo: null,
         });
-        setNamedMembers([]);
       }
-      setMemberName('');
     }
   }, [isOpen, reset, team]);
 
@@ -70,7 +77,9 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
       setNamedMembers([]);
       setMemberName('');
       onClose();
-    } catch (_) {}
+    } catch {
+      // El store registra el error y la vista lo muestra por toast
+    }
   };
 
   const handleAddMember = () => {

@@ -8,6 +8,7 @@ import {
 } from '../../../shared/api';
 import { resolveExpiresAt } from '../../../shared/api/sessionRefresh.js';
 import { resetAppStores } from '../../../shared/store/resetAppStores.js';
+import { showError } from '../../../shared/utils/toast.js';
 
 export const useAuthStore = create(
   persist(

@@ -9,5 +9,6 @@ public interface IRefreshTokenRepository
     Task AddAsync(RefreshToken token);
     Task RevokeAsync(RefreshToken token);
     Task RevokeFamilyAsync(Guid familyId);
+    Task RevokeAllForUserAsync(string userId);
     Task SaveChangesAsync();
 }

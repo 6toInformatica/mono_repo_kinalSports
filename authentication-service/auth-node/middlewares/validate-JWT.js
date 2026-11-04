@@ -6,11 +6,8 @@ import { findUserById } from '../helpers/user-db.js';
  */
 export const validateJWT = async (req, res, next) => {
   try {
-    let token =
-      req.header('x-token') ||
-      req.header('authorization') ||
-      req.body.token ||
-      req.query.token;
+    // Solo por headers: en body o query string el token puede quedar en logs
+    let token = req.header('x-token') || req.header('authorization');
 
     if (!token) {
       return res.status(401).json({

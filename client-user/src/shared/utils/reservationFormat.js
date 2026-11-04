@@ -61,7 +61,10 @@ export const mapReservation = (reservation) => {
   };
 };
 
-export const buildReservationDateTime = (date, time) => `${date}T${time}:00`;
+// Se interpreta en la hora local del dispositivo y se envía en ISO (UTC) para que
+// el servidor no la confunda con UTC
+export const buildReservationDateTime = (date, time) =>
+  new Date(`${date}T${time}:00`).toISOString();
 
 export const formatDateValue = (date) => {
   const year = date.getFullYear();

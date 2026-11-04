@@ -1,6 +1,7 @@
 'use strict';
 
 import Reservation from './reservation.model.js';
+import { getBusinessDayRange } from '../../helpers/validation-helpers.js';
 
 /**
  * Guardar nueva reservación.
@@ -14,6 +15,27 @@ export const registerReservation = async (reservationData, userId) => {
   });
 
   await reservation.save();
+
+  // Verificación posterior al insert: MongoDB standalone no tiene transacciones, así que
+  // dos solicitudes simultáneas pueden pasar el chequeo previo. Si ahora existe otra reserva
+  // solapada creada antes (ObjectId menor), esta se descarta y solo sobrevive la primera.
+  const conflicts = await Reservation.findConflictingReservations(
+    reservation.fieldId,
+    reservation.startTime,
+    reservation.endTime,
+    reservation._id
+  );
+  const lostRace = conflicts.some(
+    (other) => other._id.toString() < reservation._id.toString()
+  );
+
+  if (lostRace) {
+    await Reservation.deleteOne({ _id: reservation._id });
+    const error = new Error('Conflicto de horario con otras reservas');
+    error.statusCode = 409;
+    throw error;
+  }
+
   return reservation;
 };
 
@@ -28,9 +50,15 @@ export const cancelUserReservation = async (reservationId, userId) => {
 
   if (!reservation) return null;
 
-  if (['CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(reservation.status)) {
+  if (!['PENDING', 'CONFIRMED'].includes(reservation.status)) {
     throw new Error(
       `No se puede cancelar una reserva con estado ${reservation.status}`
+    );
+  }
+
+  if (reservation.startTime <= new Date()) {
+    throw new Error(
+      'No se puede cancelar una reserva que ya inició o finalizó'
     );
   }
 
@@ -57,16 +85,14 @@ export const fetchUserReservationHistory = async (userId) => {
  * Consultar lapsos de tiempo ocupados para un campo en una fecha.
  */
 export const fetchOccupiedSlots = async (fieldId, date) => {
-  const searchDate = new Date(date);
-  const nextDay = new Date(date);
-  nextDay.setDate(searchDate.getDate() + 1);
+  // El día se interpreta en la zona horaria del negocio, no en UTC
+  const { start, end } = getBusinessDayRange(date);
 
+  // Incluye reservas que se traslapan con el día (no solo las que inician en él)
   return await Reservation.find({
     fieldId,
     status: { $nin: ['CANCELLED', 'NO_SHOW'] },
-    startTime: {
-      $gte: searchDate,
-      $lt: nextDay,
-    },
+    startTime: { $lt: end },
+    endTime: { $gt: start },
   }).select('startTime endTime -_id');
 };

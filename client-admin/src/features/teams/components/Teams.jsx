@@ -28,7 +28,8 @@ export const Teams = () => {
     if (error) showError(error);
   }, [error]);
 
-  if (loading) return <Spinner />;
+  // Con el modal abierto no se reemplaza la vista: así el formulario no se desmonta al guardar
+  if (loading && !openModal) return <Spinner />;
 
   return (
     <div className='p-4'>
@@ -76,7 +77,7 @@ export const Teams = () => {
 
               <div className='flex gap-2 mt-2'>
                 <span className='px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium'>
-                  {team.category.replace('_', ' ')}
+                  {team.category?.replace('_', ' ')}
                 </span>
 
                 <span className='px-3 py-1 text-xs rounded-full bg-purple-100 text-purple-700 font-medium'>

@@ -24,6 +24,15 @@ export const parseNamedMembers = (input) => {
     .filter((member) => member.name.length > 0);
 };
 
+// Cupo de miembros registrados por categoría (titulares + suplentes)
+export const MAX_MEMBERS_BY_CATEGORY = {
+  FUTBOL_7: 12,
+  FUTBOL_11: 18,
+};
+
+export const getMaxMembers = (category) =>
+  MAX_MEMBERS_BY_CATEGORY[category] ?? MAX_MEMBERS_BY_CATEGORY.FUTBOL_11;
+
 export const ensureManagerInMembers = (managerId, members = []) => {
   if (!managerId) return members;
   const uniqueMembers = new Set(members.map((member) => member.toString()));

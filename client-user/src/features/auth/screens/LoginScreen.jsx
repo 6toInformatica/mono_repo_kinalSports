@@ -33,7 +33,7 @@ export default function LoginScreen({ navigation }) {
   const onSubmit = async (data) => {
     try {
       await handleLogin(data);
-    } catch (_) {
+    } catch {
       // error ya gestionado en el hook, se muestra en pantalla
     }
   };
@@ -112,6 +112,26 @@ export default function LoginScreen({ navigation }) {
           style={styles.button}
         />
 
+        {/* Recuperación de cuenta */}
+        <View style={styles.helpLinks}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("AccountEmail", { mode: "forgot" })
+            }
+            activeOpacity={0.7}
+          >
+            <Text style={styles.linkBold}>¿Olvidaste tu contraseña?</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("AccountEmail", { mode: "verify" })
+            }
+            activeOpacity={0.7}
+          >
+            <Text style={styles.linkBold}>Reenviar verificación</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Enlace a registro */}
         <TouchableOpacity
           onPress={() => navigation.navigate("Register")}
@@ -175,6 +195,11 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: SPACING.sm,
+  },
+  helpLinks: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: SPACING.md,
   },
   linkContainer: {
     marginTop: SPACING.lg,

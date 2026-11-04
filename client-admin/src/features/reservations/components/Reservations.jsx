@@ -50,7 +50,8 @@ export const Reservations = () => {
   } = useFieldsStore();
 
   useEffect(() => {
-    getAllReservations();
+    // El store ya guarda el error y se muestra por toast; aquí solo evitamos la promesa no manejada
+    getAllReservations().catch(() => {});
   }, [getAllReservations]);
 
   useEffect(() => {

@@ -6,8 +6,8 @@ services:
     container_name: pg-kinal-sports
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-IN6AV}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-In6av2026!}
+      POSTGRES_USER: ${POSTGRES_USER:-KinalSports}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-KinalSports2027!}
       POSTGRES_DB: ${POSTGRES_DB:-kinal_sports}
     ports:
       - "${POSTGRES_PORT:-5435}:5432"
@@ -17,7 +17,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER:-IN6AV} -d ${POSTGRES_DB:-kinal_sports}",
+          "pg_isready -U ${POSTGRES_USER:-KinalSports} -d ${POSTGRES_DB:-kinal_sports}",
         ]
       interval: 10s
       timeout: 5s
@@ -58,11 +58,12 @@ services:
       DOTNET_USE_POLLING_FILE_WATCHER: "1"
       ConnectionStrings__DefaultConnection: >-
         Host=postgres;Port=5432;Database=${POSTGRES_DB:-kinal_sports};
-        Username=${POSTGRES_USER:-IN6AV};Password=${POSTGRES_PASSWORD:-In6av2026!}
+        Username=${POSTGRES_USER:-KinalSports};Password=${POSTGRES_PASSWORD:-KinalSports2027!}
       AppSettings__FrontendUrl: ${FRONTEND_URL:-http://localhost:5173}
       JwtSettings__SecretKey: ${JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
       JwtSettings__Issuer: ${JWT_ISSUER:-AuthService}
       JwtSettings__Audience: ${JWT_AUDIENCE:-AuthService}
+      InternalServiceToken: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
       SmtpSettings__Enabled: "true"
       SmtpSettings__Host: ${SMTP_HOST:-smtp.gmail.com}
       SmtpSettings__Port: ${SMTP_PORT:-465}
@@ -72,10 +73,10 @@ services:
       SmtpSettings__FromEmail: ${SMTP_FROM:-${EMAIL_FROM:-}}
       SmtpSettings__FromName: ${SMTP_FROM_NAME:-${EMAIL_FROM_NAME:-Kinal Sports Support}}
       SmtpSettings__UseImplicitSsl: ${SMTP_USE_IMPLICIT_SSL:-true}
-      CloudinarySettings__CloudName: ${CLOUDINARY_CLOUD_NAME:-dug3apxt3}
+      CloudinarySettings__CloudName: ${CLOUDINARY_CLOUD_NAME:-b3xvlule}
       CloudinarySettings__ApiKey: ${CLOUDINARY_API_KEY:-}
       CloudinarySettings__ApiSecret: ${CLOUDINARY_API_SECRET:-}
-      CloudinarySettings__BaseUrl: ${CLOUDINARY_BASE_URL:-https://res.cloudinary.com/dug3apxt3/image/upload/}
+      CloudinarySettings__BaseUrl: ${CLOUDINARY_BASE_URL:-https://res.cloudinary.com/b3xvlule/image/upload/}
       CloudinarySettings__Folder: ${CLOUDINARY_FOLDER:-auth_service/profiles}
       CloudinarySettings__DefaultAvatarPath: ${CLOUDINARY_DEFAULT_AVATAR_PATH:-auth_service/profiles/avatarDefault-1749508519496_oam3k3}
     env_file:
@@ -117,14 +118,15 @@ services:
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB:-kinal_sports}
-      DB_USERNAME: ${POSTGRES_USER:-IN6AV}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-In6av2026!}
+      DB_USERNAME: ${POSTGRES_USER:-KinalSports}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-KinalSports2027!}
       DEFAULT_CONNECTION: >-
         Host=postgres;Port=5432;Database=${POSTGRES_DB:-kinal_sports};
-        Username=${POSTGRES_USER:-IN6AV};Password=${POSTGRES_PASSWORD:-In6av2026!}
+        Username=${POSTGRES_USER:-KinalSports};Password=${POSTGRES_PASSWORD:-KinalSports2027!}
       JWT_SECRET: ${JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
       JWT_ISSUER: ${JWT_ISSUER:-AuthService}
       JWT_AUDIENCE: ${JWT_AUDIENCE:-AuthService}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-465}
@@ -133,10 +135,10 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Kinal Sports Support}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-dug3apxt3}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-b3xvlule}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
-      CLOUDINARY_BASE_URL: ${CLOUDINARY_BASE_URL:-https://res.cloudinary.com/dug3apxt3/image/upload/}
+      CLOUDINARY_BASE_URL: ${CLOUDINARY_BASE_URL:-https://res.cloudinary.com/b3xvlule/image/upload/}
       CLOUDINARY_FOLDER: ${CLOUDINARY_FOLDER:-auth_service/profiles}
       CLOUDINARY_DEFAULT_AVATAR_FILENAME: ${CLOUDINARY_DEFAULT_AVATAR_FILENAME:-avatarDefault-1749508519496_oam3k3}
       CHOKIDAR_USEPOLLING: "true"
@@ -200,7 +202,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 20s
+      # El contenedor ejecuta pnpm install al arrancar (puede tardar ~2 min)
+      start_period: 180s
     networks:
       - kinal-network
 
@@ -227,7 +230,7 @@ services:
       ADMIN_SERVICE_URL: http://server-admin:3009/kinalSportsAdmin/v1
       AUTH_NODE_URL: ${AUTH_NODE_URL:-http://auth-node:3007/api/v1}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-dug3apxt3}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-b3xvlule}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
       CLOUDINARY_TEAMS_FOLDER: ${CLOUDINARY_TEAMS_FOLDER:-kinal_sports/teams}
@@ -269,7 +272,7 @@ services:
     environment:
       VITE_AUTH_URL: ${VITE_AUTH_URL:-http://localhost:5156/api/v1}
       VITE_ADMIN_URL: ${VITE_ADMIN_URL:-http://localhost:3009/kinalSportsAdmin/v1}
-      VITE_CLOUDINARY_BASE_URL: ${VITE_CLOUDINARY_BASE_URL:-https://res.cloudinary.com/dug3apxt3/image/upload/}
+      VITE_CLOUDINARY_BASE_URL: ${VITE_CLOUDINARY_BASE_URL:-https://res.cloudinary.com/b3xvlule/image/upload/}
       CHOKIDAR_USEPOLLING: "true"
     env_file:
       - path: .env.docker

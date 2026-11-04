@@ -23,6 +23,7 @@ npm-debug.log*
 .env.*
 **/.env
 **/.env.*
+!**/.env.example
 
 # Uploads (keep structure, use .gitkeep where needed)
 **/uploads/*

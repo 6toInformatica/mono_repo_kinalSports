@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as refreshController from './refresh.controller.js';
 import * as authController from './auth.controller.js';
 import { validateJWT } from '../../middlewares/validate-JWT.js';
+import { validateInternalToken } from '../../middlewares/validate-internal-token.js';
 import {
   authRateLimit,
   requestLimit,
@@ -307,7 +308,12 @@ router.post(
  *       404:
  *         description: Usuario no encontrado
  */
-router.post('/profile/by-id', requestLimit, authController.getProfileById);
+// Solo para servicios internos (exponen email y teléfono)
+router.post(
+  '/profile/by-id',
+  validateInternalToken,
+  authController.getProfileById
+);
 
 /**
  * @swagger
@@ -318,7 +324,7 @@ router.post('/profile/by-id', requestLimit, authController.getProfileById);
  */
 router.post(
   '/profile/by-username',
-  requestLimit,
+  validateInternalToken,
   authController.getProfileByUsername
 );
 

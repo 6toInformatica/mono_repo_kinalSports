@@ -39,6 +39,18 @@ axiosAdmin.interceptors.request.use((config) => {
   return config;
 });
 
+// Endpoints públicos: un 401 aquí es un error de negocio (ej. credenciales inválidas),
+// no una sesión expirada, por lo que no deben disparar el refresh.
+const PUBLIC_AUTH_ENDPOINTS = [
+  '/auth/refresh',
+  '/auth/login',
+  '/auth/register',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+  '/auth/verify-email',
+  '/auth/resend-verification',
+];
+
 const handleRefreshToken = async function (error) {
   const original = error.config;
   if (!original || original._retry) {
@@ -46,9 +58,9 @@ const handleRefreshToken = async function (error) {
   }
 
   const requestUrl = original.url || '';
-  const isRefreshEndpoint = requestUrl.includes('/auth/refresh');
+  const isPublicAuthEndpoint = PUBLIC_AUTH_ENDPOINTS.some((path) => requestUrl.includes(path));
 
-  if (!isAuthError(error) || isRefreshEndpoint) {
+  if (!isAuthError(error) || isPublicAuthEndpoint) {
     return Promise.reject(error);
   }
 

@@ -12,6 +12,16 @@ const TOURNAMENT_STATUSES = [
   'CANCELADO',
 ];
 
+// Si llegan ambas fechas, la de finalización no puede ser anterior a la de inicio
+const validateEndDateAfterStartDate = (endDate, { req }) => {
+  if (req.body.startDate && new Date(endDate) < new Date(req.body.startDate)) {
+    throw new Error(
+      'La fecha de finalizacion no puede ser anterior a la de inicio'
+    );
+  }
+  return true;
+};
+
 export const validateCreateTournament = [
   validateJWT,
   body('tournamentsName')
@@ -34,7 +44,9 @@ export const validateCreateTournament = [
     .notEmpty()
     .withMessage('La fecha de finalizacion es requerida')
     .isISO8601()
-    .withMessage('La fecha de finalizacion debe ser valida (ISO 8601)'),
+    .withMessage('La fecha de finalizacion debe ser valida (ISO 8601)')
+    .bail()
+    .custom(validateEndDateAfterStartDate),
   body('teams').optional().isArray().withMessage('Teams debe ser un arreglo'),
   body('teams.*')
     .optional()
@@ -73,7 +85,9 @@ export const validateUpdateTournamentRequest = [
   body('endDate')
     .optional()
     .isISO8601()
-    .withMessage('La fecha de finalizacion debe ser valida (ISO 8601)'),
+    .withMessage('La fecha de finalizacion debe ser valida (ISO 8601)')
+    .bail()
+    .custom(validateEndDateAfterStartDate),
   body('teams').optional().isArray().withMessage('Teams debe ser un arreglo'),
   body('teams.*')
     .optional()

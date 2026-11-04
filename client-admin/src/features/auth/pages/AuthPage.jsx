@@ -1,15 +1,22 @@
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { LoginForm } from '../components/LoginForm';
 import { ForgotPasswordForm } from '../components/ForgotPasswordForm';
+import { useAuthStore } from '../store/authStore.js';
+import logoImg from '../../../assets/img/kinal_sports.png';
 
 export const AuthPage = () => {
   const [isForgot, setIsForgot] = useState(false);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  // Un admin con sesión activa no necesita ver el login
+  if (isAuthenticated) return <Navigate to='/dashboard' replace />;
 
   return (
     <div className='min-h-screen flex items-center justify-center bg-gray-50 p-4'>
       <div className='w-full max-w-xl bg-white rounded-xl shadow-lg border border-gray-200 p-6 md:p-10'>
         <div className='flex justify-center mb-6'>
-          <img src='/src/assets/img/kinal_sports.png' alt='Kinal Sports' className='h-20 w-auto' />
+          <img src={logoImg} alt='Kinal Sports' className='h-20 w-auto' />
         </div>
 
         <div className='text-center mb-6'>

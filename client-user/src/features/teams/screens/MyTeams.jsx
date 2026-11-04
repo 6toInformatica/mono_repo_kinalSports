@@ -1,5 +1,6 @@
 // src/features/teams/screens/MyTeams.jsx
-import { useEffect } from "react";
+import { useCallback } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   FlatList,
   View,
@@ -17,13 +18,17 @@ import {
 } from "../../../shared/components/common/Common.jsx";
 import { COLORS, FONT_SIZE, SPACING } from "../../../shared/constants/theme.js";
 import useTeams from "../hooks/useTeams.js";
+import { resolveRemoteImage } from "../../../shared/utils/imageUri.js";
 
 export default function MyTeams({ navigation }) {
   const { myTeams, listLoading, error, fetchMyTeams } = useTeams();
 
-  useEffect(() => {
-    fetchMyTeams();
-  }, [fetchMyTeams]);
+  // Recarga cada vez que se entra a la pantalla (ej. tras crear un equipo o inscribirse)
+  useFocusEffect(
+    useCallback(() => {
+      fetchMyTeams();
+    }, [fetchMyTeams]),
+  );
 
   if (listLoading && myTeams.length === 0) return <LoadingSpinner />;
 
@@ -62,9 +67,9 @@ export default function MyTeams({ navigation }) {
             onPress={() => navigation.navigate("TeamDetail", { team: item })}
           >
             <Card style={styles.card}>
-              {(item.logo ?? item.photo) ? (
+              {resolveRemoteImage(item.logo ?? item.photo) ? (
                 <Image
-                  source={{ uri: item.logo ?? item.photo }}
+                  source={{ uri: resolveRemoteImage(item.logo ?? item.photo) }}
                   style={styles.avatar}
                 />
               ) : (

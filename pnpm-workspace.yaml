@@ -9,3 +9,7 @@ allowBuilds:
   "@scarf/scarf": false
   argon2: true
   esbuild: true
+overrides:
+  # Parches de seguridad para dependencias transitivas (ver package.json de cada paquete)
+  minimatch: ^11.0.1
+  uuid@<11.1.1: ^11.1.1

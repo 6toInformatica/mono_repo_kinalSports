@@ -31,7 +31,12 @@ export const generateJWT = (userId, extraClaims = {}, options = {}) => {
 
 export const verifyJWT = (token) => {
   return new Promise((resolve, reject) => {
-    jwt.verify(token, config.jwt.secret, (err, decoded) => {
+    // Mismas validaciones que auth-service y server-admin: algoritmo, emisor y audiencia
+    const verifyOptions = { algorithms: ['HS256'] };
+    if (config.jwt.issuer) verifyOptions.issuer = config.jwt.issuer;
+    if (config.jwt.audience) verifyOptions.audience = config.jwt.audience;
+
+    jwt.verify(token, config.jwt.secret, verifyOptions, (err, decoded) => {
       if (err) {
         console.error('Error verifying JWT:', err);
         reject(err);

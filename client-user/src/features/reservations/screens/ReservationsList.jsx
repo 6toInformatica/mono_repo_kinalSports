@@ -16,6 +16,7 @@ import {
 } from "../../../shared/components/common/Common.jsx";
 import { COLORS, FONT_SIZE, SPACING } from "../../../shared/constants/theme.js";
 import useReservations from "../hooks/useReservations.js";
+import useRefreshOnFocus from "../../../shared/hooks/useRefreshOnFocus.js";
 
 const STATUS_CONFIG = {
   PENDING: { label: "Pendiente", color: COLORS.warning },
@@ -24,9 +25,10 @@ const STATUS_CONFIG = {
   COMPLETED: { label: "Completada", color: COLORS.secondary },
 };
 
-export default function ReservationsList({ navigation }) {
+export default function ReservationsList() {
   const { reservations, loading, error, refetch, cancelReservation } =
     useReservations();
+  useRefreshOnFocus(refetch);
 
   const handleCancel = (id) => {
     Alert.alert(
@@ -40,7 +42,9 @@ export default function ReservationsList({ navigation }) {
           onPress: async () => {
             try {
               await cancelReservation(id);
-            } catch (_) {}
+            } catch {
+              // useReservations guarda el error y la pantalla lo muestra
+            }
           },
         },
       ],

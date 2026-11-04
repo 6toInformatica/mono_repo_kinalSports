@@ -41,6 +41,7 @@ public static class DataSeeder
                 var profileId = UuidGenerator.GenerateUserId();
                 var emailId = UuidGenerator.GenerateUserId();
                 var userRoleId = UuidGenerator.GenerateUserId();
+                var passwordResetId = UuidGenerator.GenerateUserId();
 
                 var adminUser = new User
                 {
@@ -65,6 +66,14 @@ public static class DataSeeder
                         EmailVerified = true,
                         EmailVerificationToken = null,
                         EmailVerificationTokenExpiry = null
+                    },
+                    // Igual que en el registro: sin esta fila el reset de contraseña falla
+                    UserPasswordReset = new UserPasswordReset
+                    {
+                        Id = passwordResetId,
+                        UserId = userId,
+                        PasswordResetToken = null,
+                        PasswordResetTokenExpiry = null
                     },
                     UserRoles =
                     [

@@ -12,4 +12,13 @@ const authClient = axios.create({
   },
 });
 
+// Los endpoints profile/by-* de los servicios de auth requieren el token interno
+authClient.interceptors.request.use((config) => {
+  const internalToken = process.env.INTERNAL_SERVICE_TOKEN;
+  if (internalToken) {
+    config.headers['x-internal-token'] = internalToken;
+  }
+  return config;
+});
+
 export default authClient;

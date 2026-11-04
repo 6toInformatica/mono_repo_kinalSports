@@ -1,6 +1,9 @@
 import Field from './field.model.js';
 import { cloudinary } from '../../middlewares/file-uploader.js';
 
+const FIELD_IMAGE_FOLDER =
+  process.env.CLOUDINARY_FOLDER || 'kinal_sports/fields';
+
 export const fetchFields = async ({
   page = 1,
   limit = 10,
@@ -59,7 +62,7 @@ export const updateFieldRecord = async ({ id, updateData, file }) => {
         const url = currentField.photo;
         const parts = url.split('/');
         const fileNameWithExt = parts[parts.length - 1]; // ej: cancha123.jpg
-        const publicId = `kinal_sports/fields/${fileNameWithExt.split('.')[0]}`; // quitar extensión
+        const publicId = `${FIELD_IMAGE_FOLDER}/${fileNameWithExt.split('.')[0]}`; // quitar extensión
         await cloudinary.uploader.destroy(publicId);
       } catch (deleteError) {
         console.error(

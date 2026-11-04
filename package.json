@@ -17,7 +17,11 @@
     "lint": "pnpm -r --filter './server-*' run lint && pnpm --filter authentication-service/auth-node run lint && pnpm --filter client-admin run lint",
     "format": "pnpm -r --filter './server-*' run format || true",
     "commit": "cz",
-    "lint:changed": "git diff --name-only --cached | xargs pnpm exec eslint"
+    "lint:changed": "git diff --name-only --cached | xargs pnpm exec eslint",
+    "docker:up": "docker compose --env-file .env.docker up --build",
+    "docker:up:detached": "docker compose --env-file .env.docker up --build -d",
+    "docker:down": "docker compose --env-file .env.docker down",
+    "docker:logs": "docker compose --env-file .env.docker logs -f"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,jsx,ts,tsx}": [
@@ -32,14 +36,17 @@
     }
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.5.0",
-    "@commitlint/config-conventional": "^19.5.0",
-    "commitizen": "^4.3.0",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@eslint/js": "^9.39.5",
+    "commitizen": "^4.3.2",
     "cz-conventional-changelog": "^3.3.0",
-    "eslint": "^9.39.0",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.7",
     "husky": "^9.1.7",
-    "lint-staged": "^15.2.10",
-    "prettier": "^3.2.5"
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.9.10"
   },
   "dependencies": {
     "express-async-handler": "^1.2.0"

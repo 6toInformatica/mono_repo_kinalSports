@@ -13,7 +13,10 @@ import {
   removeTeamMemberByCaptain,
 } from './team.service.js';
 import { uploadBufferToCloudinary } from '../../middlewares/file-uploader.js';
-import { parseNamedMembers } from '../../helpers/team-helpers.js';
+import {
+  parseNamedMembers,
+  MAX_MEMBERS_BY_CATEGORY,
+} from '../../helpers/team-helpers.js';
 import { enrichTeamDetails } from '../../helpers/team-enrichment.js';
 
 /**
@@ -51,6 +54,14 @@ export const createTeam = async (req, res) => {
       });
     }
 
+    // Validar antes de subir el logo para no dejar imágenes huérfanas en Cloudinary
+    if (!Object.keys(MAX_MEMBERS_BY_CATEGORY).includes(category)) {
+      return res.status(400).json({
+        success: false,
+        message: 'La categoría debe ser FUTBOL_7 o FUTBOL_11',
+      });
+    }
+
     let logo;
     if (req.file) {
       const folder =
@@ -60,7 +71,8 @@ export const createTeam = async (req, res) => {
         folder,
         req.file.originalname
       );
-      logo = result.public_id;
+      // Se guarda la URL completa, igual que server-admin, para que ambos clientes la usen directamente
+      logo = result.secure_url;
     }
 
     const data = {
@@ -146,7 +158,10 @@ export const joinTeam = async (req, res) => {
       data: teamData,
     });
   } catch (error) {
-    const isClientError = error.message.includes('Ya eres miembro');
+    const isClientError =
+      error.message.includes('Ya eres miembro') ||
+      error.message.includes('no está disponible') ||
+      error.message.includes('cupo máximo');
     return res.status(isClientError ? 400 : 500).json({
       success: false,
       message: error.message || 'Error al intentar unirte al equipo',
@@ -278,7 +293,9 @@ export const addTeamAppMember = async (req, res) => {
   } catch (error) {
     const isClientError =
       error.message.includes('Ya eres miembro') ||
-      error.message.includes('no encontrado');
+      error.message.includes('no encontrado') ||
+      error.message.includes('no está disponible') ||
+      error.message.includes('cupo máximo');
     return res.status(isClientError ? 400 : 500).json({
       success: false,
       message: error.message || 'Error al agregar usuario al equipo',

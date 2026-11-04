@@ -53,6 +53,7 @@ export const useFieldsStore = create((set, get) => ({
         loading: false,
         error: error.response?.data?.message || 'Error al crear campo',
       });
+      throw error;
     }
   },
 

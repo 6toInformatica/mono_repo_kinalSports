@@ -16,6 +16,7 @@ import {
 } from '../../middlewares/tournament-validators.js';
 import { uploadTournamentImage } from '../../middlewares/file-uploader.js';
 import { cleanupUploadedFileOnFinish } from '../../middlewares/delete-file-on-error.js';
+import { validateJWT } from '../../middlewares/validate-JWT.js';
 import { requireRole } from '../../middlewares/validate-role.js';
 import { authOrInternal } from '../../middlewares/validate-internal-token.js';
 
@@ -33,19 +34,23 @@ router.get(
 // Rutas de escritura - SOLO para administradores globales
 router.post(
   '/',
+  // Autenticar y autorizar antes de subir la imagen a Cloudinary
+  validateJWT,
+  requireRole('ADMIN_ROLE'),
   uploadTournamentImage.single('logo'),
   cleanupUploadedFileOnFinish,
   validateCreateTournament,
-  requireRole('ADMIN_ROLE'),
   createTournament
 );
 
 router.put(
   '/:id',
+  // Autenticar y autorizar antes de subir la imagen a Cloudinary
+  validateJWT,
+  requireRole('ADMIN_ROLE'),
   uploadTournamentImage.single('logo'),
   cleanupUploadedFileOnFinish,
   validateUpdateTournamentRequest,
-  requireRole('ADMIN_ROLE'),
   updateTournament
 );
 

@@ -42,26 +42,20 @@ public class PasswordHashService : IPasswordHashService
     {
         try
         {
-            Console.WriteLine($"[DEBUG] Verifying password for hash: {hashedPassword.Substring(0, Math.Min(50, hashedPassword.Length))}...");
-
             // Verificar si es el formato estándar Argon2
             if (hashedPassword.StartsWith("$argon2id$"))
             {
-                Console.WriteLine("[DEBUG] Using Argon2 standard format verification");
-                var result = VerifyArgon2StandardFormat(password, hashedPassword);
-                Console.WriteLine($"[DEBUG] Verification result: {result}");
-                return result;
+                return VerifyArgon2StandardFormat(password, hashedPassword);
             }
             else
             {
-                Console.WriteLine("[DEBUG] Using legacy format verification");
                 // Formato legacy (Base64 simple)
                 return VerifyLegacyFormat(password, hashedPassword);
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"[DEBUG] Exception in VerifyPassword: {ex.Message}");
+            // Un hash con formato inválido se trata como contraseña incorrecta
             return false;
         }
     }
