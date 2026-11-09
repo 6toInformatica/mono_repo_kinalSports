@@ -3,6 +3,9 @@
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Archivos generados en tiempo de ejecución: no forman parte del proyecto
+         (evita que dotnet watch reaccione a cada línea de log) -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);logs/**;keys/**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>

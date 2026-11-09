@@ -80,9 +80,13 @@ public class CloudinaryService(IOptions<CloudinaryOptions> options) : ICloudinar
     }
 
 
+    // URL base de entrega: la configurada o, si falta, la de la cuenta configurada (CloudName)
+    private string BaseUrl =>
+        _settings.BaseUrl ?? $"https://res.cloudinary.com/{_settings.CloudName}/image/upload/";
+
     public string GetDefaultAvatarUrl()
     {
-        var baseUrl = _settings.BaseUrl ?? "https://res.cloudinary.com/dug3apxt3/image/upload/";
+        var baseUrl = BaseUrl;
         var defaultPath = _settings.DefaultAvatarPath ?? "auth_service/profiles/avatarDefault-1749508519496_oam3k3";
         // Asegurar que tenga extensión .png
         if (!defaultPath.EndsWith(".png"))
@@ -92,8 +96,7 @@ public class CloudinaryService(IOptions<CloudinaryOptions> options) : ICloudinar
 
     public string GetFullImageUrl(string fileName)
     {
-        var baseUrl = _settings.BaseUrl
-                      ?? "https://res.cloudinary.com/dqx1m6nxh/image/upload/";
+        var baseUrl = BaseUrl;
 
         if (string.IsNullOrWhiteSpace(fileName))
         {

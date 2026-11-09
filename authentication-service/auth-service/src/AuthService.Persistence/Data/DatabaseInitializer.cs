@@ -32,6 +32,7 @@ public static class DatabaseInitializer
     public static async Task InitializeAsync(
         ApplicationDbContext context,
         IPasswordHashService passwordHasher,
+        string? adminPassword,
         ILogger logger,
         CancellationToken cancellationToken = default)
     {
@@ -44,7 +45,7 @@ public static class DatabaseInitializer
         }
         await context.Database.MigrateAsync(cancellationToken);
 
-        await DataSeeder.SeedAsync(context, passwordHasher);
+        await DataSeeder.SeedAsync(context, passwordHasher, adminPassword, logger);
     }
 
     /// <summary>

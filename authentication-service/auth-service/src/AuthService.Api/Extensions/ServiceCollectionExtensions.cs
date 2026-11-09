@@ -14,8 +14,6 @@ public static class ServiceCollectionExtensions
             .AddInfrastructure(configuration)
             .AddPersistence(configuration);
 
-        services.AddHealthChecks();
-
         return services;
     }
 

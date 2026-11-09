@@ -85,11 +85,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Health check endpoints - both versions for compatibility
-// Standard health check endpoint
-app.MapHealthChecks("/health");
-
-// Custom health endpoint to match Node.js response format
+// Health: /health (formato compatible con auth-node) y /api/v1/health (HealthController)
 app.MapGet("/health", () =>
 {
     var response = new
@@ -99,8 +95,6 @@ app.MapGet("/health", () =>
     };
     return Results.Ok(response);
 });
-
-app.MapHealthChecks("/api/v1/health");
 
 // Startup log: addresses and health endpoint
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
@@ -141,7 +135,8 @@ using (var scope = app.Services.CreateScope())
     try
     {
         logger.LogInformation("Initializing database...");
-        await DatabaseInitializer.InitializeAsync(context, passwordHasher, logger);
+        var adminPassword = app.Configuration["Seed:AdminPassword"];
+        await DatabaseInitializer.InitializeAsync(context, passwordHasher, adminPassword, logger);
         logger.LogInformation("Database initialization completed successfully");
     }
     catch (Exception ex)

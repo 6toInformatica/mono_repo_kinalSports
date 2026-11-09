@@ -3,12 +3,21 @@ using AuthService.Application.Interfaces;
 using AuthService.Application.Services;
 using AuthService.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AuthService.Persistence.Data;
 
 public static class DataSeeder
 {
-    public static async Task SeedAsync(ApplicationDbContext context, IPasswordHashService passwordHasher)
+    /// <param name="adminPassword">
+    /// Contraseña del admin inicial (configuración Seed:AdminPassword). Si no se define,
+    /// no se crea el admin: la contraseña nunca va fija en el código.
+    /// </param>
+    public static async Task SeedAsync(
+        ApplicationDbContext context,
+        IPasswordHashService passwordHasher,
+        string? adminPassword,
+        ILogger logger)
     {
         // Verificar si ya existen roles
         if (!(context.Roles?.Any() ?? false))
@@ -32,6 +41,12 @@ public static class DataSeeder
         // Seed de un usuario administrador por defecto SOLO si no existen usuarios todavía
         if (!(await (context.Users?.AnyAsync() ?? Task.FromResult(false))))
         {
+            if (string.IsNullOrWhiteSpace(adminPassword))
+            {
+                logger.LogWarning("Seed:AdminPassword is not configured. The initial admin user was not created");
+                return;
+            }
+
             // Buscar rol admin existente
             var adminRole = await (context.Roles ?? throw new InvalidOperationException("Roles DbSet is null.")).FirstOrDefaultAsync(r => r.Name == RoleConstants.ADMIN_ROLE);
             if (adminRole != null)
@@ -49,7 +64,7 @@ public static class DataSeeder
                     Surname = "User",
                     Username = "admin",
                     Email = "admin@ksports.local",
-                    Password = passwordHasher.HashPassword("Admin1234!"),
+                    Password = passwordHasher.HashPassword(adminPassword),
                     Status = true,
                     UserProfile = new UserProfile
                     {
