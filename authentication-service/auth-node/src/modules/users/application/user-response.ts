@@ -1,26 +1,24 @@
-import {
-  getDefaultAvatarPath,
-  getFullImageUrl,
-} from '../../../../helpers/cloudinary-service.js';
 import { USER_ROLE } from '../../roles/domain/roles.ts';
-import type { UserWithRelations } from '../infrastructure/user.repository.ts';
+import type { User } from '../domain/user.ts';
+import type { ImageStorage } from './ports.ts';
 
 /** Representación pública del usuario (misma forma que UserResponseDto de .NET) */
-export const buildUserResponse = (user: UserWithRelations) => ({
+export const createUserPresenter = (images: ImageStorage) => (user: User) => ({
   id: user.id,
   name: user.name,
   surname: user.surname,
   username: user.username,
   email: user.email,
-  phone: user.userProfile?.phone || '',
-  profilePicture: getFullImageUrl(
-    user.userProfile?.profilePicture || getDefaultAvatarPath()
+  phone: user.profile?.phone || '',
+  profilePicture: images.fullUrl(
+    user.profile?.profilePicture || images.defaultAvatarPath()
   ),
-  role: user.userRoles[0]?.role.name ?? USER_ROLE,
+  role: user.roles[0] ?? USER_ROLE,
   status: user.status,
-  isEmailVerified: user.userEmail?.emailVerified ?? false,
+  isEmailVerified: user.emailVerification?.verified ?? false,
   createdAt: user.createdAt,
   updatedAt: user.updatedAt,
 });
 
-export type UserResponse = ReturnType<typeof buildUserResponse>;
+export type UserPresenter = ReturnType<typeof createUserPresenter>;
+export type UserResponse = ReturnType<UserPresenter>;

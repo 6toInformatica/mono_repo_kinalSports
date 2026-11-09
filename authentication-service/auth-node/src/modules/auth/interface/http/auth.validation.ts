@@ -1,4 +1,4 @@
-import { rule } from '../../http/validation.ts';
+import { rule } from '../../../../http/validation.ts';
 
 const LETTERS_AND_SPACES = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
 

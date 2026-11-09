@@ -4,7 +4,7 @@ import {
   closeDatabase,
   connectDatabase,
 } from './infrastructure/database/prisma.ts';
-import { roleRepository } from './modules/roles/infrastructure/role.repository.ts';
+import { createContainer } from './container.ts';
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
@@ -19,9 +19,10 @@ process.on('unhandledRejection', (reason) => {
 const start = async () => {
   await connectDatabase();
   // Datos esenciales (roles)
-  await roleRepository.seedRoles();
+  const container = createContainer(config);
+  await container.roles.seed();
 
-  const app = await buildApp(config);
+  const app = await buildApp(config, container);
   app.addHook('onClose', async () => closeDatabase());
 
   // Apagado ordenado: deja de aceptar peticiones, termina las activas y cierra la base

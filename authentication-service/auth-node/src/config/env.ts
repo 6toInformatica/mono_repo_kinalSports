@@ -26,6 +26,11 @@ const csv = z
 const positiveInt = (fallback: number) =>
   z.coerce.number().int().positive().catch(fallback);
 
+const optionalText = z
+  .string()
+  .optional()
+  .transform((value) => value || undefined);
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
@@ -41,12 +46,14 @@ const envSchema = z.object({
 
   // HS256 compartido con auth-service (.NET exige al menos 256 bits)
   JWT_SECRET: z.string().min(32),
-  JWT_ISSUER: z.string().optional(),
-  JWT_AUDIENCE: z.string().optional(),
+  JWT_ISSUER: optionalText,
+  JWT_AUDIENCE: optionalText,
 
-  INTERNAL_SERVICE_TOKEN: z.string().optional(),
+  INTERNAL_SERVICE_TOKEN: optionalText,
 
   ALLOWED_ORIGINS: csv,
+  // Enlaces de los correos de verificación y recuperación
+  FRONTEND_URL: z.string().default('http://localhost:3000'),
 
   RATE_LIMIT_WINDOW_MS: positiveInt(60_000),
   RATE_LIMIT_MAX: positiveInt(100),
@@ -54,6 +61,24 @@ const envSchema = z.object({
   RATE_LIMIT_AUTH_MAX: positiveInt(30),
 
   UPLOAD_PATH: z.string().default('./uploads'),
+
+  SMTP_HOST: optionalText,
+  SMTP_PORT: positiveInt(587),
+  SMTP_ENABLE_SSL: optionalText,
+  SMTP_USERNAME: optionalText,
+  SMTP_PASSWORD: optionalText,
+  SMTP_FROM: optionalText,
+  EMAIL_FROM: optionalText,
+  SMTP_FROM_NAME: optionalText,
+  EMAIL_FROM_NAME: optionalText,
+
+  CLOUDINARY_CLOUD_NAME: optionalText,
+  CLOUDINARY_API_KEY: optionalText,
+  CLOUDINARY_API_SECRET: optionalText,
+  CLOUDINARY_BASE_URL: optionalText,
+  CLOUDINARY_FOLDER: optionalText,
+  CLOUDINARY_DEFAULT_AVATAR: optionalText,
+  CLOUDINARY_DEFAULT_AVATAR_FILENAME: optionalText,
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -68,12 +93,21 @@ if (!parsed.success) {
 
 const env = parsed.data;
 
+/** Avatar por defecto: valor directo o carpeta + nombre de archivo */
+const defaultAvatarPath =
+  env.CLOUDINARY_DEFAULT_AVATAR && !env.CLOUDINARY_DEFAULT_AVATAR.includes('${')
+    ? env.CLOUDINARY_DEFAULT_AVATAR
+    : [env.CLOUDINARY_FOLDER, env.CLOUDINARY_DEFAULT_AVATAR_FILENAME]
+        .filter(Boolean)
+        .join('/');
+
 export const config = {
   env: env.NODE_ENV,
   isDevelopment: env.NODE_ENV === 'development',
   port: env.PORT,
   basePath: '/api/v1',
   internalServiceToken: env.INTERNAL_SERVICE_TOKEN,
+  frontendUrl: env.FRONTEND_URL,
   database: {
     host: env.DB_HOST,
     port: env.DB_PORT,
@@ -81,6 +115,11 @@ export const config = {
     user: env.DB_USERNAME,
     password: env.DB_PASSWORD,
     logQueries: env.DB_SQL_LOGGING,
+  },
+  jwt: {
+    secret: env.JWT_SECRET,
+    issuer: env.JWT_ISSUER,
+    audience: env.JWT_AUDIENCE,
   },
   cors: {
     allowedOrigins: env.ALLOWED_ORIGINS.length
@@ -102,6 +141,27 @@ export const config = {
       'image/png',
       'image/webp',
     ] as string[],
+  },
+  smtp: {
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    // Sin valor explícito, SSL implícito solo en el puerto 465
+    enableSsl:
+      env.SMTP_ENABLE_SSL === 'true' ||
+      (env.SMTP_ENABLE_SSL === undefined && env.SMTP_PORT === 465),
+    username: env.SMTP_USERNAME,
+    password: env.SMTP_PASSWORD,
+    fromEmail: env.SMTP_FROM ?? env.EMAIL_FROM,
+    fromName: env.SMTP_FROM_NAME ?? env.EMAIL_FROM_NAME,
+  },
+  cloudinary: {
+    cloudName: env.CLOUDINARY_CLOUD_NAME,
+    apiKey: env.CLOUDINARY_API_KEY,
+    apiSecret: env.CLOUDINARY_API_SECRET,
+    baseUrl: env.CLOUDINARY_BASE_URL ?? '',
+    folder: env.CLOUDINARY_FOLDER ?? '',
+    defaultAvatarPath,
+    defaultAvatarFilename: env.CLOUDINARY_DEFAULT_AVATAR_FILENAME,
   },
 } as const;
 

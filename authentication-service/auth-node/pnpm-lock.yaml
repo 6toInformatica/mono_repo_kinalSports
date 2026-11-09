@@ -37,9 +37,6 @@ importers:
       cloudinary:
         specifier: ^2.11.0
         version: 2.11.0
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
       fastify:
         specifier: ^5.12.8
         version: 5.12.8

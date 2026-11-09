@@ -1,14 +1,19 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { AppConfig } from '../../config/env.ts';
-import { verifyJWT } from '../../../helpers/generate-jwt.js';
-import { userRepository } from '../../modules/users/infrastructure/user.repository.ts';
+import type { TokenService } from '../../modules/auth/application/ports.ts';
+import type { UserRepository } from '../../modules/users/application/ports.ts';
+
+export interface SessionDeps {
+  tokens: TokenService;
+  users: UserRepository;
+}
 
 /**
  * Valida el access token (cabecera Authorization: Bearer o x-token) y carga el usuario.
  * Solo por cabeceras: en el body o la query string el token puede quedar en logs.
  */
 export const authenticate =
-  (config: AppConfig) =>
+  (config: AppConfig, { tokens, users }: SessionDeps) =>
   async (request: FastifyRequest, reply: FastifyReply) => {
     const header = request.headers['x-token'] || request.headers.authorization;
 
@@ -22,8 +27,8 @@ export const authenticate =
     const token = String(header).replace(/^Bearer\s+/, '');
 
     try {
-      const decoded = (await verifyJWT(token)) as { sub: string };
-      const user = await userRepository.findById(decoded.sub);
+      const { sub } = await tokens.verifyAccessToken(token);
+      const user = await users.findById(sub);
 
       if (!user) {
         return reply.code(401).send({

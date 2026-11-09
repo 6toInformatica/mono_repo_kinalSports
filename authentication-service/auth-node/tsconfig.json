@@ -13,13 +13,12 @@
     "erasableSyntaxOnly": true,
     "allowImportingTsExtensions": true,
     "rewriteRelativeImportExtensions": true,
-    "allowJs": true,
-    "checkJs": false,
+    "allowJs": false,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "outDir": "dist",
     "rootDir": ".",
     "sourceMap": true
   },
-  "include": ["src", "configs", "helpers", "utils"]
+  "include": ["src", "prisma.config.ts"]
 }
