@@ -38,15 +38,9 @@ export const dbConnection = async () => {
     console.log('PostgreSQL | Connected to PostgreSQL');
     console.log('PostgreSQL | Connection to database established');
 
-    // Sincronizar modelos en desarrollo
-    // Solo crea las tablas que falten: el esquema se comparte con auth-service (.NET),
-    // por lo que `alter` no debe modificar en cada arranque las tablas que crea EF Core
-    if (process.env.NODE_ENV === 'development') {
-      const syncLogging =
-        process.env.DB_SQL_LOGGING === 'true' ? console.log : false;
-      await sequelize.sync({ logging: syncLogging });
-      console.log('PostgreSQL | Models synchronized with database');
-    }
+    // El esquema lo crean y migran solo las migraciones de EF Core (auth-service / auth-migrator).
+    // Este servicio no ejecuta sequelize.sync(): evita la carrera al arrancar y que los dos
+    // servicios creen tablas distintas.
   } catch (error) {
     console.error('PostgreSQL | Could not connect to PostgreSQL');
     console.error('PostgreSQL | Error:', error.message);
