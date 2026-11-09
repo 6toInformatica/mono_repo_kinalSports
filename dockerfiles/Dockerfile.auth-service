@@ -1,8 +1,9 @@
 # auth-service (.NET 10)
 #
 # Destinos:
-#   dev      -> SDK con dotnet watch y hot reload (lo usa docker-compose.yml)
-#   runtime  -> imagen ASP.NET liviana con la app publicada (producción)
+#   dev       -> SDK con dotnet watch y hot reload (lo usa docker-compose.yml)
+#   runtime   -> imagen ASP.NET liviana con la app publicada (producción)
+#   migrator  -> aplica las migraciones de EF Core y termina (servicio auth-migrator)
 
 # ---------- base: SDK con certificados ----------
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS sdk
@@ -57,7 +58,15 @@ RUN apt-get update \
 WORKDIR /app
 COPY --from=publish /app/publish ./
 
+# Carpetas que la app escribe en tiempo de ejecución (claves de Data Protection y logs);
+# la imagen corre sin privilegios de root
+RUN mkdir -p /app/keys /app/logs && chown "$APP_UID" /app/keys /app/logs
+
 ENV ASPNETCORE_URLS=http://+:5156
 EXPOSE 5156
 USER $APP_UID
 ENTRYPOINT ["dotnet", "AuthService.Api.dll"]
+
+# ---------- migrator: prepara el esquema compartido y termina ----------
+FROM runtime AS migrator
+ENTRYPOINT ["dotnet", "AuthService.Api.dll", "--migrate-only"]

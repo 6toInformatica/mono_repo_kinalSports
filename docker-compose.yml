@@ -43,6 +43,29 @@ services:
     networks:
       - kinal-network
 
+  # Aplica las migraciones de EF Core (dueño del esquema de autenticación) y termina.
+  # auth-service y auth-node esperan a que finalice; después funcionan de forma independiente.
+  auth-migrator:
+    build:
+      context: ./authentication-service/auth-service
+      dockerfile: ../../dockerfiles/Dockerfile.auth-service
+      target: migrator
+    container_name: kinal_auth_migrator
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: >-
+        Host=postgres;Port=5432;Database=${POSTGRES_DB:-kinal_sports};
+        Username=${POSTGRES_USER:-KinalSports};Password=${POSTGRES_PASSWORD:-KinalSports2027!}
+      JwtSettings__SecretKey: ${JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
+      JwtSettings__Issuer: ${JWT_ISSUER:-AuthService}
+      JwtSettings__Audience: ${JWT_AUDIENCE:-AuthService}
+    networks:
+      - kinal-network
+
   auth-service:
     build:
       context: ./authentication-service/auth-service
@@ -53,6 +76,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      auth-migrator:
+        condition: service_completed_successfully
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:5156
@@ -115,6 +140,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      auth-migrator:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: development
       PORT: 3007

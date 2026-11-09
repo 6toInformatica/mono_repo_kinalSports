@@ -131,30 +131,30 @@ app.Lifetime.ApplicationStarted.Register(() =>
     }
 });
 
-// Initialize database and seed data
+// Migraciones y datos iniciales. EF Core es el único dueño del esquema (auth-node lo comparte).
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<AuthService.Application.Interfaces.IPasswordHashService>();
 
     try
     {
-        logger.LogInformation("Checking database connection...");
-
-        // Ensure database is created (similar to Sequelize sync in Node.js)
-        await context.Database.EnsureCreatedAsync();
-
-        logger.LogInformation("Database ready. Running seed data...");
-        var passwordHasher = scope.ServiceProvider.GetRequiredService<AuthService.Application.Interfaces.IPasswordHashService>();
-        await DataSeeder.SeedAsync(context, passwordHasher);
-
+        logger.LogInformation("Initializing database...");
+        await DatabaseInitializer.InitializeAsync(context, passwordHasher, logger);
         logger.LogInformation("Database initialization completed successfully");
     }
     catch (Exception ex)
     {
         logger.LogError(ex, "An error occurred while initializing the database");
-        throw; // Re-throw to stop the application
+        throw; // Detiene la aplicación
     }
+}
+
+// Modo migrador (servicio auth-migrator de docker-compose): prepara la base y termina
+if (args.Contains("--migrate-only"))
+{
+    return;
 }
 
 app.Run();
