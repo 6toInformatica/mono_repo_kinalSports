@@ -2,7 +2,7 @@ name: kinal-sports
 
 services:
   postgres:
-    image: postgres:13
+    image: postgres:18
     container_name: pg-kinal-sports
     restart: unless-stopped
     environment:
@@ -12,7 +12,8 @@ services:
     ports:
       - "${POSTGRES_PORT:-5435}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # PostgreSQL 18+ guarda los datos en /var/lib/postgresql/<versión>/docker
+      - postgres18_data:/var/lib/postgresql
     healthcheck:
       test:
         [
@@ -63,6 +64,8 @@ services:
       JwtSettings__SecretKey: ${JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
       JwtSettings__Issuer: ${JWT_ISSUER:-AuthService}
       JwtSettings__Audience: ${JWT_AUDIENCE:-AuthService}
+      # Admin inicial (solo se crea si la base no tiene usuarios). Valor por defecto solo para desarrollo
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-Admin1234!}
     networks:
       - kinal-network
 
@@ -89,6 +92,8 @@ services:
       JwtSettings__SecretKey: ${JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
       JwtSettings__Issuer: ${JWT_ISSUER:-AuthService}
       JwtSettings__Audience: ${JWT_AUDIENCE:-AuthService}
+      # Admin inicial (solo se crea si la base no tiene usuarios). Valor por defecto solo para desarrollo
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-Admin1234!}
       InternalServiceToken: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
       SmtpSettings__Enabled: "true"
       SmtpSettings__Host: ${SMTP_HOST:-smtp.gmail.com}
@@ -353,5 +358,7 @@ networks:
     driver: bridge
 
 volumes:
+  # postgres_data (PostgreSQL 13) ya no se usa: se conserva solo como respaldo de la migración
   postgres_data:
+  postgres18_data:
   mongo_data:
