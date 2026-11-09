@@ -48,3 +48,6 @@ Thumbs.db
 
 # Misc
 *.swp
+
+# Respaldos locales de bases de datos (contienen datos reales)
+backups/
