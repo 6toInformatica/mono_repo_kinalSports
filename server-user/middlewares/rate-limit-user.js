@@ -2,13 +2,17 @@
 
 import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
 
+// Límites configurables por entorno; los valores por defecto son los de producción
+const envInt = (name, fallback) =>
+  Number.parseInt(process.env[name], 10) || fallback;
+
 /**
  * Limitador General por Usuario (100 peticiones / 15 min)
  * Se utiliza para operaciones comunes de lectura de equipos y torneos.
  */
 export const generalUserLimit = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Límite de 100 peticiones por usuario en la ventana definida.
+  windowMs: envInt('RATE_LIMIT_USER_WINDOW_MS', 15 * 60 * 1000), // 15 minutos
+  max: envInt('RATE_LIMIT_USER_MAX', 100), // 100 peticiones por usuario en la ventana
   keyGenerator: (req) => req.user?.id || ipKeyGenerator(req), // Si no está autenticado, fallback a la IP compatible con IPv6
   handler: (req, res) => {
     return res.status(429).json({
@@ -26,8 +30,8 @@ export const generalUserLimit = rateLimit({
  * Aplicado específicamente a la creación y gestión de reservaciones (acción costosa).
  */
 export const reservationLimit = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hora
-  max: 10, // Límite estricto de 10 peticiones de reserva por usuario por hora.
+  windowMs: envInt('RATE_LIMIT_RESERVATION_WINDOW_MS', 60 * 60 * 1000), // 1 hora
+  max: envInt('RATE_LIMIT_RESERVATION_MAX', 10), // 10 peticiones de reserva por usuario por hora
   keyGenerator: (req) => req.user?.id || ipKeyGenerator(req),
   handler: (req, res) => {
     return res.status(429).json({
