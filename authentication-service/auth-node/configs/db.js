@@ -49,25 +49,8 @@ export const dbConnection = async () => {
   }
 };
 
-// Graceful shutdown handlers
-const gracefulShutdown = async (signal) => {
-  console.log(
-    `PostgreSQL | Received ${signal}. Closing database connection...`
-  );
-  try {
-    await sequelize.close();
-    console.log('PostgreSQL | Database connection closed successfully');
-    process.exit(0);
-  } catch (error) {
-    console.error(
-      'PostgreSQL | Error during graceful shutdown:',
-      error.message
-    );
-    process.exit(1);
-  }
+// Cierre de la conexión; lo invoca el apagado ordenado del servidor (src/main.ts)
+export const closeDatabase = async () => {
+  await sequelize.close();
+  console.log('PostgreSQL | Database connection closed successfully');
 };
-
-// Handle different termination signals
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2')); // For nodemon restarts
