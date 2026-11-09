@@ -1,5 +1,6 @@
 {
   "watch": ["src", "configs", "helpers", "utils"],
   "ext": "ts,js,json",
-  "exec": "node src/main.ts"
+  "exec": "prisma generate --no-hints && node src/main.ts",
+  "ignore": ["src/generated/**"]
 }

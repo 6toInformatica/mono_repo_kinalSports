@@ -37,6 +37,7 @@ const envSchema = z.object({
   DB_NAME: z.string().min(1),
   DB_USERNAME: z.string().min(1),
   DB_PASSWORD: z.string().min(1),
+  DB_SQL_LOGGING: z.stringbool().default(false),
 
   // HS256 compartido con auth-service (.NET exige al menos 256 bits)
   JWT_SECRET: z.string().min(32),
@@ -73,6 +74,14 @@ export const config = {
   port: env.PORT,
   basePath: '/api/v1',
   internalServiceToken: env.INTERNAL_SERVICE_TOKEN,
+  database: {
+    host: env.DB_HOST,
+    port: env.DB_PORT,
+    name: env.DB_NAME,
+    user: env.DB_USERNAME,
+    password: env.DB_PASSWORD,
+    logQueries: env.DB_SQL_LOGGING,
+  },
   cors: {
     allowedOrigins: env.ALLOWED_ORIGINS.length
       ? env.ALLOWED_ORIGINS

@@ -1,6 +1,10 @@
 import { config } from './config/env.ts';
 import { buildApp } from './app.ts';
-import { closeDatabase, connectDatabase, seedRoles } from './legacy/index.ts';
+import {
+  closeDatabase,
+  connectDatabase,
+} from './infrastructure/database/prisma.ts';
+import { roleRepository } from './modules/roles/infrastructure/role.repository.ts';
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
@@ -15,7 +19,7 @@ process.on('unhandledRejection', (reason) => {
 const start = async () => {
   await connectDatabase();
   // Datos esenciales (roles)
-  await seedRoles();
+  await roleRepository.seedRoles();
 
   const app = await buildApp(config);
   app.addHook('onClose', async () => closeDatabase());

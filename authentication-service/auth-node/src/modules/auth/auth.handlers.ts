@@ -1,22 +1,23 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
+import { generateJWT } from '../../../helpers/generate-jwt.js';
+import { USER_ROLE } from '../roles/domain/roles.ts';
+import { roleRepository } from '../roles/infrastructure/role.repository.ts';
 import {
-  findRefreshTokenByHash,
-  findUserStatus,
-  forgotPassword as forgotPasswordFlow,
-  generateJwt,
   getUserProfile,
   getUserProfileByUsername,
-  getUserRoleNames,
-  hashToken,
+  updateProfilePicture as updateProfilePictureFlow,
+} from '../users/application/profile.service.ts';
+import { userRepository } from '../users/infrastructure/user.repository.ts';
+import {
+  forgotPassword as forgotPasswordFlow,
   loginUser,
   registerUser,
   resendVerificationEmail,
   resetPassword as resetPasswordFlow,
-  revokeRefreshTokenFamily,
-  saveRefreshToken,
-  updateProfilePicture as updateProfilePictureFlow,
   verifyEmail as verifyEmailFlow,
-} from '../../legacy/index.ts';
+  type RegisterInput,
+} from './application/auth.service.ts';
+import { refreshTokenRepository } from './infrastructure/refresh-token.repository.ts';
 
 type Body = Record<string, unknown>;
 type Request = FastifyRequest;
@@ -26,7 +27,6 @@ const bodyOf = (request: FastifyRequest) => request.body as Body;
 
 const ACCESS_TOKEN_TTL = '15m';
 const ACCESS_TOKEN_TTL_SECONDS = 900;
-const USER_ROLE = 'USER_ROLE';
 
 const messageOf = (error: unknown) => (error as Error).message ?? '';
 
@@ -53,7 +53,7 @@ const tokenErrorStatus = (message: string) => {
 export const register = async (request: Request, reply: FastifyReply) => {
   try {
     const result = await registerUser({
-      ...bodyOf(request),
+      ...(bodyOf(request) as unknown as RegisterInput),
       profilePicture: request.uploadedFile?.path ?? null,
     });
     return reply.code(201).send(result);
@@ -214,45 +214,45 @@ export const refresh = async (request: Request, reply: FastifyReply) => {
     return reply.code(400).send({ message: 'Refresh token requerido' });
   }
 
-  const stored = await findRefreshTokenByHash(hashToken(String(refreshToken)));
+  const stored = await refreshTokenRepository.findByRawToken(
+    String(refreshToken)
+  );
   if (!stored) {
     return reply.code(401).send({ message: 'Refresh token inválido' });
   }
 
-  if (stored.ExpiresAt < new Date()) {
-    stored.RevokedAt = new Date();
-    await stored.save();
+  if (stored.expiresAt < new Date()) {
+    await refreshTokenRepository.revoke(stored.id);
     return reply.code(401).send({ message: 'Refresh token expirado' });
   }
 
-  if (stored.RevokedAt) {
+  if (stored.revokedAt) {
     // Reutilización detectada: se revoca toda la familia
-    await revokeRefreshTokenFamily(stored.FamilyId);
+    await refreshTokenRepository.revokeFamily(stored.familyId);
     return reply
       .code(401)
       .send({ message: 'Sesión comprometida. Refresh token reutilizado.' });
   }
 
-  stored.RevokedAt = new Date();
-  await stored.save();
+  await refreshTokenRepository.revoke(stored.id);
 
   // Un usuario desactivado no puede seguir renovando su sesión
-  const userId = String(stored.UserId);
-  const user = await findUserStatus(userId);
-  if (!user || !user.Status) {
+  const { userId } = stored;
+  const user = await userRepository.findStatus(userId);
+  if (!user || !user.status) {
     return reply.code(401).send({ message: 'La cuenta está desactivada' });
   }
 
-  // El rol se vuelve a leer de la base para que el token renovado conserve el claim `role`
-  const [role = USER_ROLE] = await getUserRoleNames(userId);
-  const accessToken = await generateJwt(
+  // El rol se vuelve a leer de la base para que el token renovado conserve el claim role
+  const [role = USER_ROLE] = await roleRepository.getUserRoleNames(userId);
+  const accessToken = await generateJWT(
     userId,
     { role },
     { expiresIn: ACCESS_TOKEN_TTL }
   );
-  const { raw: newRefreshToken } = await saveRefreshToken(
+  const { raw: newRefreshToken } = await refreshTokenRepository.issue(
     userId,
-    stored.FamilyId
+    stored.familyId
   );
 
   return reply.code(200).send({
@@ -268,10 +268,11 @@ export const logout = async (request: Request, reply: FastifyReply) => {
     return reply.code(400).send({ message: 'Refresh token requerido' });
   }
 
-  const stored = await findRefreshTokenByHash(hashToken(String(refreshToken)));
-  if (stored && !stored.RevokedAt) {
-    stored.RevokedAt = new Date();
-    await stored.save();
+  const stored = await refreshTokenRepository.findByRawToken(
+    String(refreshToken)
+  );
+  if (stored && !stored.revokedAt) {
+    await refreshTokenRepository.revoke(stored.id);
   }
   return reply.code(200).send({ message: 'Sesión cerrada' });
 };

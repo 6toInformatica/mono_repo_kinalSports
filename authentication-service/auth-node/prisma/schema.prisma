@@ -1,0 +1,106 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model EFMigrationsHistory {
+  migration_id    String @id(map: "pk___ef_migrations_history") @db.VarChar(150)
+  product_version String @db.VarChar(32)
+
+  @@map("__EFMigrationsHistory")
+  @@ignore
+}
+
+model RefreshToken {
+  id        String    @id(map: "pk_refresh_tokens") @default(uuid()) @db.Uuid
+  tokenHash String    @unique(map: "ix_refresh_tokens_token_hash") @map("token_hash") @db.VarChar(255)
+  userId    String    @map("user_id") @db.VarChar(16)
+  familyId  String    @map("family_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt DateTime  @map("created_at") @db.Timestamptz(6)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_refresh_tokens_users_user_id")
+
+  @@index([familyId], map: "ix_refresh_tokens_family_id")
+  @@index([userId], map: "ix_refresh_tokens_user_id")
+  @@map("refresh_tokens")
+}
+
+model Role {
+  id        String     @id(map: "pk_roles") @db.VarChar(16)
+  name      String     @unique(map: "ix_roles_name") @db.VarChar(50)
+  createdAt DateTime   @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime   @updatedAt @map("updated_at") @db.Timestamptz(6)
+  userRoles UserRole[]
+
+  @@map("roles")
+}
+
+model UserEmail {
+  id                           String    @id(map: "pk_user_emails") @db.VarChar(16)
+  userId                       String    @unique(map: "ix_user_emails_user_id") @map("user_id") @db.VarChar(16)
+  emailVerified                Boolean   @default(false) @map("email_verified")
+  emailVerificationToken       String?   @map("email_verification_token") @db.VarChar(256)
+  emailVerificationTokenExpiry DateTime? @map("email_verification_token_expiry") @db.Timestamptz(6)
+  user                         User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_emails_users_user_id")
+
+  @@map("user_emails")
+}
+
+model UserPasswordReset {
+  id                       String    @id(map: "pk_user_password_resets") @db.VarChar(16)
+  userId                   String    @unique(map: "ix_user_password_resets_user_id") @map("user_id") @db.VarChar(16)
+  passwordResetToken       String?   @map("password_reset_token") @db.VarChar(256)
+  passwordResetTokenExpiry DateTime? @map("password_reset_token_expiry") @db.Timestamptz(6)
+  user                     User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_password_resets_users_user_id")
+
+  @@map("user_password_resets")
+}
+
+model UserProfile {
+  id             String @id(map: "pk_user_profiles") @db.VarChar(16)
+  userId         String @unique(map: "ix_user_profiles_user_id") @map("user_id") @db.VarChar(16)
+  profilePicture String @default("") @map("profile_picture") @db.VarChar(512)
+  phone          String @db.VarChar(8)
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_profiles_users_user_id")
+
+  @@map("user_profiles")
+}
+
+model UserRole {
+  id        String   @id(map: "pk_user_roles") @db.VarChar(16)
+  userId    String   @map("user_id") @db.VarChar(16)
+  roleId    String   @map("role_id") @db.VarChar(16)
+  createdAt DateTime @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  role      Role     @relation(fields: [roleId], references: [id], onUpdate: NoAction, map: "fk_user_roles_roles_role_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_roles_users_user_id")
+
+  @@index([roleId], map: "ix_user_roles_role_id")
+  @@index([userId], map: "ix_user_roles_user_id")
+  @@map("user_roles")
+}
+
+model User {
+  id                String             @id(map: "pk_users") @db.VarChar(16)
+  name              String             @db.VarChar(25)
+  surname           String             @db.VarChar(25)
+  username          String             @unique(map: "ix_users_username") @db.VarChar(50)
+  email             String             @unique(map: "ix_users_email") @db.VarChar(150)
+  password          String             @db.VarChar(255)
+  status            Boolean            @default(false)
+  createdAt         DateTime           @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  refreshTokens     RefreshToken[]
+  userEmail         UserEmail?
+  userPasswordReset UserPasswordReset?
+  userProfile       UserProfile?
+  userRoles         UserRole[]
+
+  @@map("users")
+}

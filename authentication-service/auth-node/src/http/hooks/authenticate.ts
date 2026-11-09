@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { AppConfig } from '../../config/env.ts';
-import { findUserById, verifyJwt } from '../../legacy/index.ts';
+import { verifyJWT } from '../../../helpers/generate-jwt.js';
+import { userRepository } from '../../modules/users/infrastructure/user.repository.ts';
 
 /**
  * Valida el access token (cabecera Authorization: Bearer o x-token) y carga el usuario.
@@ -21,8 +22,8 @@ export const authenticate =
     const token = String(header).replace(/^Bearer\s+/, '');
 
     try {
-      const decoded = await verifyJwt(token);
-      const user = await findUserById(decoded.sub);
+      const decoded = (await verifyJWT(token)) as { sub: string };
+      const user = await userRepository.findById(decoded.sub);
 
       if (!user) {
         return reply.code(401).send({
@@ -31,7 +32,7 @@ export const authenticate =
         });
       }
 
-      if (!user.Status) {
+      if (!user.status) {
         return reply.code(423).send({
           success: false,
           message: 'Cuenta desactivada. Contacta al administrador.',
@@ -39,7 +40,7 @@ export const authenticate =
       }
 
       request.user = user;
-      request.userId = String(user.Id);
+      request.userId = user.id;
     } catch (error) {
       const { name, message: detail } = error as Error;
       request.log.warn({ err: error }, 'Error validating JWT');

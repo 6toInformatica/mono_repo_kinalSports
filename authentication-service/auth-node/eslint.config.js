@@ -16,7 +16,13 @@ const nodeGlobals = {
 };
 
 export default tseslint.config(
-  { ignores: [scoped('dist/**'), scoped('uploads/**')] },
+  {
+    ignores: [
+      scoped('dist/**'),
+      scoped('uploads/**'),
+      scoped('src/generated/**'),
+    ],
+  },
   {
     files: [scoped('**/*.{js,ts}')],
     extends: [js.configs.recommended],
