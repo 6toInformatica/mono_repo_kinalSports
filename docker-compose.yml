@@ -91,6 +91,8 @@ services:
       - /src/src/AuthService.Application/obj
       - /src/src/AuthService.Domain/bin
       - /src/src/AuthService.Domain/obj
+      - /src/src/AuthService.Infrastructure/bin
+      - /src/src/AuthService.Infrastructure/obj
       - /src/src/AuthService.Persistence/bin
       - /src/src/AuthService.Persistence/obj
     ports:

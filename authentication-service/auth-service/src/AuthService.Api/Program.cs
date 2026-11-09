@@ -145,7 +145,8 @@ using (var scope = app.Services.CreateScope())
         await context.Database.EnsureCreatedAsync();
 
         logger.LogInformation("Database ready. Running seed data...");
-        await DataSeeder.SeedAsync(context);
+        var passwordHasher = scope.ServiceProvider.GetRequiredService<AuthService.Application.Interfaces.IPasswordHashService>();
+        await DataSeeder.SeedAsync(context, passwordHasher);
 
         logger.LogInformation("Database initialization completed successfully");
     }

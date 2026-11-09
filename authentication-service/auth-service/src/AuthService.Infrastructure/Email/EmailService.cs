@@ -1,18 +1,25 @@
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using AuthService.Application.Interfaces;
+using AuthService.Infrastructure.Options;
 using MailKit.Net.Smtp;
 using MailKit.Security;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MimeKit;
-using AuthService.Application.Interfaces;
 
-namespace AuthService.Application.Services;
+namespace AuthService.Infrastructure.Email;
 
-public class EmailService(IConfiguration configuration, ILogger<EmailService> logger) : IEmailService
+public class EmailService(
+    IOptions<SmtpOptions> smtpOptions,
+    IOptions<AppOptions> appOptions,
+    ILogger<EmailService> logger) : IEmailService
 {
+    private readonly SmtpOptions _smtp = smtpOptions.Value;
+    private readonly string? _frontendUrl = appOptions.Value.FrontendUrl;
+
     public async Task SendEmailVerificationAsync(string email, string username, string token)
     {
         var subject = "Verifica tu correo electrónico - Kinal Sports";
-        var verificationUrl = $"{configuration["AppSettings:FrontendUrl"]}/verify-email?token={token}";
+        var verificationUrl = $"{_frontendUrl}/verify-email?token={token}";
 
         var body = $@"
             <h2>¡Bienvenido a Kinal Sports, {username}!</h2>
@@ -32,7 +39,7 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
     public async Task SendPasswordResetAsync(string email, string username, string token)
     {
         var subject = "Restablece tu contraseña - Kinal Sports";
-        var resetUrl = $"{configuration["AppSettings:FrontendUrl"]}/reset-password?token={token}";
+        var resetUrl = $"{_frontendUrl}/reset-password?token={token}";
 
         var body = $@"
             <h2>Solicitud de restablecimiento de contraseña - Kinal Sports</h2>
@@ -68,25 +75,22 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
 
     private async Task SendEmailAsync(string to, string subject, string body)
     {
-        var smtpSettings = configuration.GetSection("SmtpSettings");
-
         try
         {
             // Verificar si el email está habilitado
-            var enabled = bool.Parse(smtpSettings["Enabled"] ?? "true");
-            if (!enabled)
+            if (!_smtp.Enabled)
             {
                 logger.LogInformation("Email disabled in configuration. Skipping send");
                 return;
             }
 
             // Validar configuración
-            var host = smtpSettings["Host"];
-            var portString = smtpSettings["Port"];
-            var username = smtpSettings["Username"];
-            var password = smtpSettings["Password"];
-            var fromEmail = smtpSettings["FromEmail"];
-            var fromName = smtpSettings["FromName"];
+            var host = _smtp.Host;
+            var port = _smtp.Port;
+            var username = _smtp.Username;
+            var password = _smtp.Password;
+            var fromEmail = _smtp.FromEmail;
+            var fromName = _smtp.FromName;
 
             if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
@@ -96,13 +100,10 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
 
             // Avoid logging sensitive SMTP details
 
-            var port = int.Parse(portString ?? "587");
-
             using var client = new SmtpClient();
 
             // Configurar timeout
-            var timeoutMs = int.Parse(smtpSettings["Timeout"] ?? "30000");
-            client.Timeout = timeoutMs;
+            client.Timeout = _smtp.Timeout;
 
             // FIX: Bypass SSL (Cloudinary, etc.)
             client.CheckCertificateRevocation = false;
@@ -111,10 +112,8 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
             try
             {
                 // Verificar configuración de SSL implícito
-                var useImplicitSsl = bool.Parse(smtpSettings["UseImplicitSsl"] ?? "false");
-
                 // Configuración específica por puerto y SSL
-                if (useImplicitSsl || port == 465)
+                if (_smtp.UseImplicitSsl || port == 465)
                 {
                     await client.ConnectAsync(host, port, SecureSocketOptions.SslOnConnect);
                 }
@@ -161,8 +160,7 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
             logger.LogError(ex, "Failed to send email");
 
             // Verificar si usar fallback
-            var useFallback = bool.Parse(smtpSettings["UseFallback"] ?? "false");
-            if (useFallback)
+            if (_smtp.UseFallback)
             {
                 logger.LogWarning("Using email fallback");
                 return; // No fallar, solo logear

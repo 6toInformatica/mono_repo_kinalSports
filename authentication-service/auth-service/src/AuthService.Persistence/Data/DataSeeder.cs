@@ -1,4 +1,5 @@
 using AuthService.Domain.Entities;
+using AuthService.Application.Interfaces;
 using AuthService.Application.Services;
 using AuthService.Domain.Constants;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,7 @@ namespace AuthService.Persistence.Data;
 
 public static class DataSeeder
 {
-    public static async Task SeedAsync(ApplicationDbContext context)
+    public static async Task SeedAsync(ApplicationDbContext context, IPasswordHashService passwordHasher)
     {
         // Verificar si ya existen roles
         if (!(context.Roles?.Any() ?? false))
@@ -35,8 +36,6 @@ public static class DataSeeder
             var adminRole = await (context.Roles ?? throw new InvalidOperationException("Roles DbSet is null.")).FirstOrDefaultAsync(r => r.Name == RoleConstants.ADMIN_ROLE);
             if (adminRole != null)
             {
-                var passwordHasher = new PasswordHashService();
-
                 var userId = UuidGenerator.GenerateUserId();
                 var profileId = UuidGenerator.GenerateUserId();
                 var emailId = UuidGenerator.GenerateUserId();
