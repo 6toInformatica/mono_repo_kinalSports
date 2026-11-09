@@ -16,13 +16,15 @@ interface Rule {
 interface FieldSchema {
   field: string;
   trim?: boolean;
+  /** Campo secreto (contraseñas): su valor nunca se devuelve en los errores */
+  sensitive?: boolean;
   rules: Rule[];
 }
 
-export interface ValidationIssue {
+interface ValidationIssue {
   field: string;
   message: string;
-  value: unknown;
+  value?: unknown;
 }
 
 const asText = (value: unknown): string =>
@@ -51,7 +53,7 @@ export const rule = {
   }),
 };
 
-export const validateBody = (
+const validateBody = (
   body: unknown,
   schema: FieldSchema[]
 ): ValidationIssue[] => {
@@ -61,7 +63,7 @@ export const validateBody = (
   >;
   const issues: ValidationIssue[] = [];
 
-  for (const { field, trim, rules } of schema) {
+  for (const { field, trim, sensitive, rules } of schema) {
     let value: unknown = source[field];
     if (trim) {
       value = asText(value).trim();
@@ -70,7 +72,8 @@ export const validateBody = (
     }
     const text = asText(value);
     for (const { check, message } of rules) {
-      if (!check(text)) issues.push({ field, message, value });
+      if (check(text)) continue;
+      issues.push(sensitive ? { field, message } : { field, message, value });
     }
   }
 

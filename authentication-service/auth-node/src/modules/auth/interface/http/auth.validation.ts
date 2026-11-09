@@ -55,6 +55,7 @@ export const registerSchema = [
   },
   {
     field: 'password',
+    sensitive: true,
     rules: [
       rule.notEmpty('La contraseña es obligatoria'),
       rule.length(
@@ -81,7 +82,11 @@ export const loginSchema = [
     trim: true,
     rules: [rule.notEmpty('Email o nombre de usuario es requerido')],
   },
-  { field: 'password', rules: [rule.notEmpty('La contraseña es requerida')] },
+  {
+    field: 'password',
+    sensitive: true,
+    rules: [rule.notEmpty('La contraseña es requerida')],
+  },
 ];
 
 export const verifyEmailSchema = [
@@ -110,6 +115,7 @@ export const resetPasswordSchema = [
   },
   {
     field: 'newPassword',
+    sensitive: true,
     rules: [
       rule.notEmpty('La nueva contraseña es obligatoria'),
       rule.length(

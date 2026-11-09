@@ -1,5 +1,4 @@
 import type {
-  DbClient,
   Prisma,
   PrismaClient,
 } from '../../../infrastructure/database/prisma.ts';
@@ -8,7 +7,7 @@ import type { UserRepository } from '../application/ports.ts';
 import type { NewUser, User } from '../domain/user.ts';
 
 /** Relaciones que forman un usuario completo del dominio */
-export const userWithRelations = {
+const userWithRelations = {
   userProfile: true,
   userEmail: true,
   userPasswordReset: true,
@@ -260,12 +259,8 @@ export class PrismaUserRepository implements UserRepository {
    * auth-service guarda el username tal como se escribió. SQL parametrizado y sin
    * ILIKE, para que `_` y `%` no actúen como comodines.
    */
-  async #findIdByEmailOrUsername(
-    email: string,
-    username: string,
-    db: DbClient = this.#db
-  ) {
-    const rows = await db.$queryRaw<{ id: string }[]>`
+  async #findIdByEmailOrUsername(email: string, username: string) {
+    const rows = await this.#db.$queryRaw<{ id: string }[]>`
       SELECT id FROM users
       WHERE email = ${email.toLowerCase()}
          OR lower(username) = ${username.toLowerCase()}

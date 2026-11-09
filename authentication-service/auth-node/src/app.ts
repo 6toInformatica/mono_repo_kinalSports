@@ -5,6 +5,7 @@ import { bodyParsersPlugin } from './http/plugins/body-parsers.ts';
 import { errorHandlerPlugin } from './http/plugins/error-handler.ts';
 import { globalRateLimitPlugin } from './http/plugins/rate-limit.ts';
 import { securityPlugin } from './http/plugins/security.ts';
+import { removeUploadedFile } from './http/upload.ts';
 import { authRoutes } from './modules/auth/interface/http/auth.routes.ts';
 import { rolesRoutes } from './modules/roles/interface/http/roles.routes.ts';
 import { profileRoutes } from './modules/users/interface/http/profile.routes.ts';
@@ -36,6 +37,7 @@ export const buildApp = async (config: AppConfig, container: Container) => {
   app.decorateRequest('user', null);
   app.decorateRequest('userId', null);
   app.decorateRequest('uploadedFile', null);
+  app.addHook('onResponse', removeUploadedFile);
 
   await app.register(securityPlugin, { config });
   await app.register(globalRateLimitPlugin, { config });

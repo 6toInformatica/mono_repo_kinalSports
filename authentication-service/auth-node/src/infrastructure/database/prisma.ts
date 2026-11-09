@@ -25,12 +25,6 @@ export const prisma = new PrismaClient({
   log: database.logQueries ? ['query', 'warn', 'error'] : ['warn', 'error'],
 });
 
-/** Transacción interactiva (cliente que reciben los repositorios dentro de ella) */
-export type DbClient = Omit<
-  PrismaClient,
-  '$connect' | '$disconnect' | '$on' | '$transaction' | '$extends'
->;
-
 export const connectDatabase = async () => {
   console.log('PostgreSQL | Trying to connect...');
   await prisma.$queryRaw`SELECT 1`;

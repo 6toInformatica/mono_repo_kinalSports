@@ -156,9 +156,6 @@ services:
       DB_NAME: ${POSTGRES_DB:-kinal_sports}
       DB_USERNAME: ${POSTGRES_USER:-KinalSports}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-KinalSports2027!}
-      DEFAULT_CONNECTION: >-
-        Host=postgres;Port=5432;Database=${POSTGRES_DB:-kinal_sports};
-        Username=${POSTGRES_USER:-KinalSports};Password=${POSTGRES_PASSWORD:-KinalSports2027!}
       JWT_SECRET: ${JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
       JWT_ISSUER: ${JWT_ISSUER:-AuthService}
       JWT_AUDIENCE: ${JWT_AUDIENCE:-AuthService}

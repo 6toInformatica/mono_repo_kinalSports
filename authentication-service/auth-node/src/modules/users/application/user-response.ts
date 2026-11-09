@@ -21,4 +21,3 @@ export const createUserPresenter = (images: ImageStorage) => (user: User) => ({
 });
 
 export type UserPresenter = ReturnType<typeof createUserPresenter>;
-export type UserResponse = ReturnType<UserPresenter>;

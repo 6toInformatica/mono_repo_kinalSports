@@ -3,7 +3,7 @@ import type { AppConfig } from '../../config/env.ts';
 import type { TokenService } from '../../modules/auth/application/ports.ts';
 import type { UserRepository } from '../../modules/users/application/ports.ts';
 
-export interface SessionDeps {
+interface SessionDeps {
   tokens: TokenService;
   users: UserRepository;
 }

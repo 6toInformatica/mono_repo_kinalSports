@@ -3,7 +3,7 @@ import { createWriteStream } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
-import type { preHandlerAsyncHookHandler } from 'fastify';
+import type { FastifyRequest, preHandlerAsyncHookHandler } from 'fastify';
 import type { AppConfig } from '../config/env.ts';
 import { HttpResponseError } from './plugins/error-handler.ts';
 
@@ -86,3 +86,14 @@ export const singleFileUpload =
     request.body = fields;
     request.uploadedFile = saved ?? null;
   };
+
+/**
+ * Hook onResponse: borra el archivo temporal si sigue en disco al terminar la petición.
+ * Cubre los casos en que no llega a Cloudinary (validación fallida, usuario duplicado,
+ * errores), que antes dejaban archivos huérfanos en UPLOAD_PATH.
+ */
+export const removeUploadedFile = async (request: FastifyRequest) => {
+  if (request.uploadedFile) {
+    await rm(request.uploadedFile.path, { force: true });
+  }
+};
