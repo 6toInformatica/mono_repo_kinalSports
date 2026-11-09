@@ -5,6 +5,7 @@ packages:
   - server-user
   - client-admin
   - client-user
+  - tests/contract
 allowBuilds:
   "@scarf/scarf": false
   argon2: true

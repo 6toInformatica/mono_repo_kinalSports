@@ -1,0 +1,1351 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GET /health 1`] = `
+{
+  "body": {
+    "service": "string",
+    "status": "Healthy",
+    "timestamp": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`fields > GET /fields con token de usuario 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "capacity": "string",
+        "createdAt": "string",
+        "description": "string",
+        "fieldName": "string",
+        "fieldType": "string",
+        "isActive": "boolean",
+        "photo": "string",
+        "pricePerHour": "number",
+        "updatedAt": "string",
+      },
+    ],
+    "pagination": {
+      "currentPage": "number",
+      "limit": "number",
+      "totalPages": "number",
+      "totalRecords": "number",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`fields > GET /fields con token interno 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "capacity": "string",
+        "createdAt": "string",
+        "description": "string",
+        "fieldName": "string",
+        "fieldType": "string",
+        "isActive": "boolean",
+        "photo": "string",
+        "pricePerHour": "number",
+        "updatedAt": "string",
+      },
+    ],
+    "pagination": {
+      "currentPage": "number",
+      "limit": "string",
+      "totalPages": "number",
+      "totalRecords": "number",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`fields > GET /fields sin token 1`] = `
+{
+  "body": {
+    "error": "MISSING_TOKEN",
+    "message": "No se proporcionó un token",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`fields > GET /fields/:id 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "capacity": "string",
+      "createdAt": "string",
+      "description": "string",
+      "fieldName": "string",
+      "fieldType": "string",
+      "isActive": "boolean",
+      "photo": "string",
+      "pricePerHour": "number",
+      "updatedAt": "string",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`fields > GET /fields/:id con id inválido 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`fields > GET /fields/:id inexistente 1`] = `
+{
+  "body": {
+    "message": "Campo no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`fields > POST /fields como usuario 1`] = `
+{
+  "body": {
+    "error": "FORBIDDEN",
+    "message": "No tienes permisos para acceder a este recurso",
+    "requiredRole": [
+      "string",
+    ],
+    "success": false,
+    "yourRole": "string",
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`fields > POST /fields con archivo que no es imagen 1`] = `
+{
+  "body": {
+    "error": "CUSTOM_ERROR",
+    "message": "Solo se permiten imágenes: image/jpeg, image/png, image/jpg, image/webp, image/avif",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`fields > POST /fields con datos inválidos 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`fields > POST /fields con imagen 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "capacity": "string",
+      "createdAt": "string",
+      "description": "string",
+      "fieldName": "string",
+      "fieldType": "string",
+      "isActive": "boolean",
+      "photo": "string",
+      "pricePerHour": "number",
+      "updatedAt": "string",
+    },
+    "message": "Campo creado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 201,
+}
+`;
+
+exports[`fields > POST /fields con imagen demasiado grande 1`] = `
+{
+  "body": {
+    "error": "LIMIT_FILE_SIZE",
+    "message": "File too large",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`fields > POST /fields sin token 1`] = `
+{
+  "body": {
+    "error": "MISSING_TOKEN",
+    "message": "No se proporcionó un token",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`fields > POST /fields válido 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "capacity": "string",
+      "createdAt": "string",
+      "description": "string",
+      "fieldName": "string",
+      "fieldType": "string",
+      "isActive": "boolean",
+      "photo": "string",
+      "pricePerHour": "number",
+      "updatedAt": "string",
+    },
+    "message": "Campo creado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 201,
+}
+`;
+
+exports[`fields > PUT /fields/:id 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "capacity": "string",
+      "createdAt": "string",
+      "description": "string",
+      "fieldName": "string",
+      "fieldType": "string",
+      "isActive": "boolean",
+      "photo": "string",
+      "pricePerHour": "number",
+      "updatedAt": "string",
+    },
+    "message": "Campo actualizado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`fields > PUT /fields/:id inexistente 1`] = `
+{
+  "body": {
+    "message": "Campo no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`fields > PUT /fields/:id/deactivate como usuario 1`] = `
+{
+  "body": {
+    "error": "FORBIDDEN",
+    "message": "No tienes permisos para acceder a este recurso",
+    "requiredRole": [
+      "string",
+    ],
+    "success": false,
+    "yourRole": "string",
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`fields > PUT /fields/:id/deactivate y /activate 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "capacity": "string",
+      "createdAt": "string",
+      "description": "string",
+      "fieldName": "string",
+      "fieldType": "string",
+      "isActive": "boolean",
+      "photo": "string",
+      "pricePerHour": "number",
+      "updatedAt": "string",
+    },
+    "message": "Campo desactivado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`fields > PUT /fields/:id/deactivate y /activate 2`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "capacity": "string",
+      "createdAt": "string",
+      "description": "string",
+      "fieldName": "string",
+      "fieldType": "string",
+      "isActive": "boolean",
+      "photo": "string",
+      "pricePerHour": "number",
+      "updatedAt": "string",
+    },
+    "message": "Campo activado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`reservations > GET /reservations como admin 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "createdAt": "string",
+        "endTime": "string",
+        "fieldId": {
+          "_id": "string",
+          "fieldName": "string",
+          "fieldType": "string",
+          "pricePerHour": "number",
+        },
+        "lastModifiedBy": "string",
+        "startTime": "string",
+        "status": "string",
+        "updatedAt": "string",
+        "user": {
+          "displayName": "string",
+          "email": "string",
+          "id": "string",
+          "name": "string",
+          "phone": "string",
+          "profilePicture": "string",
+          "surname": "string",
+          "username": "string",
+        },
+        "userEmail": "string",
+        "userId": "string",
+        "userName": "string",
+      },
+    ],
+    "pagination": {
+      "currentPage": "number",
+      "limit": "number",
+      "totalPages": "number",
+      "totalRecords": "number",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`reservations > GET /reservations como usuario 1`] = `
+{
+  "body": {
+    "error": "FORBIDDEN",
+    "message": "No tienes permisos para acceder a este recurso",
+    "requiredRole": [
+      "string",
+    ],
+    "success": false,
+    "yourRole": "string",
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`reservations > GET /reservations filtrado por cancha y estado 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "createdAt": "string",
+        "endTime": "string",
+        "fieldId": {
+          "_id": "string",
+          "fieldName": "string",
+          "fieldType": "string",
+          "pricePerHour": "number",
+        },
+        "lastModifiedBy": "string",
+        "startTime": "string",
+        "status": "string",
+        "updatedAt": "string",
+        "user": {
+          "displayName": "string",
+          "email": "string",
+          "id": "string",
+          "name": "string",
+          "phone": "string",
+          "profilePicture": "string",
+          "surname": "string",
+          "username": "string",
+        },
+        "userEmail": "string",
+        "userId": "string",
+        "userName": "string",
+      },
+    ],
+    "pagination": {
+      "currentPage": "number",
+      "limit": "number",
+      "totalPages": "number",
+      "totalRecords": "number",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`reservations > GET /reservations/:id como admin 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "createdAt": "string",
+      "endTime": "string",
+      "fieldId": {
+        "_id": "string",
+        "capacity": "string",
+        "fieldName": "string",
+        "fieldType": "string",
+        "pricePerHour": "number",
+      },
+      "lastModifiedBy": "string",
+      "startTime": "string",
+      "status": "PENDING",
+      "updatedAt": "string",
+      "user": {
+        "displayName": "string",
+        "email": "string",
+        "id": "string",
+        "name": "string",
+        "phone": "string",
+        "profilePicture": "string",
+        "surname": "string",
+        "username": "string",
+      },
+      "userEmail": "string",
+      "userId": "string",
+      "userName": "string",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`reservations > GET /reservations/:id como dueño 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "createdAt": "string",
+      "endTime": "string",
+      "fieldId": {
+        "_id": "string",
+        "capacity": "string",
+        "fieldName": "string",
+        "fieldType": "string",
+        "pricePerHour": "number",
+      },
+      "lastModifiedBy": "string",
+      "startTime": "string",
+      "status": "PENDING",
+      "updatedAt": "string",
+      "user": {
+        "displayName": "string",
+        "email": "string",
+        "id": "string",
+        "name": "string",
+        "phone": "string",
+        "profilePicture": "string",
+        "surname": "string",
+        "username": "string",
+      },
+      "userEmail": "string",
+      "userId": "string",
+      "userName": "string",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`reservations > GET /reservations/:id como otro usuario 1`] = `
+{
+  "body": {
+    "error": "FORBIDDEN",
+    "message": "No tienes permisos para ver esta reserva",
+    "success": false,
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`reservations > GET /reservations/:id inexistente 1`] = `
+{
+  "body": {
+    "message": "Reserva no encontrada",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`reservations > PUT /reservations/:id/cancel 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "createdAt": "string",
+      "endTime": "string",
+      "fieldId": {
+        "_id": "string",
+        "fieldName": "string",
+        "fieldType": "string",
+        "pricePerHour": "number",
+      },
+      "lastModifiedBy": "string",
+      "startTime": "string",
+      "status": "CANCELLED",
+      "updatedAt": "string",
+      "user": {
+        "displayName": "string",
+        "email": "string",
+        "id": "string",
+        "name": "string",
+        "phone": "string",
+        "profilePicture": "string",
+        "surname": "string",
+        "username": "string",
+      },
+      "userEmail": "string",
+      "userId": "string",
+      "userName": "string",
+    },
+    "message": "Reserva cancelada exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`reservations > PUT /reservations/:id/cancel ya cancelada 1`] = `
+{
+  "body": {
+    "error": "No se puede cancelar una reserva con estado: CANCELLED",
+    "message": "No se puede cancelar una reserva con estado: CANCELLED",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`reservations > PUT /reservations/:id/confirm 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "confirmation": {
+        "confirmedAt": "string",
+        "confirmedBy": "string",
+      },
+      "createdAt": "string",
+      "endTime": "string",
+      "fieldId": {
+        "_id": "string",
+        "fieldName": "string",
+        "fieldType": "string",
+        "pricePerHour": "number",
+      },
+      "lastModifiedBy": "string",
+      "startTime": "string",
+      "status": "CONFIRMED",
+      "updatedAt": "string",
+      "user": {
+        "displayName": "string",
+        "email": "string",
+        "id": "string",
+        "name": "string",
+        "phone": "string",
+        "profilePicture": "string",
+        "surname": "string",
+        "username": "string",
+      },
+      "userEmail": "string",
+      "userId": "string",
+      "userName": "string",
+    },
+    "message": "Reserva confirmada exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`reservations > PUT /reservations/:id/confirm como usuario 1`] = `
+{
+  "body": {
+    "error": "FORBIDDEN",
+    "message": "No tienes permisos para acceder a este recurso",
+    "requiredRole": [
+      "string",
+    ],
+    "success": false,
+    "yourRole": "string",
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`reservations > PUT /reservations/:id/confirm de una cancelada 1`] = `
+{
+  "body": {
+    "message": "No se puede confirmar una reserva con estado: CANCELLED",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`reservations > PUT /reservations/:id/confirm ya confirmada 1`] = `
+{
+  "body": {
+    "message": "No se puede confirmar una reserva con estado: CONFIRMED",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`ruta inexistente 1`] = `
+{
+  "body": {
+    "message": "Endpoint no encontrado en Admin API",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`teams > DELETE /teams/:id/named-members/:memberId 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "members": [
+        "string",
+      ],
+      "namedMembers": [],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Miembro eliminado del roster",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > DELETE /teams/:id/named-members/:memberId inexistente 1`] = `
+{
+  "body": {
+    "message": "Miembro del roster no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`teams > GET /teams 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "category": "string",
+        "createdAt": "string",
+        "isActive": "boolean",
+        "logo": "string",
+        "managerId": "string",
+        "members": [
+          "string",
+        ],
+        "namedMembers": [
+          {
+            "_id": "string",
+            "name": "string",
+          },
+        ],
+        "teamName": "string",
+        "updatedAt": "string",
+      },
+    ],
+    "pagination": {
+      "currentPage": "number",
+      "limit": "number",
+      "totalPages": "number",
+      "totalRecords": "number",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > GET /teams sin token 1`] = `
+{
+  "body": {
+    "error": "MISSING_TOKEN",
+    "message": "No se proporcionó un token",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`teams > GET /teams/:id 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "members": [
+        "string",
+      ],
+      "namedMembers": [],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > GET /teams/:id inexistente 1`] = `
+{
+  "body": {
+    "message": "Equipo no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`teams > POST /teams como usuario 1`] = `
+{
+  "body": {
+    "error": "FORBIDDEN",
+    "message": "No tienes permisos para acceder a este recurso",
+    "requiredRole": [
+      "string",
+    ],
+    "success": false,
+    "yourRole": "string",
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`teams > POST /teams con datos inválidos 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`teams > POST /teams válido 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "members": [
+        "string",
+      ],
+      "namedMembers": [],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Equipo creado correctamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 201,
+}
+`;
+
+exports[`teams > POST /teams/:id/named-members 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "members": [
+        "string",
+      ],
+      "namedMembers": [
+        {
+          "_id": "string",
+          "name": "string",
+        },
+      ],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Miembro agregado al roster",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > POST /teams/:id/named-members sin nombre 1`] = `
+{
+  "body": {
+    "message": "El nombre del miembro es requerido",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`teams > PUT /teams/:id como admin 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "members": [
+        "string",
+      ],
+      "namedMembers": [],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Equipo actualizado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > PUT /teams/:id como manager 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "members": [
+        "string",
+      ],
+      "namedMembers": [],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Equipo actualizado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > PUT /teams/:id como usuario que no es el manager 1`] = `
+{
+  "body": {
+    "error": "FORBIDDEN",
+    "message": "Solo puedes actualizar tu propio equipo",
+    "success": false,
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`teams > PUT /teams/:id/activate como usuario 1`] = `
+{
+  "body": {
+    "error": "FORBIDDEN",
+    "message": "No tienes permisos para acceder a este recurso",
+    "requiredRole": [
+      "string",
+    ],
+    "success": false,
+    "yourRole": "string",
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`teams > PUT /teams/:id/deactivate y /activate 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "members": [
+        "string",
+      ],
+      "namedMembers": [],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Equipo desactivado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > PUT /teams/:id/deactivate y /activate 2`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "members": [
+        "string",
+      ],
+      "namedMembers": [],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Equipo activado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > PUT /teams/:id/manager 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "members": [
+        "string",
+      ],
+      "namedMembers": [],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Manager del equipo actualizado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > PUT /teams/:id/manager sin managerId 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`tournaments > DELETE /tournaments/:id 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "description": "string",
+      "endDate": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "startDate": "string",
+      "status": "PENDIENTE",
+      "teams": [],
+      "tournamentsName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Torneo eliminado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`tournaments > DELETE /tournaments/:id como usuario 1`] = `
+{
+  "body": {
+    "error": "FORBIDDEN",
+    "message": "No tienes permisos para acceder a este recurso",
+    "requiredRole": [
+      "string",
+    ],
+    "success": false,
+    "yourRole": "string",
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`tournaments > DELETE /tournaments/:id inexistente 1`] = `
+{
+  "body": {
+    "message": "Torneo no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`tournaments > GET /tournaments 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "category": "string",
+        "createdAt": "string",
+        "description": "string",
+        "endDate": "string",
+        "isActive": "boolean",
+        "logo": "string",
+        "startDate": "string",
+        "status": "string",
+        "teams": [
+          "string",
+        ],
+        "tournamentsName": "string",
+        "updatedAt": "string",
+      },
+    ],
+    "pagination": {
+      "currentPage": "number",
+      "limit": "number",
+      "totalPages": "number",
+      "totalRecords": "number",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`tournaments > GET /tournaments sin token 1`] = `
+{
+  "body": {
+    "error": "MISSING_TOKEN",
+    "message": "No se proporcionó un token",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`tournaments > GET /tournaments/:id 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "description": "string",
+      "endDate": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "startDate": "string",
+      "status": "PENDIENTE",
+      "teams": [],
+      "tournamentsName": "string",
+      "updatedAt": "string",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`tournaments > GET /tournaments/:id inexistente 1`] = `
+{
+  "body": {
+    "message": "Torneo no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`tournaments > POST /tournaments como usuario 1`] = `
+{
+  "body": {
+    "error": "FORBIDDEN",
+    "message": "No tienes permisos para acceder a este recurso",
+    "requiredRole": [
+      "string",
+    ],
+    "success": false,
+    "yourRole": "string",
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`tournaments > POST /tournaments con fin antes del inicio 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`tournaments > POST /tournaments válido 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "description": "string",
+      "endDate": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "startDate": "string",
+      "status": "PENDIENTE",
+      "teams": [],
+      "tournamentsName": "string",
+      "updatedAt": "string",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`tournaments > PUT /tournaments/:id 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "description": "string",
+      "endDate": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "startDate": "string",
+      "status": "PENDIENTE",
+      "teams": [],
+      "tournamentsName": "string",
+      "updatedAt": "string",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`tournaments > PUT /tournaments/:id/deactivate y /activate 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "description": "string",
+      "endDate": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "startDate": "string",
+      "status": "PENDIENTE",
+      "teams": [],
+      "tournamentsName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Torneo desactivado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`tournaments > PUT /tournaments/:id/deactivate y /activate 2`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "description": "string",
+      "endDate": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "startDate": "string",
+      "status": "PENDIENTE",
+      "teams": [],
+      "tournamentsName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Torneo activado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;

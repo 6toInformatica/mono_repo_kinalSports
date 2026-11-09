@@ -1,0 +1,63 @@
+# Ajustes de docker-compose.yml SOLO para correr las pruebas de contrato.
+# Se usa encima del compose principal:
+#   docker compose -f docker-compose.yml -f tests/contract/compose.contract.yml --env-file .env.docker up -d
+#
+# - Los correos van a Mailpit (buzón local) en vez del SMTP real.
+# - Los rate limits se suben para que una corrida completa no los agote.
+#
+# Para volver a la configuración normal basta con "pnpm docker:up:detached".
+
+services:
+  mailpit:
+    image: axllent/mailpit:v1.33.1
+    container_name: kinal_mailpit
+    restart: unless-stopped
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      MP_MAX_MESSAGES: 2000
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"
+    networks:
+      - kinal-network
+
+  auth-service:
+    depends_on:
+      mailpit:
+        condition: service_started
+    environment:
+      SmtpSettings__Host: mailpit
+      SmtpSettings__Port: 1025
+      SmtpSettings__EnableSsl: "false"
+      SmtpSettings__UseImplicitSsl: "false"
+      SmtpSettings__Username: contract
+      SmtpSettings__Password: contract
+      SmtpSettings__FromEmail: no-reply@kinalsports.test
+      RateLimiting__AuthPermitLimit: 100000
+      RateLimiting__ApiTokenLimit: 100000
+      RateLimiting__ApiTokensPerPeriod: 100000
+
+  auth-node:
+    depends_on:
+      mailpit:
+        condition: service_started
+    environment:
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_ENABLE_SSL: "false"
+      SMTP_USERNAME: contract
+      SMTP_PASSWORD: contract
+      SMTP_FROM: no-reply@kinalsports.test
+      RATE_LIMIT_MAX: 100000
+      RATE_LIMIT_AUTH_MAX: 100000
+      RATE_LIMIT_EMAIL_MAX: 100000
+
+  server-admin:
+    environment:
+      RATE_LIMIT_MAX: 100000
+
+  server-user:
+    environment:
+      RATE_LIMIT_MAX: 100000
+      RATE_LIMIT_USER_MAX: 100000
+      RATE_LIMIT_RESERVATION_MAX: 100000
