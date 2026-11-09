@@ -1,31 +1,62 @@
-FROM mcr.microsoft.com/dotnet/sdk:8.0
+# auth-service (.NET 10)
+#
+# Destinos:
+#   dev      -> SDK con dotnet watch y hot reload (lo usa docker-compose.yml)
+#   runtime  -> imagen ASP.NET liviana con la app publicada (producción)
+
+# ---------- base: SDK con certificados ----------
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS sdk
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /src
-
+# Certificado de proxy corporativo opcional (solo si existe en certs/)
 COPY certs/ /tmp/certs/
 RUN if [ -f /tmp/certs/local-fortinet-ca.crt ]; then \
       cp /tmp/certs/local-fortinet-ca.crt /usr/local/share/ca-certificates/local-fortinet-ca.crt && \
       update-ca-certificates; \
     fi
 
-COPY AuthService.sln ./
-COPY src/AuthService.Domain/ src/AuthService.Domain/
-COPY src/AuthService.Persistence/ src/AuthService.Persistence/
-COPY src/AuthService.Application/ src/AuthService.Application/
-COPY src/AuthService.Api/ src/AuthService.Api/
+WORKDIR /src
 
+# Restaurar primero solo los proyectos aprovecha la caché de capas
+COPY AuthService.sln global.json Directory.Build.props ./
+COPY src/AuthService.Domain/AuthService.Domain.csproj src/AuthService.Domain/
+COPY src/AuthService.Application/AuthService.Application.csproj src/AuthService.Application/
+COPY src/AuthService.Persistence/AuthService.Persistence.csproj src/AuthService.Persistence/
+COPY src/AuthService.Api/AuthService.Api.csproj src/AuthService.Api/
 RUN dotnet restore AuthService.sln
 
-ENV ASPNETCORE_ENVIRONMENT=Development
-ENV ASPNETCORE_URLS=http://+:5156
+COPY src/ src/
 
-ENV DOTNET_USE_POLLING_FILE_WATCHER=1
-ENV DOTNET_WATCH_RESTART_ON_RUDE_EDIT=1
+# ---------- dev: hot reload ----------
+FROM sdk AS dev
+
+ENV ASPNETCORE_ENVIRONMENT=Development \
+    ASPNETCORE_URLS=http://+:5156 \
+    DOTNET_USE_POLLING_FILE_WATCHER=1 \
+    DOTNET_WATCH_RESTART_ON_RUDE_EDIT=1
 
 EXPOSE 5156
-
 CMD ["dotnet", "watch", "--project", "src/AuthService.Api", "run", "--urls", "http://+:5156"]
+
+# ---------- publish ----------
+FROM sdk AS publish
+RUN dotnet publish src/AuthService.Api/AuthService.Api.csproj \
+      --configuration Release --no-restore --output /app/publish
+
+# ---------- runtime: producción ----------
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+COPY --from=publish /app/publish ./
+
+ENV ASPNETCORE_URLS=http://+:5156
+EXPOSE 5156
+USER $APP_UID
+ENTRYPOINT ["dotnet", "AuthService.Api.dll"]

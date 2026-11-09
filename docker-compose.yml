@@ -47,6 +47,7 @@ services:
     build:
       context: ./authentication-service/auth-service
       dockerfile: ../../dockerfiles/Dockerfile.auth-service
+      target: dev
     container_name: kinal_auth_service
     restart: unless-stopped
     depends_on:

@@ -9,9 +9,6 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// FIX: Bypass SSL (Cloudinary, etc.)
-System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-
 // Configure Serilog from appsettings.json only (avoid duplicate sinks)
 builder.Host.UseSerilog((context, services, loggerConfiguration) =>
     loggerConfiguration
