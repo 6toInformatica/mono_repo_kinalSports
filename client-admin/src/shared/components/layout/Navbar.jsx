@@ -1,4 +1,3 @@
-import { Typography } from '@material-tailwind/react';
 import { AvatarUser } from '../ui/AvatarUser';
 import imgLogo from '../../../assets/img/kinal_sports.png';
 
@@ -12,9 +11,9 @@ export const Navbar = () => {
             alt='Kinal Sports Logo'
             className='h-8 md:h-10 w-auto object-contain'
           />
-          <Typography variant='h5' className='font-bold text-main-blue'>
+          <h5 className='block font-sans text-xl font-bold leading-snug tracking-normal text-main-blue antialiased'>
             Kinal Sports Admin
-          </Typography>
+          </h5>
         </div>
         <AvatarUser />
       </div>

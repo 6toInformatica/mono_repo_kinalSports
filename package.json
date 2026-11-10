@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "prepare": "husky install",
-    "lint": "pnpm -r --filter './server-*' run lint && pnpm --filter authentication-service/auth-node run lint && pnpm --filter client-admin run lint",
+    "lint": "pnpm -r --filter './server-*' run lint && pnpm --filter authentication-service/auth-node run lint && pnpm --filter @kinal/client-admin run lint",
     "format": "pnpm -r --filter './server-*' run format || true",
     "commit": "cz",
     "lint:changed": "git diff --name-only --cached | xargs pnpm exec eslint",
