@@ -329,6 +329,33 @@ services:
     networks:
       - kinal-network
 
+  # Panel admin en Next.js (proyecto paralelo a client-admin, misma funcionalidad).
+  # Habla con los backends desde su servidor: las URLs y los tokens nunca llegan al navegador.
+  client-admin-next:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.client-admin-next
+      target: dev
+    container_name: kinal_client_admin_next
+    restart: unless-stopped
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      server-admin:
+        condition: service_healthy
+    environment:
+      AUTH_API_URL: http://auth-service:5156/api/v1
+      ADMIN_API_URL: http://server-admin:3009/kinalSportsAdmin/v1
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./client-admin-next:/app
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "${CLIENT_ADMIN_NEXT_PORT:-3000}:3000"
+    networks:
+      - kinal-network
+
   client-user:
     build:
       context: .

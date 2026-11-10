@@ -4,6 +4,7 @@ packages:
   - server-admin
   - server-user
   - client-admin
+  - client-admin-next
   - client-user
   - tests/contract
 allowBuilds:
