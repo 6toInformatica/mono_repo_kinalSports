@@ -1,0 +1,7 @@
+# Workspace propio para instalar client-user solo (Docker) con su lockfile
+allowBuilds:
+  "@scarf/scarf": false
+overrides:
+  minimatch: ^11.0.1
+  # glob 13 (de @expo/cli y @expo/fingerprint): GHSA-3g3m-2fjr-6pw4, corregido en 14.0.2
+  glob@>=13.0.0 <14.0.2: ^14.0.4

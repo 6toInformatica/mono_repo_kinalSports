@@ -1,15 +1,16 @@
-FROM node:22
+# client-user: Expo (servidor de desarrollo Metro para Expo Go)
+FROM node:26-slim
 
 WORKDIR /app
+# Node 25+ ya no incluye corepack: se instala la misma versión de pnpm que fija el repo
+RUN npm install -g pnpm@10.29.2 && npm cache clean --force
 
-RUN corepack enable && corepack prepare pnpm@9 --activate
-
-COPY client-user/package.json client-user/pnpm-lock.yaml ./
-
-RUN pnpm install --frozen-lockfile
+COPY client-user/package.json client-user/pnpm-lock.yaml client-user/pnpm-workspace.yaml ./
+# CI solo para instalar: con CI activo Metro desactiva la recarga automática
+RUN CI=true pnpm install --frozen-lockfile
 
 COPY client-user/ ./
 
 EXPOSE 8081 19000 19001 19002
 
-CMD ["pnpm", "exec", "expo", "start", "--host", "lan", "--port", "8081"]
+CMD ["node_modules/.bin/expo", "start", "--host", "lan", "--port", "8081"]
