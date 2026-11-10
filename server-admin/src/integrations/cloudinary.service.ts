@@ -59,11 +59,26 @@ export class CloudinaryService {
   }
 
   /**
-   * public_id de una imagen guardada (URL completa), suponiendo que está en `folder`.
-   * Así la calculaba la versión anterior para reemplazar imágenes.
+   * public_id de una imagen subida, leído de su URL
+   * (.../image/upload/[transformaciones/]v123/carpeta/nombre.ext → carpeta/nombre).
+   * Devuelve null si no es una URL de Cloudinary, como el logo por defecto.
    */
-  publicIdFromUrl(url: string, folder: string) {
-    const fileName = url.split('/').pop() ?? '';
-    return `${folder}/${fileName.split('.')[0]}`;
+  publicIdFromUrl(url: string): string | null {
+    const marker = '/image/upload/';
+    const start = url.indexOf(marker);
+    if (!url.startsWith('http') || start === -1) return null;
+
+    const segments = url.slice(start + marker.length).split('/');
+    const version = segments.findIndex((segment) => /^v\d+$/.test(segment));
+    const path = (version === -1 ? segments : segments.slice(version + 1)).join(
+      '/'
+    );
+    return path.replace(/\.[a-z0-9]+$/i, '') || null;
+  }
+
+  /** Borra la imagen de una URL guardada (si es de Cloudinary) */
+  async destroyByUrl(url: string | null | undefined) {
+    const publicId = url ? this.publicIdFromUrl(url) : null;
+    if (publicId) await this.destroy(publicId);
   }
 }

@@ -1,4 +1,4 @@
-import { Schema, type HydratedDocument, type Types } from 'mongoose';
+import { Schema, type Types } from 'mongoose';
 
 export const TEAM_MODEL = 'Team';
 export const DEFAULT_TEAM_LOGO = 'fields/kinal_sports_nyvxo5';
@@ -15,8 +15,6 @@ export interface Team {
   createdAt: Date;
   updatedAt: Date;
 }
-
-export type TeamDocument = HydratedDocument<Team>;
 
 // Mismo esquema que usa server-user (colección compartida)
 export const TeamSchema = new Schema<Team>(

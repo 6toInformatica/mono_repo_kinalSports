@@ -138,6 +138,6 @@ export class TournamentService {
   }
 
   #destroy(url: string) {
-    return this.images.destroy(this.images.publicIdFromUrl(url, this.#folder));
+    return this.images.destroyByUrl(url);
   }
 }

@@ -9,7 +9,7 @@ import {
 } from './schemas/reservation.schema.js';
 
 // Datos de la cancha que acompañan a cada reserva
-const FIELD_SUMMARY = 'fieldName fieldType location pricePerHour';
+const FIELD_SUMMARY = 'fieldName fieldType pricePerHour';
 const FIELD_DETAIL = `${FIELD_SUMMARY} capacity`;
 
 export type ReservationFilter = QueryFilter<Reservation>;

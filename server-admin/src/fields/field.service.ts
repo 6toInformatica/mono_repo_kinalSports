@@ -73,11 +73,8 @@ export class FieldService {
     try {
       await field.save();
     } catch (error) {
-      if (image) {
-        await this.images.destroy(
-          this.images.publicIdFromUrl(field.photo, this.#folder)
-        );
-      }
+      // La imagen recién subida ya no se usa
+      if (image) await this.images.destroyByUrl(field.photo);
       throw error;
     }
     return field;
@@ -106,19 +103,15 @@ export class FieldService {
         runValidators: true,
       });
     } catch (error) {
+      // La imagen recién subida ya no se usa
       if (typeof changes.photo === 'string') {
-        await this.images.destroy(
-          this.images.publicIdFromUrl(changes.photo, this.#folder)
-        );
+        await this.images.destroyByUrl(changes.photo);
       }
       throw error;
     }
 
-    if (image && current.photo) {
-      await this.images.destroy(
-        this.images.publicIdFromUrl(current.photo, this.#folder)
-      );
-    }
+    // Reemplazada: se borra la anterior (la imagen por defecto no se toca)
+    if (image) await this.images.destroyByUrl(current.photo);
     return updated;
   }
 
