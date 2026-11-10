@@ -1,8 +1,8 @@
 'use strict';
 
 import {
-  getUserById,
   getUserByUsername,
+  getUsersByIds,
 } from '../infrastructure/auth.client.js';
 import { uploadImage } from '../infrastructure/cloudinary.storage.js';
 import {
@@ -37,24 +37,26 @@ const findTeamOrFail = async (teamId) => {
  */
 export const enrichTeam = async (team) => {
   const teamData = team.toObject ? team.toObject() : { ...team };
+  const members = teamData.members ?? [];
 
-  const managerProfile = await getUserById(teamData.managerId);
+  // Una consulta por usuario distinto (el capitán también es miembro)
+  const profiles = await getUsersByIds([teamData.managerId, ...members]);
+
+  const managerProfile = profiles.get(String(teamData.managerId));
   if (managerProfile) {
     teamData.managerName = formatUserDisplayName(managerProfile);
   }
 
-  teamData.memberProfiles = await Promise.all(
-    (teamData.members ?? []).map(async (memberId) => {
-      const profile = await getUserById(memberId);
-      const username = profile?.username ?? profile?.Username ?? null;
-      return {
-        userId: memberId,
-        displayName: formatUserDisplayName(profile) ?? username ?? 'Miembro',
-        username,
-        isCaptain: sameId(memberId, teamData.managerId),
-      };
-    })
-  );
+  teamData.memberProfiles = members.map((memberId) => {
+    const profile = profiles.get(String(memberId));
+    const username = profile?.username ?? profile?.Username ?? null;
+    return {
+      userId: memberId,
+      displayName: formatUserDisplayName(profile) ?? username ?? 'Miembro',
+      username,
+      isCaptain: sameId(memberId, teamData.managerId),
+    };
+  });
 
   return teamData;
 };

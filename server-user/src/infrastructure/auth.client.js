@@ -87,3 +87,38 @@ export const uploadProfilePicture = async (file, authorizationHeader) => {
 
   return data?.data ?? data;
 };
+
+// Caché corta de perfiles públicos para enriquecer equipos: evita repetir una consulta
+// por miembro en cada vista (agotaba el rate limit de auth y los nombres salían como
+// "Miembro"). Solo se guardan los usuarios encontrados.
+const PROFILE_CACHE_TTL_MS = 60_000;
+const PROFILE_CACHE_MAX = 1000;
+const profileCache = new Map();
+
+const getCachedUserById = (userId) => {
+  const key = String(userId);
+  const hit = profileCache.get(key);
+  if (hit && hit.expiresAt > Date.now()) return hit.promise;
+
+  if (profileCache.size >= PROFILE_CACHE_MAX) profileCache.clear();
+
+  const promise = getUserById(key).then((user) => {
+    if (!user) profileCache.delete(key);
+    return user;
+  });
+  profileCache.set(key, {
+    promise,
+    expiresAt: Date.now() + PROFILE_CACHE_TTL_MS,
+  });
+  return promise;
+};
+
+/**
+ * Perfiles de varios usuarios: una sola consulta por id distinto (con caché de 60 s).
+ * Devuelve un Map id → perfil (o null si no se encontró).
+ */
+export const getUsersByIds = async (userIds) => {
+  const uniqueIds = [...new Set(userIds.filter(Boolean).map(String))];
+  const profiles = await Promise.all(uniqueIds.map(getCachedUserById));
+  return new Map(uniqueIds.map((id, index) => [id, profiles[index]]));
+};
