@@ -37,20 +37,8 @@ export const dbConnection = async () => {
   }
 };
 
-// Graceful shutdown handlers
-const gracefulShutdown = async (signal) => {
-  console.log(`MongoDB | Received ${signal}. Closing database connection...`);
-  try {
-    await mongoose.connection.close();
-    console.log('MongoDB | Database connection closed successfully');
-    process.exit(0);
-  } catch (error) {
-    console.error('MongoDB | Error during graceful shutdown:', error.message);
-    process.exit(1);
-  }
+// Cierre de la conexión: lo invoca el apagado ordenado de Nest (DatabaseShutdown)
+export const closeDatabase = async () => {
+  await mongoose.connection.close();
+  console.log('MongoDB | Database connection closed successfully');
 };
-
-// Handle different termination signals
-process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2')); // For nodemon restarts

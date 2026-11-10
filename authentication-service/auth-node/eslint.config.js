@@ -39,6 +39,9 @@ export default tseslint.config(
   {
     files: [scoped('**/*.ts')],
     extends: [tseslint.configs.recommended],
+    languageOptions: {
+      parserOptions: { tsconfigRootDir: import.meta.dirname },
+    },
     rules: {
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
