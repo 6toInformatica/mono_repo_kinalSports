@@ -1,107 +1,97 @@
 'use strict';
 
 import mongoose from 'mongoose';
-import Tournament from './tournament.model.js';
-import Team from '../teams/team.model.js';
-import adminClient from '../../utils/adminClient.js';
+import { getAdminTournament } from '../infrastructure/admin.client.js';
+import { BadRequestError, NotFoundError } from '../shared/errors.js';
+import { teamRepository } from '../teams/team.repository.js';
+import { tournamentRepository } from './tournament.repository.js';
 
-/**
- * Listar todos los torneos activos.
- */
-export const fetchTournaments = async () => {
-  return await Tournament.find({ isActive: true });
+export const listTournaments = () => tournamentRepository.findActive();
+
+export const getTournament = async (id) => {
+  const tournament = await tournamentRepository.findById(id);
+  if (!tournament) throw new NotFoundError('Torneo no encontrado');
+  return tournament;
 };
 
-/**
- * Detalle de un torneo por ID.
- */
-export const fetchTournamentById = async (id) => {
-  return await Tournament.findById(id);
-};
+/** Torneos activos en los que participa alguno de los equipos del usuario */
+export const listMyTournaments = async (userId) =>
+  tournamentRepository.findActiveByTeams(
+    await teamRepository.findIdsByMember(userId)
+  );
 
 /**
- * Torneos en los que participa el usuario mediante sus equipos.
+ * Torneo según server-admin (fuente de verdad), validando que acepte inscripciones.
+ * Los errores de inscripción responden 400, igual que antes.
  */
-export const fetchMyTournaments = async (userId) => {
-  const myTeams = await Team.find({ members: userId }).select('_id');
-  const myTeamIds = myTeams.map((team) => team._id);
-
-  return await Tournament.find({
-    teams: { $in: myTeamIds },
-    isActive: true,
-  });
-};
-
-/**
- * Inscribir equipo en torneo.
- * Valida permisos del capitán y estado del torneo contra admin-service.
- */
-export const registerTeam = async (tournamentId, teamId, userId) => {
-  // Un teamId que no es ObjectId (o un objeto) no debe llegar a la consulta
-  if (!mongoose.isValidObjectId(teamId)) {
-    throw new Error('Equipo no encontrado');
-  }
-
-  const team = await Team.findById(teamId);
-  if (!team) throw new Error('Equipo no encontrado');
-
-  if (team.managerId.toString() !== userId.toString()) {
-    throw new Error('Solo el capitán del equipo puede inscribirlo.');
-  }
-
-  if (!team.isActive) {
-    throw new Error('El equipo no está disponible para inscripción.');
-  }
-
-  // 1. Validar torneo con el servicio administrativo
-  let adminResponse;
+const getOpenAdminTournament = async (tournamentId) => {
+  let response;
   try {
-    adminResponse = await adminClient.get(`/tournaments/${tournamentId}`);
+    response = await getAdminTournament(tournamentId);
   } catch (error) {
     if ([400, 404].includes(error.response?.status)) {
-      throw new Error('Torneo no encontrado');
+      throw new BadRequestError('Torneo no encontrado');
     }
     throw error;
   }
 
-  const externalData = adminResponse.data?.data;
+  const tournament = response?.data;
   if (
-    !adminResponse.data?.success ||
-    !externalData?.isActive ||
-    externalData.status !== 'PENDIENTE' ||
-    new Date(externalData.startDate) <= new Date()
+    !response?.success ||
+    !tournament?.isActive ||
+    tournament.status !== 'PENDIENTE' ||
+    new Date(tournament.startDate) <= new Date()
   ) {
-    throw new Error('El torneo no está disponible para inscripción.');
+    throw new BadRequestError('El torneo no está disponible para inscripción.');
+  }
+  return tournament;
+};
+
+/**
+ * El capitán inscribe a su equipo. El torneo se valida contra server-admin y se
+ * guarda una copia local la primera vez.
+ */
+export const registerTeam = async (tournamentId, teamId, userId) => {
+  // Un teamId que no es ObjectId (o un objeto) no debe llegar a la consulta
+  if (!mongoose.isValidObjectId(teamId)) {
+    throw new BadRequestError('Equipo no encontrado');
   }
 
-  if (externalData.category !== team.category) {
-    throw new Error('La categoría del equipo no coincide con la del torneo.');
+  const team = await teamRepository.findById(teamId);
+  if (!team) throw new BadRequestError('Equipo no encontrado');
+
+  if (team.managerId.toString() !== userId.toString()) {
+    throw new BadRequestError('Solo el capitán del equipo puede inscribirlo.');
+  }
+  if (!team.isActive) {
+    throw new BadRequestError('El equipo no está disponible para inscripción.');
   }
 
-  // 2. Sincronizar (Caché local) si no existe
-  let localTournament = await Tournament.findById(tournamentId);
+  const external = await getOpenAdminTournament(tournamentId);
+  if (external.category !== team.category) {
+    throw new BadRequestError(
+      'La categoría del equipo no coincide con la del torneo.'
+    );
+  }
 
-  if (!localTournament) {
-    localTournament = new Tournament({
+  const tournament =
+    (await tournamentRepository.findById(tournamentId)) ??
+    (await tournamentRepository.create({
       _id: tournamentId,
-      tournamentsName: externalData.tournamentsName,
-      category: externalData.category,
-      startDate: externalData.startDate,
-      endDate: externalData.endDate,
-      status: externalData.status,
-      isActive: externalData.isActive,
-    });
-    await localTournament.save();
+      tournamentsName: external.tournamentsName,
+      category: external.category,
+      startDate: external.startDate,
+      endDate: external.endDate,
+      status: external.status,
+      isActive: external.isActive,
+    }));
+
+  if (tournament.teams.some((t) => t.toString() === teamId.toString())) {
+    throw new BadRequestError('El equipo ya está inscrito en este torneo.');
   }
 
-  // 3. Validar duplicados e inscribir
-  if (localTournament.teams.some((t) => t.toString() === teamId.toString())) {
-    throw new Error('El equipo ya está inscrito en este torneo.');
-  }
+  tournament.teams.push(teamId);
+  await tournamentRepository.save(tournament);
 
-  localTournament.teams.push(teamId);
-
-  await localTournament.save();
-
-  return { localTournament, teamName: team.teamName };
+  return { tournament, teamName: team.teamName };
 };

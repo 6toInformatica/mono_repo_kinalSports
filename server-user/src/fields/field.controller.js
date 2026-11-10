@@ -1,60 +1,43 @@
 'use strict';
 
-import { fetchFields, fetchFieldById } from './field.service.js';
+import { sendError } from '../shared/errors.js';
+import { getField, listFields } from './field.service.js';
 
-/**
- * Obtener todos los campos con paginación y filtros.
- */
 export const getFields = async (req, res) => {
   try {
     const { page = 1, limit = 10, isActive = true } = req.query;
-
-    const { fields, pagination } = await fetchFields({
-      page,
-      limit,
-      isActive,
-    });
-
-    return res.status(200).json({
-      success: true,
-      data: fields,
-      pagination,
-    });
+    const { fields, pagination } = await listFields({ page, limit, isActive });
+    return res.status(200).json({ success: true, data: fields, pagination });
   } catch (error) {
-    console.error('Error en getFields controller:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al obtener los campos deportivos',
-      error: error.message,
+    return sendError(res, error, {
+      log: 'Error en getFields controller:',
+      fallbackBody: (e) => ({
+        success: false,
+        message: 'Error al obtener los campos deportivos',
+        error: e.message,
+      }),
     });
   }
 };
 
-/**
- * Obtener campo por ID.
- */
 export const getFieldById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const field = await fetchFieldById(id);
-
+    const field = await getField(req.params.id);
     if (!field) {
       return res.status(404).json({
         success: false,
         message: 'Campo deportivo no encontrado',
       });
     }
-
-    return res.status(200).json({
-      success: true,
-      data: field,
-    });
+    return res.status(200).json({ success: true, data: field });
   } catch (error) {
-    console.error('Error en getFieldById controller:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al obtener el detalle del campo deportivo',
-      error: error.message,
+    return sendError(res, error, {
+      log: 'Error en getFieldById controller:',
+      fallbackBody: (e) => ({
+        success: false,
+        message: 'Error al obtener el detalle del campo deportivo',
+        error: e.message,
+      }),
     });
   }
 };

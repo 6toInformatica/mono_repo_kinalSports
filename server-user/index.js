@@ -1,8 +1,6 @@
-import dotenv from 'dotenv';
+// Primero: las variables de .env deben existir antes de que cualquier módulo las lea
+import 'dotenv/config';
 import { initServer } from './configs/app.js';
-
-// Configurar variables de entorno
-dotenv.config();
 
 // Manejar errores no capturados
 process.on('uncaughtException', (err) => {

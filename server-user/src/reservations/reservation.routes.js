@@ -8,8 +8,7 @@ import {
 import {
   validateCreateReservation,
   validateCancelReservation,
-} from '../../middlewares/reservation-validators.js';
-import { checkReservationConflict } from '../../middlewares/reservation-conflict.js';
+} from './reservation.validators.js';
 import { reservationLimit } from '../../middlewares/rate-limit-user.js';
 
 const router = Router();
@@ -27,7 +26,6 @@ router.post(
   '/',
   reservationLimit,
   validateCreateReservation,
-  checkReservationConflict,
   createReservation
 );
 

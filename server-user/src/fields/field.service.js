@@ -1,29 +1,19 @@
 'use strict';
 
-import Field from './field.model.js';
+import { fieldRepository } from './field.repository.js';
 
-/**
- * Servicio para manejar la lógica de datos de campos deportivos.
- */
-export const fetchFields = async ({
-  page = 1,
-  limit = 10,
-  isActive = true,
-}) => {
-  const filter = { isActive };
-
+/** Campos con paginación (por defecto solo los activos) */
+export const listFields = async ({ page = 1, limit = 10, isActive = true }) => {
   const pageNumber = parseInt(page);
   const limitNumber = parseInt(limit);
 
-  const fields = await Field.find(filter)
-    .limit(limitNumber)
-    .skip((pageNumber - 1) * limitNumber)
-    .sort({ createdAt: -1 });
-
-  const total = await Field.countDocuments(filter);
+  const { items, total } = await fieldRepository.findPage(
+    { isActive },
+    { skip: (pageNumber - 1) * limitNumber, limit: limitNumber }
+  );
 
   return {
-    fields,
+    fields: items,
     pagination: {
       currentPage: pageNumber,
       totalPages: Math.ceil(total / limitNumber),
@@ -33,6 +23,11 @@ export const fetchFields = async ({
   };
 };
 
-export const fetchFieldById = async (id) => {
-  return await Field.findById(id);
+/** Campo por id, o null si no existe */
+export const getField = (id) => fieldRepository.findById(id);
+
+/** true si la cancha existe y está activa (se puede reservar) */
+export const isFieldAvailable = async (id) => {
+  const field = await fieldRepository.findAvailability(id);
+  return Boolean(field?.isActive);
 };
