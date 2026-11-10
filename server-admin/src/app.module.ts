@@ -1,13 +1,28 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
+import { MongooseModule } from '@nestjs/mongoose';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
-import { validateEnv } from './config/env.validation.js';
+import { SecurityModule } from './common/security/security.module.js';
+import { type Env, validateEnv } from './config/env.validation.js';
 import { DatabaseLifecycle } from './database/database.lifecycle.js';
 import { HealthController } from './health/health.controller.js';
+import { ReservationsModule } from './reservations/reservations.module.js';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, validate: validateEnv })],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
+    MongooseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Env, true>) => ({
+        uri: config.get('URI_MONGODB', { infer: true }),
+        serverSelectionTimeoutMS: 5000,
+        maxPoolSize: 10,
+      }),
+    }),
+    SecurityModule,
+    ReservationsModule,
+  ],
   controllers: [HealthController],
   providers: [
     DatabaseLifecycle,

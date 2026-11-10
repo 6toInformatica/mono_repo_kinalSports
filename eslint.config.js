@@ -19,4 +19,10 @@ export default defineConfig([
   ...serverAdmin,
   ...serverUser,
   ...authNode,
+  // En TypeScript la regla base no entiende parámetros de constructor ni tipos;
+  // la reemplaza @typescript-eslint/no-unused-vars (configurada en cada proyecto)
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    rules: { "no-unused-vars": "off" },
+  },
 ]);

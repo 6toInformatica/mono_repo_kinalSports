@@ -28,7 +28,8 @@ export const validateJWT = (req, res, next) => {
   }
 
   try {
-    const verifyOptions = {};
+    // Solo HS256, igual que los servicios de auth (evita aceptar otros algoritmos)
+    const verifyOptions = { algorithms: ['HS256'] };
     if (jwtConfig.issuer) verifyOptions.issuer = jwtConfig.issuer;
     if (jwtConfig.audience) verifyOptions.audience = jwtConfig.audience;
 
