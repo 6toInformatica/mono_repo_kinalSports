@@ -23,6 +23,11 @@ export const updateProfile = async (authId, updateData) => {
   return await UserProfile.findOneAndUpdate(
     { authId },
     { $set: updateData },
-    { new: true, runValidators: true, upsert: true, setDefaultsOnInsert: true }
+    {
+      returnDocument: 'after',
+      runValidators: true,
+      upsert: true,
+      setDefaultsOnInsert: true,
+    }
   );
 };

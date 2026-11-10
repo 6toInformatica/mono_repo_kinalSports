@@ -249,6 +249,7 @@ services:
     build:
       context: ./server-user
       dockerfile: ../dockerfiles/Dockerfile.server-user
+      target: dev
     container_name: kinal_server_user
     restart: unless-stopped
     depends_on:
@@ -284,8 +285,10 @@ services:
     healthcheck:
       test:
         [
-          "CMD-SHELL",
-          "curl -fsS http://localhost:3008/kinalSportsUser/v1/health || exit 1",
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3008/kinalSportsUser/v1/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
         ]
       interval: 10s
       timeout: 5s
