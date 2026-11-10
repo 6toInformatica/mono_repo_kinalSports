@@ -5,9 +5,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 import { SecurityModule } from './common/security/security.module.js';
 import { type Env, validateEnv } from './config/env.validation.js';
-import { DatabaseLifecycle } from './database/database.lifecycle.js';
+import { FieldsModule } from './fields/fields.module.js';
 import { HealthController } from './health/health.controller.js';
+import { IntegrationsModule } from './integrations/integrations.module.js';
 import { ReservationsModule } from './reservations/reservations.module.js';
+import { TeamsModule } from './teams/teams.module.js';
+import { TournamentsModule } from './tournaments/tournaments.module.js';
 
 @Module({
   imports: [
@@ -21,12 +24,13 @@ import { ReservationsModule } from './reservations/reservations.module.js';
       }),
     }),
     SecurityModule,
+    IntegrationsModule,
+    FieldsModule,
+    TeamsModule,
+    TournamentsModule,
     ReservationsModule,
   ],
   controllers: [HealthController],
-  providers: [
-    DatabaseLifecycle,
-    { provide: APP_FILTER, useClass: AllExceptionsFilter },
-  ],
+  providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
 export class AppModule {}

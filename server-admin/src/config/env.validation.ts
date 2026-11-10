@@ -28,6 +28,12 @@ const envSchema = z.object({
   JWT_AUDIENCE: z.string().optional(),
   INTERNAL_SERVICE_TOKEN: z.string().optional(),
   AUTH_SERVICE_URL: z.string().optional(),
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
+  CLOUDINARY_FOLDER: z.string().default('kinal_sports/fields'),
+  CLOUDINARY_TEAMS_FOLDER: z.string().default('kinal_sports/teams'),
+  CLOUDINARY_TOURNAMENTS_FOLDER: z.string().default('kinal_sports/tournaments'),
   // Orígenes web del panel admin (separados por coma)
   ADMIN_ALLOWED_ORIGINS: csv,
 });

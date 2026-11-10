@@ -288,27 +288,12 @@ importers:
       "@nestjs/platform-express":
         specifier: ^12.4.2
         version: 12.4.2(@nestjs/common@12.4.2(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@12.4.2)(rxjs@7.8.2)
-      axios:
-        specifier: ^1.21.0
-        version: 1.21.0
       cloudinary:
         specifier: ^2.11.0
         version: 2.11.0
-      cors:
-        specifier: ^2.8.6
-        version: 2.8.6
-      dotenv:
-        specifier: ^17.4.2
-        version: 17.4.2
-      express:
-        specifier: ^5.3.0
-        version: 5.3.0
       express-rate-limit:
         specifier: ^8.7.3
         version: 8.7.3(express@5.3.0)
-      express-validator:
-        specifier: ^7.3.2
-        version: 7.3.2
       helmet:
         specifier: ^8.3.0
         version: 8.3.0
@@ -324,18 +309,15 @@ importers:
       multer:
         specifier: ^2.5.0
         version: 2.5.0
-      multer-storage-cloudinary:
-        specifier: ^4.0.0
-        version: 4.0.0(cloudinary@2.11.0)
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
-      uuid:
-        specifier: ^13.0.2
-        version: 13.0.2
+      validator:
+        specifier: ^13.15.35
+        version: 13.15.35
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -352,9 +334,15 @@ importers:
       "@types/morgan":
         specifier: ^1.9.10
         version: 1.9.10
+      "@types/multer":
+        specifier: ^2.3.0
+        version: 2.3.0
       "@types/node":
         specifier: ^24.19.2
         version: 24.19.2
+      "@types/validator":
+        specifier: ^13.15.10
+        version: 13.15.10
       eslint:
         specifier: ^9.39.5
         version: 9.39.5(jiti@2.7.0)
@@ -3418,6 +3406,12 @@ packages:
     resolution:
       {
         integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==,
+      }
+
+  "@types/multer@2.3.0":
+    resolution:
+      {
+        integrity: sha512-i7STIm9V4K2MPH4ZYMtrZAwNxs3kglk2LgleaTuB9pUXgADBcQYQuYMd7+6xgTIxfoggIkFA/DkkvycdZpIARA==,
       }
 
   "@types/node@24.19.2":
@@ -7947,14 +7941,6 @@ packages:
       {
         integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==,
       }
-
-  multer-storage-cloudinary@4.0.0:
-    resolution:
-      {
-        integrity: sha512-25lm9R6o5dWrHLqLvygNX+kBOxprzpmZdnVKH4+r68WcfCt8XV6xfQaMuAg+kUE5Xmr8mJNA4gE0AcBj9FJyWA==,
-      }
-    peerDependencies:
-      cloudinary: ^1.21.0
 
   multer@2.5.0:
     resolution:
@@ -12845,6 +12831,10 @@ snapshots:
 
   "@types/ms@2.1.0": {}
 
+  "@types/multer@2.3.0":
+    dependencies:
+      "@types/express": 5.0.6
+
   "@types/node@24.19.2":
     dependencies:
       undici-types: 7.24.6
@@ -15879,10 +15869,6 @@ snapshots:
   ms@2.0.0: {}
 
   ms@2.1.3: {}
-
-  multer-storage-cloudinary@4.0.0(cloudinary@2.11.0):
-    dependencies:
-      cloudinary: 2.11.0
 
   multer@2.5.0:
     dependencies:

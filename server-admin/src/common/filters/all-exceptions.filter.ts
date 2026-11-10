@@ -44,13 +44,21 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     if (exception instanceof HttpException) {
       const body = exception.getResponse();
-      res
-        .status(exception.getStatus())
-        .json(
-          typeof body === 'object'
-            ? body
-            : { success: false, message: String(body) }
-        );
+      // Las respuestas propias ya traen el formato de la API
+      if (typeof body === 'object' && 'success' in body) {
+        res.status(exception.getStatus()).json(body);
+        return;
+      }
+      // Excepciones de Nest (por ejemplo un JSON mal formado): mismo formato que antes
+      const message =
+        typeof body === 'object'
+          ? (body as { message?: unknown }).message
+          : body;
+      res.status(exception.getStatus()).json({
+        success: false,
+        message: Array.isArray(message) ? message.join(', ') : String(message),
+        error: 'CUSTOM_ERROR',
+      });
       return;
     }
 

@@ -32,7 +32,6 @@ ENV NODE_ENV=production
 COPY package.json ./
 COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY legacy ./legacy
 USER node
 EXPOSE 3009
 CMD ["node", "dist/main.js"]

@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { FIELD_MODEL, FieldSchema } from '../fields/schemas/field.schema.js';
-import { AuthClientService } from '../integrations/auth-client.service.js';
 import { ReservationEnricher } from './reservation.enricher.js';
 import { ReservationRepository } from './reservation.repository.js';
 import { ReservationService } from './reservation.service.js';
@@ -20,11 +19,6 @@ import {
     ]),
   ],
   controllers: [ReservationsController],
-  providers: [
-    ReservationRepository,
-    ReservationService,
-    ReservationEnricher,
-    AuthClientService,
-  ],
+  providers: [ReservationRepository, ReservationService, ReservationEnricher],
 })
 export class ReservationsModule {}

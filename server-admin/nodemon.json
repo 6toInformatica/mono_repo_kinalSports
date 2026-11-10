@@ -1,5 +1,5 @@
 {
-  "watch": ["src", "legacy"],
+  "watch": ["src"],
   "ext": "ts,js,json",
   "exec": "tsc -p tsconfig.build.json && exec node dist/main.js"
 }

@@ -3,19 +3,20 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import type { Request, Response } from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { helmetConfiguration } from '../legacy/configs/helmet-configuration.js';
-import { requestLimit } from '../legacy/middlewares/request-limit.js';
-import { createLegacyRouter } from '../legacy/router.js';
 import { AppModule } from './app.module.js';
 import { allowedOrigins, type Env } from './config/env.validation.js';
+import {
+  helmetConfiguration,
+  notFoundFallback,
+  requestLimit,
+} from './config/http.config.js';
 
 const BASE_PATH = 'kinalSportsAdmin/v1';
 
 async function bootstrap() {
-  // El cuerpo lo parsean las rutas (10 MB, como antes); Nest no lo hace a nivel global
+  // El cuerpo se parsea después del rate limit, con el límite de 10 MB de antes
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
   });
@@ -36,21 +37,16 @@ async function bootstrap() {
   app.use(helmet(helmetConfiguration));
   app.use(requestLimit);
   app.use(morgan('dev'));
+  app.useBodyParser('urlencoded', { extended: false, limit: '10mb' });
+  app.useBodyParser('json', { limit: '10mb' });
 
   app.setGlobalPrefix(BASE_PATH);
-  // Rutas de la versión Express, todavía no migradas a módulos de Nest
-  app.use(`/${BASE_PATH}`, createLegacyRouter());
 
   app.enableShutdownHooks();
 
   // Nest responde el 404 solo dentro del prefijo; fuera de él se mantiene el mismo JSON
   await app.init();
-  app.use((_req: Request, res: Response) =>
-    res.status(404).json({
-      success: false,
-      message: 'Endpoint no encontrado en Admin API',
-    })
-  );
+  app.use(notFoundFallback);
 
   const port = config.get('PORT', { infer: true });
   await app.listen(port);
