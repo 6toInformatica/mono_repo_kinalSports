@@ -79,7 +79,7 @@ kinalSports/
 ├── client-admin-next/      # Panel web admin (Next.js 16, sesion con cookies httpOnly)
 ├── client-user/            # App movil (React Native + Expo SDK 58)
 ├── tests/contract/         # Pruebas de contrato HTTP (Vitest) de todas las rutas
-├── scripts/seed/           # Datos de prueba
+├── scripts/seed/           # Datos iniciales (usuarios, canchas, equipos, torneos, reservas)
 ├── docker-compose.yml      # Orquestacion de todos los servicios
 ├── dockerfiles/            # Dockerfiles por servicio (multi-stage)
 ├── .husky/                 # Git hooks (pre-commit, commit-msg)
@@ -215,7 +215,8 @@ pnpm format          # Formatear server-*
 pnpm commit          # Commit interactivo con Commitizen
 pnpm lint:changed    # ESLint sobre archivos staged
 pnpm contract:up     # Stack para pruebas de contrato (Mailpit, rate limits altos)
-pnpm db:seed         # Datos de prueba
+pnpm db:seed         # Carga los datos iniciales (idempotente)
+pnpm db:reset        # Borra todos los datos y vuelve a cargar los iniciales
 pnpm test:contract   # Pruebas de contrato contra el stack levantado
 ```
 
@@ -268,7 +269,7 @@ Las pruebas de contrato (`tests/contract/`) cubren las rutas HTTP de los cuatro 
 cada respuesta. Ver [tests/contract/README.md](./tests/contract/README.md).
 
 ```bash
-pnpm contract:up && pnpm db:seed && pnpm test:contract
+pnpm contract:up && pnpm db:reset && pnpm test:contract
 ```
 
 ## Commit Conventions

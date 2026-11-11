@@ -14,9 +14,9 @@ export const urls = {
 export const PASSWORD = "Admin1234!";
 export const users = {
   admin: "admin",
-  user: "pruebae2e",
-  manager: "ana.lopez",
-  other: "lucia.perez",
+  user: "luis.garcia",
+  manager: "andrea.morales",
+  other: "valeria.lopez",
 };
 export const seededUserIds = {
   manager: "usr_SeedUser0002",

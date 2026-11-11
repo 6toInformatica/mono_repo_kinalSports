@@ -223,21 +223,27 @@ describe("reservations", () => {
     ).toMatchSnapshot();
   });
 
+  // La lista depende de los datos cargados; se compara solo la reserva creada por esta prueba
+  const ownReservation = (response) => ({
+    ...response,
+    data: {
+      ...response.data,
+      data: response.data.data.filter((r) => r._id === reservationId),
+    },
+  });
+
   test("GET /reservations/me/history", async () => {
-    expect(
-      contract(
-        await http.get(`${base}/reservations/me/history`, {
-          token: user.token,
-        }),
-      ),
-    ).toMatchSnapshot();
+    const response = await http.get(`${base}/reservations/me/history`, {
+      token: user.token,
+    });
+    expect(contract(ownReservation(response))).toMatchSnapshot();
   });
 
   test("GET /reservations/my-reservations", async () => {
     const response = await http.get(`${base}/reservations/my-reservations`, {
       token: user.token,
     });
-    expect(contract(response)).toMatchSnapshot();
+    expect(contract(ownReservation(response))).toMatchSnapshot();
   });
 
   test("PUT /reservations/:id/cancel de otro usuario", async () => {
