@@ -62,6 +62,15 @@ const envSchema = z.object({
 
   UPLOAD_PATH: z.string().default('./uploads'),
 
+  // Transporte de correo: Kinal Mail Hub (API REST) o SMTP (pruebas con Mailpit)
+  MAIL_PROVIDER: z.enum(['kmh', 'smtp']).default('kmh'),
+  KMH_API_BASE_URL: z.string().default('https://mail.lab.kinal.edu.gt'),
+  KMH_MAIL_FROM: z
+    .string()
+    .default('kinal-sports@am-delta.in6am.mail.kinal.test'),
+  KMH_PROJECT_API_KEY: optionalText,
+  KMH_TIMEOUT_MS: positiveInt(10_000),
+
   SMTP_HOST: optionalText,
   SMTP_PORT: positiveInt(587),
   SMTP_ENABLE_SSL: optionalText,
@@ -141,6 +150,13 @@ export const config = {
       'image/png',
       'image/webp',
     ] as string[],
+  },
+  mailProvider: env.MAIL_PROVIDER,
+  kmh: {
+    baseUrl: env.KMH_API_BASE_URL,
+    from: env.KMH_MAIL_FROM,
+    apiKey: env.KMH_PROJECT_API_KEY,
+    timeoutMs: env.KMH_TIMEOUT_MS,
   },
   smtp: {
     host: env.SMTP_HOST,

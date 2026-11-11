@@ -79,7 +79,7 @@ kinalSports/
 ├── client-admin-next/      # Panel web admin (Next.js 16, sesion con cookies httpOnly)
 ├── client-user/            # App movil (React Native + Expo SDK 58)
 ├── tests/contract/         # Pruebas de contrato HTTP (Vitest) de todas las rutas
-├── scripts/seed/           # Datos de prueba
+├── scripts/seed/           # Datos iniciales (usuarios, canchas, equipos, torneos, reservas)
 ├── docker-compose.yml      # Orquestacion de todos los servicios
 ├── dockerfiles/            # Dockerfiles por servicio (multi-stage)
 ├── .husky/                 # Git hooks (pre-commit, commit-msg)
@@ -122,6 +122,25 @@ pnpm docker:down          # detener
 > Importante: `docker compose up` sin `--env-file .env.docker` NO usa ese archivo para resolver
 > las variables `${...}` del compose (Compose solo lee `.env` automaticamente), por lo que se
 > aplicarian los valores por defecto y las credenciales de SMTP/Cloudinary quedarian vacias.
+
+### Correos (Kinal Mail Hub)
+
+auth-service y auth-node envian los correos (verificacion, recuperacion, bienvenida) por la API REST de
+Kinal Mail Hub (`POST https://mail.lab.kinal.edu.gt/api/v1/messages`). Agrega tu API key a `.env.docker`:
+
+```bash
+KMH_PROJECT_API_KEY=<API key REST emitida para el proyecto>
+# Opcionales (estos son los valores por defecto)
+# MAIL_PROVIDER=kmh
+# KMH_API_BASE_URL=https://mail.lab.kinal.edu.gt
+# KMH_MAIL_FROM=kinal-sports@am-delta.in6am.mail.kinal.test
+```
+
+`mail.lab.kinal.edu.gt` no esta publicado en el DNS publico, asi que el compose lo fija con `extra_hosts`
+(IP por defecto `181.114.7.76`; si cambia, define `KMH_HOST_IP` en `.env.docker`).
+
+Los correos se ven en la Bandeja de Kinal Mail Hub. Con `MAIL_PROVIDER=smtp` se vuelve al SMTP anterior;
+las pruebas de contrato lo usan para leer los tokens desde su Mailpit local.
 
 | Servicio           | Puerto host       | URL base                                    |
 | ------------------ | ----------------- | ------------------------------------------- |
@@ -196,7 +215,8 @@ pnpm format          # Formatear server-*
 pnpm commit          # Commit interactivo con Commitizen
 pnpm lint:changed    # ESLint sobre archivos staged
 pnpm contract:up     # Stack para pruebas de contrato (Mailpit, rate limits altos)
-pnpm db:seed         # Datos de prueba
+pnpm db:seed         # Carga los datos iniciales (idempotente)
+pnpm db:reset        # Borra todos los datos y vuelve a cargar los iniciales
 pnpm test:contract   # Pruebas de contrato contra el stack levantado
 ```
 
@@ -249,7 +269,7 @@ Las pruebas de contrato (`tests/contract/`) cubren las rutas HTTP de los cuatro 
 cada respuesta. Ver [tests/contract/README.md](./tests/contract/README.md).
 
 ```bash
-pnpm contract:up && pnpm db:seed && pnpm test:contract
+pnpm contract:up && pnpm db:reset && pnpm test:contract
 ```
 
 ## Commit Conventions

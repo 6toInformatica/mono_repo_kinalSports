@@ -21,7 +21,19 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHashService, PasswordHashService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICloudinaryService, CloudinaryService>();
-        services.AddScoped<IEmailService, EmailService>();
+        // Correo: Kinal Mail Hub (API REST) por defecto; SMTP para las pruebas con Mailpit
+        services.Configure<KinalMailHubOptions>(configuration.GetSection(KinalMailHubOptions.SectionName));
+        var emailProvider = configuration.GetSection(EmailOptions.SectionName).Get<EmailOptions>()?.Provider ?? "kmh";
+        if (string.Equals(emailProvider, "smtp", StringComparison.OrdinalIgnoreCase))
+        {
+            services.AddScoped<IEmailService, EmailService>();
+        }
+        else
+        {
+            var timeout = configuration.GetSection(KinalMailHubOptions.SectionName).Get<KinalMailHubOptions>()?.TimeoutSeconds ?? 10;
+            services.AddHttpClient<IEmailService, KinalMailHubEmailService>(client =>
+                client.Timeout = TimeSpan.FromSeconds(timeout));
+        }
 
         return services;
     }

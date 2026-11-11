@@ -132,10 +132,6 @@ exports[`reservations > GET /reservations/me/history 1`] = `
     "data": [
       {
         "_id": "string",
-        "confirmation": {
-          "confirmedAt": "string",
-          "confirmedBy": "string",
-        },
         "createdAt": "string",
         "endTime": "string",
         "fieldId": {
@@ -167,10 +163,6 @@ exports[`reservations > GET /reservations/my-reservations 1`] = `
     "data": [
       {
         "_id": "string",
-        "confirmation": {
-          "confirmedAt": "string",
-          "confirmedBy": "string",
-        },
         "createdAt": "string",
         "endTime": "string",
         "fieldId": {

@@ -1,7 +1,8 @@
--- Usuarios de prueba para desarrollo local (PostgreSQL, tablas de autenticación).
--- Todos usan la contraseña de prueba "Admin1234!" (hash Argon2id compatible con auth-service y auth-node).
+-- Usuarios iniciales de Kinal Sports (PostgreSQL, tablas de autenticación).
+-- Contraseña de desarrollo para todos: "Admin1234!" (hash Argon2id compatible con auth-service y auth-node).
 -- Es idempotente: se puede ejecutar varias veces sin duplicar datos.
 -- Requiere que los roles ADMIN_ROLE y USER_ROLE existan (los crean los servicios de auth al arrancar).
+-- El usuario "admin" lo crea auth-service al arrancar con la base vacía.
 
 BEGIN;
 
@@ -10,15 +11,18 @@ CREATE TEMP TABLE seed_users (
 ) ON COMMIT DROP;
 
 INSERT INTO seed_users VALUES
-  ('E2E', 'usr_E2eTestUser1', 'Prueba', 'E2E', 'PruebaE2E', 'prueba.e2e@ksports.local', '12345678', 'USER_ROLE'),
-  ('01', 'usr_SeedUser0001', 'Carlos', 'Mendoza', 'carlos.mendoza', 'carlos.mendoza@kinalsports.test', '55510001', 'ADMIN_ROLE'),
-  ('02', 'usr_SeedUser0002', 'Ana', 'Lopez', 'ana.lopez', 'ana.lopez@kinalsports.test', '55510002', 'USER_ROLE'),
-  ('03', 'usr_SeedUser0003', 'Diego', 'Ramirez', 'diego.ramirez', 'diego.ramirez@kinalsports.test', '55510003', 'USER_ROLE'),
-  ('04', 'usr_SeedUser0004', 'Sofia', 'Garcia', 'sofia.garcia', 'sofia.garcia@kinalsports.test', '55510004', 'USER_ROLE'),
-  ('05', 'usr_SeedUser0005', 'Luis', 'Herrera', 'luis.herrera', 'luis.herrera@kinalsports.test', '55510005', 'USER_ROLE'),
-  ('06', 'usr_SeedUser0006', 'Maria', 'Castillo', 'maria.castillo', 'maria.castillo@kinalsports.test', '55510006', 'USER_ROLE'),
-  ('07', 'usr_SeedUser0007', 'Jose', 'Morales', 'jose.morales', 'jose.morales@kinalsports.test', '55510007', 'USER_ROLE'),
-  ('08', 'usr_SeedUser0008', 'Lucia', 'Perez', 'lucia.perez', 'lucia.perez@kinalsports.test', '55510008', 'USER_ROLE');
+  ('01', 'usr_SeedUser0001', 'Roberto', 'Juárez', 'roberto.juarez', 'roberto.juarez@kinalsports.gt', '55231478', 'ADMIN_ROLE'),
+  ('02', 'usr_SeedUser0002', 'Andrea', 'Morales', 'andrea.morales', 'andrea.morales@kinalsports.gt', '42178935', 'USER_ROLE'),
+  ('03', 'usr_SeedUser0003', 'José', 'Pérez', 'jose.perez', 'jose.perez@kinalsports.gt', '31846250', 'USER_ROLE'),
+  ('04', 'usr_SeedUser0004', 'Daniela', 'Rodríguez', 'daniela.rodriguez', 'daniela.rodriguez@kinalsports.gt', '58402716', 'USER_ROLE'),
+  ('05', 'usr_SeedUser0005', 'Fernando', 'Castillo', 'fernando.castillo', 'fernando.castillo@kinalsports.gt', '47715382', 'USER_ROLE'),
+  ('06', 'usr_SeedUser0006', 'Gabriela', 'Méndez', 'gabriela.mendez', 'gabriela.mendez@kinalsports.gt', '33029467', 'USER_ROLE'),
+  ('07', 'usr_SeedUser0007', 'Javier', 'Ramírez', 'javier.ramirez', 'javier.ramirez@kinalsports.gt', '50963184', 'USER_ROLE'),
+  ('08', 'usr_SeedUser0008', 'Valeria', 'López', 'valeria.lopez', 'valeria.lopez@kinalsports.gt', '45287103', 'USER_ROLE'),
+  ('09', 'usr_SeedUser0009', 'Diego', 'Hernández', 'diego.hernandez', 'diego.hernandez@kinalsports.gt', '36514829', 'USER_ROLE'),
+  ('10', 'usr_SeedUser0010', 'Mariana', 'Ortiz', 'mariana.ortiz', 'mariana.ortiz@kinalsports.gt', '59870241', 'USER_ROLE'),
+  ('11', 'usr_SeedUser0011', 'Luis', 'García', 'luis.garcia', 'luis.garcia@kinalsports.gt', '41392657', 'USER_ROLE'),
+  ('12', 'usr_SeedUser0012', 'Alejandra', 'Cifuentes', 'alejandra.cifuentes', 'alejandra.cifuentes@kinalsports.gt', '32658014', 'USER_ROLE');
 
 INSERT INTO users (id, name, surname, username, email, password, status, created_at, updated_at)
 SELECT id, name, surname, username, email,

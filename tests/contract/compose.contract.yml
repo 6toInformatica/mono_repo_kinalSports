@@ -26,6 +26,7 @@ services:
       mailpit:
         condition: service_started
     environment:
+      Email__Provider: smtp
       SmtpSettings__Host: mailpit
       SmtpSettings__Port: 1025
       SmtpSettings__EnableSsl: "false"
@@ -42,6 +43,7 @@ services:
       mailpit:
         condition: service_started
     environment:
+      MAIL_PROVIDER: smtp
       SMTP_HOST: mailpit
       SMTP_PORT: 1025
       SMTP_ENABLE_SSL: "false"

@@ -24,6 +24,7 @@
     "docker:down": "docker compose --env-file .env.docker down",
     "docker:logs": "docker compose --env-file .env.docker logs -f",
     "db:seed": "node scripts/seed/seed.mjs",
+    "db:reset": "node scripts/seed/seed.mjs --reset",
     "contract:up": "docker compose -f docker-compose.yml -f tests/contract/compose.contract.yml --env-file .env.docker up --build -V -d",
     "test:contract": "pnpm --filter @kinal/contract-tests test"
   },

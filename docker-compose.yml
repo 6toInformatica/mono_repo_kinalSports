@@ -95,6 +95,12 @@ services:
       # Admin inicial (solo se crea si la base no tiene usuarios). Valor por defecto solo para desarrollo
       Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-Admin1234!}
       InternalServiceToken: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
+      # Correo por Kinal Mail Hub (API REST). La API key va en .env.docker: KMH_PROJECT_API_KEY=...
+      Email__Provider: ${MAIL_PROVIDER:-kmh}
+      KinalMailHub__BaseUrl: ${KMH_API_BASE_URL:-https://mail.lab.kinal.edu.gt}
+      KinalMailHub__From: ${KMH_MAIL_FROM:-kinal-sports@am-delta.in6am.mail.kinal.test}
+      KinalMailHub__ApiKey: ${KMH_PROJECT_API_KEY:-}
+      KinalMailHub__TimeoutSeconds: ${KMH_TIMEOUT_SECONDS:-10}
       SmtpSettings__Enabled: "true"
       SmtpSettings__Host: ${SMTP_HOST:-smtp.gmail.com}
       SmtpSettings__Port: ${SMTP_PORT:-465}
@@ -110,6 +116,9 @@ services:
       CloudinarySettings__BaseUrl: ${CLOUDINARY_BASE_URL:-https://res.cloudinary.com/b3xvlule/image/upload/}
       CloudinarySettings__Folder: ${CLOUDINARY_FOLDER:-auth_service/profiles}
       CloudinarySettings__DefaultAvatarPath: ${CLOUDINARY_DEFAULT_AVATAR_PATH:-auth_service/profiles/avatarDefault-1749508519496_oam3k3}
+    # mail.lab.kinal.edu.gt no está en el DNS público (solo en el interno del colegio)
+    extra_hosts:
+      - "mail.lab.kinal.edu.gt:${KMH_HOST_IP:-181.114.7.76}"
     env_file:
       - path: .env.docker
         required: false
@@ -161,6 +170,11 @@ services:
       JWT_AUDIENCE: ${JWT_AUDIENCE:-AuthService}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      # Correo por Kinal Mail Hub (API REST). La API key va en .env.docker: KMH_PROJECT_API_KEY=...
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-kmh}
+      KMH_API_BASE_URL: ${KMH_API_BASE_URL:-https://mail.lab.kinal.edu.gt}
+      KMH_MAIL_FROM: ${KMH_MAIL_FROM:-kinal-sports@am-delta.in6am.mail.kinal.test}
+      KMH_PROJECT_API_KEY: ${KMH_PROJECT_API_KEY:-}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-465}
       SMTP_ENABLE_SSL: ${SMTP_ENABLE_SSL:-true}
@@ -175,6 +189,9 @@ services:
       CLOUDINARY_FOLDER: ${CLOUDINARY_FOLDER:-auth_service/profiles}
       CLOUDINARY_DEFAULT_AVATAR_FILENAME: ${CLOUDINARY_DEFAULT_AVATAR_FILENAME:-avatarDefault-1749508519496_oam3k3}
       CHOKIDAR_USEPOLLING: "true"
+    # mail.lab.kinal.edu.gt no está en el DNS público (solo en el interno del colegio)
+    extra_hosts:
+      - "mail.lab.kinal.edu.gt:${KMH_HOST_IP:-181.114.7.76}"
     env_file:
       - path: .env.docker
         required: false
