@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/* Sistema de diseño aprobado (propuesta visual de la fase 6.5) */
+@theme {
+  --color-brand: #08316d;
+  --color-brand-light: #0d3f86;
+  --color-brand-dark: #051f45;
+  --color-brand-soft: #dbe4f3;
+  --color-attention: #f59e0b;
+  --color-surface: #f4f6fa;
+  --color-line: #e3e8f0;
+  --color-line-strong: #c9d3e3;
+  --color-ink: #111827;
+  --color-ink-soft: #4b5563;
+  --color-danger: #b91c1c;
+  --color-success: #16a34a;
+
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.skeleton {
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+  background: #e5e9f0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}

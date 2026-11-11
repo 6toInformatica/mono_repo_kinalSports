@@ -1,0 +1,32 @@
+# client-admin-next: Next.js 16 + TypeScript
+#   dev      -> docker-compose (código montado como volumen, recarga en caliente)
+#   runtime  -> imagen de producción (salida standalone de Next, usuario sin privilegios)
+
+FROM node:26-slim AS base
+WORKDIR /app
+# Node 25+ ya no incluye corepack: se instala la misma versión de pnpm que fija el repo
+RUN npm install -g pnpm@10.29.2 && npm cache clean --force
+ENV NEXT_TELEMETRY_DISABLED=1
+
+FROM base AS deps
+COPY client-admin-next/package.json client-admin-next/pnpm-lock.yaml client-admin-next/pnpm-workspace.yaml ./
+RUN CI=true pnpm install --frozen-lockfile
+
+FROM deps AS dev
+COPY client-admin-next/ ./
+EXPOSE 3000
+CMD ["node_modules/.bin/next", "dev", "--port", "3000", "--hostname", "0.0.0.0"]
+
+FROM deps AS build
+COPY client-admin-next/ ./
+RUN pnpm build
+
+FROM node:26-slim AS runtime
+WORKDIR /app
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 PORT=3000 HOSTNAME=0.0.0.0
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
+USER node
+EXPOSE 3000
+CMD ["node", "server.js"]

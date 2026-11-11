@@ -1,5 +1,6 @@
 import { defineConfig } from "eslint/config";
 import clientAdmin from "./client-admin/eslint.config.js";
+import clientAdminNext from "./client-admin-next/eslint.config.mjs";
 import clientUser from "./client-user/eslint.config.js";
 import serverAdmin from "./server-admin/eslint.config.js";
 import serverUser from "./server-user/eslint.config.js";
@@ -15,6 +16,7 @@ export default defineConfig([
     ],
   },
   ...clientAdmin,
+  ...clientAdminNext,
   ...clientUser,
   ...serverAdmin,
   ...serverUser,
