@@ -18,10 +18,13 @@
     "format": "pnpm -r --filter './server-*' run format || true",
     "commit": "cz",
     "lint:changed": "git diff --name-only --cached | xargs pnpm exec eslint",
-    "docker:up": "docker compose --env-file .env.docker up --build",
-    "docker:up:detached": "docker compose --env-file .env.docker up --build -d",
+    "docker:up": "docker compose --env-file .env.docker up --build -V",
+    "docker:up:detached": "docker compose --env-file .env.docker up --build -V -d",
     "docker:down": "docker compose --env-file .env.docker down",
-    "docker:logs": "docker compose --env-file .env.docker logs -f"
+    "docker:logs": "docker compose --env-file .env.docker logs -f",
+    "db:seed": "node scripts/seed/seed.mjs",
+    "contract:up": "docker compose -f docker-compose.yml -f tests/contract/compose.contract.yml --env-file .env.docker up --build -V -d",
+    "test:contract": "pnpm --filter @kinal/contract-tests test"
   },
   "lint-staged": {
     "*.{js,mjs,cjs,jsx,ts,tsx}": [
@@ -50,5 +53,10 @@
   },
   "dependencies": {
     "express-async-handler": "^1.2.0"
+  },
+  "packageManager": "pnpm@10.29.2",
+  "engines": {
+    "node": ">=22.13.0",
+    "pnpm": ">=10"
   }
 }

@@ -1,0 +1,14 @@
+{
+  "name": "@kinal/contract-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Pruebas HTTP de contrato (caja negra) para los servicios de Kinal Sports",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run",
+    "test:update": "vitest run --update"
+  },
+  "devDependencies": {
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,0 +1,1347 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`auth-node > GET /health 1`] = `
+{
+  "body": {
+    "service": "string",
+    "status": "Healthy",
+    "timestamp": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > POST /auth/profile/picture/avatar 1`] = `
+{
+  "body": {
+    "data": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": true,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Foto de perfil actualizada exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > consultas internas entre servicios > POST /auth/profile/by-id 1`] = `
+{
+  "body": {
+    "data": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": true,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Perfil obtenido exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > consultas internas entre servicios > POST /auth/profile/by-id inexistente 1`] = `
+{
+  "body": {
+    "errorCode": "null",
+    "message": "Usuario no encontrado",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`auth-node > consultas internas entre servicios > POST /auth/profile/by-id sin token interno 1`] = `
+{
+  "body": {
+    "message": "Acceso denegado: Token interno inválido o ausente",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-node > consultas internas entre servicios > POST /auth/profile/by-username 1`] = `
+{
+  "body": {
+    "data": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": true,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Perfil obtenido exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > consultas internas entre servicios > POST /auth/profile/by-username inexistente 1`] = `
+{
+  "body": {
+    "errorCode": "null",
+    "message": "Usuario no encontrado",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`auth-node > foto de perfil > POST /auth/profile/picture con archivo que no es imagen 1`] = `
+{
+  "body": {
+    "error": "Solo se permiten imágenes (JPEG, JPG, PNG, GIF)",
+    "message": "Tipo de archivo no permitido",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-node > foto de perfil > POST /auth/profile/picture sin token 1`] = `
+{
+  "body": {
+    "message": "No hay token en la petición",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-node > foto de perfil > POST /auth/profile/picture válido 1`] = `
+{
+  "body": {
+    "data": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": true,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Foto de perfil actualizada exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > recuperación de contraseña > POST /auth/forgot-password con correo inexistente 1`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "initiated": "boolean",
+    },
+    "message": "Si el email existe, se ha enviado un enlace de recuperación",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > recuperación de contraseña > POST /auth/forgot-password y /auth/reset-password 1`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "initiated": "boolean",
+    },
+    "message": "Si el email existe, se ha enviado un enlace de recuperación",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > recuperación de contraseña > POST /auth/forgot-password y /auth/reset-password 2`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "reset": "boolean",
+    },
+    "message": "Contraseña actualizada exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > recuperación de contraseña > POST /auth/reset-password con token inválido 1`] = `
+{
+  "body": {
+    "error": "Token inválido para reset de contraseña",
+    "message": "Token inválido para reset de contraseña",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-node > registro y verificación > POST /auth/login sin verificar el correo 1`] = `
+{
+  "body": {
+    "error": "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada o reenvía el email de verificación.",
+    "message": "Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada o reenvía el email de verificación.",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-node > registro y verificación > POST /auth/register con archivo que no es imagen 1`] = `
+{
+  "body": {
+    "error": "Solo se permiten imágenes (JPEG, JPG, PNG, GIF)",
+    "message": "Tipo de archivo no permitido",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-node > registro y verificación > POST /auth/register duplicado 1`] = `
+{
+  "body": {
+    "error": "Ya existe un usuario con este email o nombre de usuario",
+    "message": "Ya existe un usuario con este email o nombre de usuario",
+    "success": false,
+  },
+  "json": true,
+  "status": 409,
+}
+`;
+
+exports[`auth-node > registro y verificación > POST /auth/register sin datos 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+        "value": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-node > registro y verificación > POST /auth/register válido 1`] = `
+{
+  "body": {
+    "emailVerificationRequired": true,
+    "message": "Usuario registrado exitosamente. Por favor, verifica tu email para activar la cuenta.",
+    "success": true,
+    "user": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": false,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+  },
+  "json": true,
+  "status": 201,
+}
+`;
+
+exports[`auth-node > registro y verificación > POST /auth/resend-verification 1`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "sent": "boolean",
+    },
+    "message": "Email de verificación enviado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > registro y verificación > POST /auth/resend-verification con correo inexistente 1`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "sent": "boolean",
+    },
+    "message": "Usuario no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`auth-node > registro y verificación > POST /auth/verify-email con token inválido 1`] = `
+{
+  "body": {
+    "error": "Token inválido para verificación de email",
+    "message": "Token inválido para verificación de email",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-node > registro y verificación > POST /auth/verify-email válido 1`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "verified": "boolean",
+    },
+    "message": "Email verificado exitosamente. Ya puedes iniciar sesión.",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > roles > GET /users/:id/roles 1`] = `
+{
+  "body": [
+    "string",
+  ],
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > roles > GET /users/by-role/:role como admin 1`] = `
+{
+  "body": [
+    {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "string",
+      "status": "boolean",
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+  ],
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > roles > GET /users/by-role/:role como usuario 1`] = `
+{
+  "body": {
+    "message": "Forbidden",
+    "success": false,
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`auth-node > roles > PUT /users/:id/role a ADMIN y de vuelta a USER 1`] = `
+{
+  "body": {
+    "createdAt": "string",
+    "email": "string",
+    "id": "string",
+    "isEmailVerified": "boolean",
+    "name": "string",
+    "phone": "string",
+    "profilePicture": "string",
+    "role": "ADMIN_ROLE",
+    "status": true,
+    "surname": "string",
+    "updatedAt": "string",
+    "username": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > roles > PUT /users/:id/role a ADMIN y de vuelta a USER 2`] = `
+{
+  "body": {
+    "createdAt": "string",
+    "email": "string",
+    "id": "string",
+    "isEmailVerified": "boolean",
+    "name": "string",
+    "phone": "string",
+    "profilePicture": "string",
+    "role": "USER_ROLE",
+    "status": true,
+    "surname": "string",
+    "updatedAt": "string",
+    "username": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > roles > PUT /users/:id/role como usuario 1`] = `
+{
+  "body": {
+    "message": "Forbidden",
+    "success": false,
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`auth-node > roles > PUT /users/:id/role con rol inválido 1`] = `
+{
+  "body": {
+    "message": "Role not allowed. Use ADMIN_ROLE or USER_ROLE",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-node > sesión > GET /auth/profile 1`] = `
+{
+  "body": {
+    "data": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": true,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Perfil obtenido exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > sesión > GET /auth/profile con token inválido 1`] = `
+{
+  "body": {
+    "error": "invalid token",
+    "message": "Token inválido",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-node > sesión > GET /auth/profile sin token 1`] = `
+{
+  "body": {
+    "message": "No hay token en la petición",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-node > sesión > POST /auth/login con contraseña incorrecta 1`] = `
+{
+  "body": {
+    "error": "Credenciales inválidas",
+    "message": "Credenciales inválidas",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-node > sesión > POST /auth/login por correo 1`] = `
+{
+  "body": {
+    "accessToken": "string",
+    "expiresIn": "number",
+    "message": "Login exitoso",
+    "refreshToken": "string",
+    "success": true,
+    "userDetails": {
+      "email": "string",
+      "id": "string",
+      "name": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "surname": "string",
+      "username": "string",
+    },
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > sesión > POST /auth/login sin datos 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+        "value": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-node > sesión > POST /auth/login válido (usuario en mayúsculas) 1`] = `
+{
+  "body": {
+    "accessToken": "string",
+    "expiresIn": "number",
+    "message": "Login exitoso",
+    "refreshToken": "string",
+    "success": true,
+    "userDetails": {
+      "email": "string",
+      "id": "string",
+      "name": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "surname": "string",
+      "username": "string",
+    },
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > sesión > POST /auth/logout 1`] = `
+{
+  "body": {
+    "message": "Sesión cerrada",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-node > sesión > POST /auth/refresh con token inválido 1`] = `
+{
+  "body": {
+    "message": "Refresh token inválido",
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-node > sesión > POST /auth/refresh después del logout 1`] = `
+{
+  "body": {
+    "message": "Sesión comprometida. Refresh token reutilizado.",
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-node > sesión > POST /auth/refresh reutilizando un token ya rotado 1`] = `
+{
+  "body": {
+    "message": "Sesión comprometida. Refresh token reutilizado.",
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-node > sesión > POST /auth/refresh válido y conserva el rol 1`] = `
+{
+  "body": {
+    "accessToken": "string",
+    "expiresIn": "number",
+    "refreshToken": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > GET /api/v1/health 1`] = `
+{
+  "body": {
+    "service": "string",
+    "status": "Healthy",
+    "timestamp": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > GET /auth/users como admin 1`] = `
+{
+  "body": [
+    {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "string",
+      "status": "boolean",
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+  ],
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > GET /health 1`] = `
+{
+  "body": {
+    "status": "Healthy",
+    "timestamp": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > consultas internas entre servicios > POST /auth/profile/by-id 1`] = `
+{
+  "body": {
+    "data": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": true,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Perfil obtenido exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > consultas internas entre servicios > POST /auth/profile/by-id inexistente 1`] = `
+{
+  "body": {
+    "errorCode": "null",
+    "message": "User with id <userId> not found.",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`auth-service > consultas internas entre servicios > POST /auth/profile/by-id sin token interno 1`] = `
+{
+  "body": {
+    "message": "Acceso denegado: Token interno inválido o ausente",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-service > consultas internas entre servicios > POST /auth/profile/by-username 1`] = `
+{
+  "body": {
+    "data": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": true,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Perfil obtenido exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > consultas internas entre servicios > POST /auth/profile/by-username inexistente 1`] = `
+{
+  "body": {
+    "message": "Usuario no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`auth-service > foto de perfil > POST /auth/profile/picture con archivo que no es imagen 1`] = `
+{
+  "body": {
+    "errorCode": "string",
+    "message": "Only the following file types are allowed: .jpg, .jpeg, .png, .webp",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-service > foto de perfil > POST /auth/profile/picture sin token 1`] = `
+{
+  "body": "text",
+  "json": false,
+  "status": 401,
+}
+`;
+
+exports[`auth-service > foto de perfil > POST /auth/profile/picture válido 1`] = `
+{
+  "body": {
+    "data": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": true,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Foto de perfil actualizada exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > recuperación de contraseña > POST /auth/forgot-password con correo inexistente 1`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "initiated": "boolean",
+    },
+    "message": "Si el email existe, se ha enviado un enlace de recuperación",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > recuperación de contraseña > POST /auth/forgot-password y /auth/reset-password 1`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "initiated": "boolean",
+    },
+    "message": "Si el email existe, se ha enviado un enlace de recuperación",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > recuperación de contraseña > POST /auth/forgot-password y /auth/reset-password 2`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "reset": "boolean",
+    },
+    "message": "Contraseña actualizada exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > recuperación de contraseña > POST /auth/reset-password con token inválido 1`] = `
+{
+  "body": {
+    "data": {
+      "reset": "boolean",
+      "token": "string",
+    },
+    "message": "Token de reset inválido o expirado",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-service > registro y verificación > POST /auth/login sin verificar el correo 1`] = `
+{
+  "body": {
+    "errorCode": "null",
+    "message": "Credenciales inválidas o permisos insuficientes",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-service > registro y verificación > POST /auth/register con archivo que no es imagen 1`] = `
+{
+  "body": {
+    "errorCode": "string",
+    "message": "Only the following file types are allowed: .jpg, .jpeg, .png, .webp",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-service > registro y verificación > POST /auth/register duplicado 1`] = `
+{
+  "body": {
+    "errorCode": "string",
+    "message": "Email already exists",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-service > registro y verificación > POST /auth/register sin datos 1`] = `
+{
+  "body": {
+    "errors": {
+      "Email": [
+        "string",
+      ],
+      "Name": [
+        "string",
+      ],
+      "Password": [
+        "string",
+      ],
+      "Phone": [
+        "string",
+      ],
+      "Surname": [
+        "string",
+      ],
+      "Username": [
+        "string",
+      ],
+    },
+    "status": 400,
+    "title": "string",
+    "traceId": "string",
+    "type": "string",
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-service > registro y verificación > POST /auth/register válido 1`] = `
+{
+  "body": {
+    "emailVerificationRequired": true,
+    "message": "Usuario registrado exitosamente. Por favor, verifica tu email para activar la cuenta.",
+    "success": true,
+    "user": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": false,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+  },
+  "json": true,
+  "status": 201,
+}
+`;
+
+exports[`auth-service > registro y verificación > POST /auth/resend-verification 1`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "sent": "boolean",
+    },
+    "message": "Email de verificación enviado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > registro y verificación > POST /auth/resend-verification con correo inexistente 1`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "sent": "boolean",
+    },
+    "message": "Usuario no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`auth-service > registro y verificación > POST /auth/verify-email con token inválido 1`] = `
+{
+  "body": {
+    "data": "null",
+    "message": "Invalid or expired verification token",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-service > registro y verificación > POST /auth/verify-email válido 1`] = `
+{
+  "body": {
+    "data": {
+      "email": "string",
+      "verified": "boolean",
+    },
+    "message": "Email verificado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > roles > GET /users/:id/roles 1`] = `
+{
+  "body": [
+    "string",
+  ],
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > roles > GET /users/by-role/:role como admin 1`] = `
+{
+  "body": [
+    {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "string",
+      "status": "boolean",
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+  ],
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > roles > GET /users/by-role/:role como usuario 1`] = `
+{
+  "body": {
+    "message": "Forbidden",
+    "success": false,
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`auth-service > roles > PUT /users/:id/role a ADMIN y de vuelta a USER 1`] = `
+{
+  "body": {
+    "createdAt": "string",
+    "email": "string",
+    "id": "string",
+    "isEmailVerified": "boolean",
+    "name": "string",
+    "phone": "string",
+    "profilePicture": "string",
+    "role": "ADMIN_ROLE",
+    "status": true,
+    "surname": "string",
+    "updatedAt": "string",
+    "username": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > roles > PUT /users/:id/role a ADMIN y de vuelta a USER 2`] = `
+{
+  "body": {
+    "createdAt": "string",
+    "email": "string",
+    "id": "string",
+    "isEmailVerified": "boolean",
+    "name": "string",
+    "phone": "string",
+    "profilePicture": "string",
+    "role": "USER_ROLE",
+    "status": true,
+    "surname": "string",
+    "updatedAt": "string",
+    "username": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > roles > PUT /users/:id/role como usuario 1`] = `
+{
+  "body": {
+    "message": "Forbidden",
+    "success": false,
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`auth-service > roles > PUT /users/:id/role con rol inválido 1`] = `
+{
+  "body": {
+    "errorCode": "null",
+    "message": "Role not allowed. Use ADMIN_ROLE or USER_ROLE",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-service > sesión > GET /auth/profile 1`] = `
+{
+  "body": {
+    "data": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": true,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Perfil obtenido exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > sesión > GET /auth/profile con token inválido 1`] = `
+{
+  "body": "text",
+  "json": false,
+  "status": 401,
+}
+`;
+
+exports[`auth-service > sesión > GET /auth/profile sin token 1`] = `
+{
+  "body": "text",
+  "json": false,
+  "status": 401,
+}
+`;
+
+exports[`auth-service > sesión > POST /auth/login con contraseña incorrecta 1`] = `
+{
+  "body": {
+    "errorCode": "null",
+    "message": "Credenciales inválidas o permisos insuficientes",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-service > sesión > POST /auth/login por correo 1`] = `
+{
+  "body": {
+    "accessToken": "string",
+    "expiresIn": "number",
+    "message": "Login exitoso",
+    "refreshToken": "string",
+    "success": true,
+    "userDetails": {
+      "email": "string",
+      "id": "string",
+      "name": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "surname": "string",
+      "username": "string",
+    },
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > sesión > POST /auth/login sin datos 1`] = `
+{
+  "body": {
+    "errors": {
+      "EmailOrUsername": [
+        "string",
+      ],
+      "Password": [
+        "string",
+      ],
+    },
+    "status": 400,
+    "title": "string",
+    "traceId": "string",
+    "type": "string",
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`auth-service > sesión > POST /auth/login válido (usuario en mayúsculas) 1`] = `
+{
+  "body": {
+    "accessToken": "string",
+    "expiresIn": "number",
+    "message": "Login exitoso",
+    "refreshToken": "string",
+    "success": true,
+    "userDetails": {
+      "email": "string",
+      "id": "string",
+      "name": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "surname": "string",
+      "username": "string",
+    },
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > sesión > POST /auth/logout 1`] = `
+{
+  "body": {
+    "message": "Sesión cerrada",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > sesión > POST /auth/refresh con token inválido 1`] = `
+{
+  "body": {
+    "errorCode": "null",
+    "message": "Credenciales inválidas o permisos insuficientes",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-service > sesión > POST /auth/refresh después del logout 1`] = `
+{
+  "body": {
+    "errorCode": "null",
+    "message": "Credenciales inválidas o permisos insuficientes",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-service > sesión > POST /auth/refresh reutilizando un token ya rotado 1`] = `
+{
+  "body": {
+    "errorCode": "null",
+    "message": "Credenciales inválidas o permisos insuficientes",
+    "success": false,
+    "timestamp": "string",
+    "traceId": "string",
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`auth-service > sesión > POST /auth/refresh válido y conserva el rol 1`] = `
+{
+  "body": {
+    "accessToken": "string",
+    "expiresIn": "number",
+    "refreshToken": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;

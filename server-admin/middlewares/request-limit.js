@@ -1,8 +1,12 @@
 import rateLimit from 'express-rate-limit';
 
+// Límites configurables por entorno; los valores por defecto son los de producción
+const envInt = (name, fallback) =>
+  Number.parseInt(process.env[name], 10) || fallback;
+
 export const requestLimit = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Límite de 100 requests por ventana de tiempo por IP
+  windowMs: envInt('RATE_LIMIT_WINDOW_MS', 15 * 60 * 1000), // 15 minutos
+  max: envInt('RATE_LIMIT_MAX', 100), // 100 requests por ventana por IP
   standardHeaders: true, // Retorna rate limit info en los headers `RateLimit-*`
   legacyHeaders: false, // Desactiva los headers `X-RateLimit-*`
   handler: (req, res) => {

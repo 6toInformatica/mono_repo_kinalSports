@@ -1,0 +1,1170 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`GET /health 1`] = `
+{
+  "body": {
+    "service": "string",
+    "status": "Healthy",
+    "timestamp": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`JSON malformado 1`] = `
+{
+  "body": {
+    "error": "CUSTOM_ERROR",
+    "message": "Expected property name or '}' in JSON at position <n> (line <n> column <n>)",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`fields (público) > GET /fields 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "capacity": "string",
+        "createdAt": "string",
+        "description": "string",
+        "fieldName": "string",
+        "fieldType": "string",
+        "isActive": "boolean",
+        "photo": "string",
+        "pricePerHour": "number",
+        "updatedAt": "string",
+      },
+    ],
+    "pagination": {
+      "currentPage": "number",
+      "limit": "number",
+      "totalPages": "number",
+      "totalRecords": "number",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`fields (público) > GET /fields/:id 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "capacity": "string",
+      "createdAt": "string",
+      "description": "string",
+      "fieldName": "string",
+      "fieldType": "string",
+      "isActive": "boolean",
+      "photo": "string",
+      "pricePerHour": "number",
+      "updatedAt": "string",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`fields (público) > GET /fields/:id con id inválido 1`] = `
+{
+  "body": {
+    "error": "Cast to ObjectId failed for value "abc" (type string) at path "_id" for model "Field"",
+    "message": "Error al obtener el detalle del campo deportivo",
+    "success": false,
+  },
+  "json": true,
+  "status": 500,
+}
+`;
+
+exports[`fields (público) > GET /fields/:id inexistente 1`] = `
+{
+  "body": {
+    "message": "Campo deportivo no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`reservations > GET /reservations/availability 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "endTime": "string",
+        "startTime": "string",
+      },
+    ],
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`reservations > GET /reservations/availability sin parámetros 1`] = `
+{
+  "body": {
+    "message": "Debe proporcionar fieldId y date (en formato YYYY-MM-DD)",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`reservations > GET /reservations/me/history 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "confirmation": {
+          "confirmedAt": "string",
+          "confirmedBy": "string",
+        },
+        "createdAt": "string",
+        "endTime": "string",
+        "fieldId": {
+          "_id": "string",
+          "capacity": "string",
+          "fieldName": "string",
+          "fieldType": "string",
+          "isActive": "boolean",
+          "photo": "string",
+          "pricePerHour": "number",
+        },
+        "lastModifiedBy": "string",
+        "startTime": "string",
+        "status": "string",
+        "updatedAt": "string",
+        "userId": "string",
+      },
+    ],
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`reservations > GET /reservations/my-reservations 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "confirmation": {
+          "confirmedAt": "string",
+          "confirmedBy": "string",
+        },
+        "createdAt": "string",
+        "endTime": "string",
+        "fieldId": {
+          "_id": "string",
+          "capacity": "string",
+          "fieldName": "string",
+          "fieldType": "string",
+          "isActive": "boolean",
+          "photo": "string",
+          "pricePerHour": "number",
+        },
+        "lastModifiedBy": "string",
+        "startTime": "string",
+        "status": "string",
+        "updatedAt": "string",
+        "userId": "string",
+      },
+    ],
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`reservations > POST /reservations de 4 horas 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`reservations > POST /reservations de 30 minutos 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`reservations > POST /reservations en cancha inexistente 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`reservations > POST /reservations en el pasado 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`reservations > POST /reservations fuera de horario 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`reservations > POST /reservations sin datos 1`] = `
+{
+  "body": {
+    "errors": [
+      {
+        "field": "string",
+        "message": "string",
+      },
+    ],
+    "message": "Errores de validación",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`reservations > POST /reservations traslapada 1`] = `
+{
+  "body": {
+    "conflicts": [
+      {
+        "endTime": "string",
+        "id": "string",
+        "startTime": "string",
+        "status": "string",
+      },
+    ],
+    "message": "Conflicto de horario con otras reservas",
+    "success": false,
+  },
+  "json": true,
+  "status": 409,
+}
+`;
+
+exports[`reservations > POST /reservations válida 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "createdAt": "string",
+      "endTime": "string",
+      "fieldId": "string",
+      "lastModifiedBy": "string",
+      "startTime": "string",
+      "status": "PENDING",
+      "updatedAt": "string",
+      "userId": "string",
+    },
+    "message": "Reserva creada correctamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 201,
+}
+`;
+
+exports[`reservations > PUT /reservations/:id/cancel 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "createdAt": "string",
+      "endTime": "string",
+      "fieldId": "string",
+      "lastModifiedBy": "string",
+      "startTime": "string",
+      "status": "CANCELLED",
+      "updatedAt": "string",
+      "userId": "string",
+    },
+    "message": "Reserva cancelada correctamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`reservations > PUT /reservations/:id/cancel de otro usuario 1`] = `
+{
+  "body": {
+    "message": "Reserva no encontrada o no pertenece al usuario autenticado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`reservations > PUT /reservations/:id/cancel inexistente 1`] = `
+{
+  "body": {
+    "message": "Reserva no encontrada o no pertenece al usuario autenticado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`reservations > PUT /reservations/:id/cancel ya cancelada 1`] = `
+{
+  "body": {
+    "message": "No se puede cancelar una reserva con estado CANCELLED",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`ruta inexistente con token 1`] = `
+{
+  "body": {
+    "message": "Endpoint no encontrado en User API",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`ruta inexistente sin token 1`] = `
+{
+  "body": {
+    "message": "Token no proporcionado",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`teams > DELETE /teams/:id/members/:userId 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "managerName": "string",
+      "memberProfiles": [
+        {
+          "displayName": "string",
+          "isCaptain": "boolean",
+          "userId": "string",
+          "username": "string",
+        },
+      ],
+      "members": [
+        "string",
+      ],
+      "namedMembers": [
+        {
+          "_id": "string",
+          "name": "string",
+        },
+      ],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Usuario eliminado del equipo",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > DELETE /teams/:id/named-members/:memberId 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "managerName": "string",
+      "memberProfiles": [
+        {
+          "displayName": "string",
+          "isCaptain": "boolean",
+          "userId": "string",
+          "username": "string",
+        },
+      ],
+      "members": [
+        "string",
+      ],
+      "namedMembers": [
+        {
+          "_id": "string",
+          "name": "string",
+        },
+      ],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Miembro eliminado del roster",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > GET /teams 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "category": "string",
+        "createdAt": "string",
+        "isActive": "boolean",
+        "logo": "string",
+        "managerId": "string",
+        "members": [
+          "string",
+        ],
+        "namedMembers": [
+          {
+            "_id": "string",
+            "name": "string",
+          },
+        ],
+        "teamName": "string",
+        "updatedAt": "string",
+      },
+    ],
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > GET /teams/:id 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "managerName": "string",
+      "memberProfiles": [
+        {
+          "displayName": "string",
+          "isCaptain": "boolean",
+          "userId": "string",
+          "username": "string",
+        },
+      ],
+      "members": [
+        "string",
+      ],
+      "namedMembers": [
+        {
+          "_id": "string",
+          "name": "string",
+        },
+      ],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > GET /teams/:id inexistente 1`] = `
+{
+  "body": {
+    "message": "Equipo no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`teams > GET /teams/me/mis-equipos 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "category": "string",
+        "createdAt": "string",
+        "isActive": "boolean",
+        "logo": "string",
+        "managerId": "string",
+        "members": [
+          "string",
+        ],
+        "namedMembers": [
+          {
+            "_id": "string",
+            "name": "string",
+          },
+        ],
+        "teamName": "string",
+        "updatedAt": "string",
+      },
+    ],
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > POST /teams con categoría inválida 1`] = `
+{
+  "body": {
+    "message": "La categoría debe ser FUTBOL_7 o FUTBOL_11",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`teams > POST /teams con logo 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "managerName": "string",
+      "memberProfiles": [
+        {
+          "displayName": "string",
+          "isCaptain": "boolean",
+          "userId": "string",
+          "username": "string",
+        },
+      ],
+      "members": [
+        "string",
+      ],
+      "namedMembers": [],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Equipo creado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 201,
+}
+`;
+
+exports[`teams > POST /teams con logo que no es imagen 1`] = `
+{
+  "body": {
+    "error": "CUSTOM_ERROR",
+    "message": "Solo se permiten imágenes: image/jpeg, image/png, image/jpg, image/webp, image/avif",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`teams > POST /teams válido 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "managerName": "string",
+      "memberProfiles": [
+        {
+          "displayName": "string",
+          "isCaptain": "boolean",
+          "userId": "string",
+          "username": "string",
+        },
+      ],
+      "members": [
+        "string",
+      ],
+      "namedMembers": [
+        {
+          "_id": "string",
+          "name": "string",
+        },
+      ],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Equipo creado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 201,
+}
+`;
+
+exports[`teams > POST /teams/:id/join 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "managerName": "string",
+      "memberProfiles": [
+        {
+          "displayName": "string",
+          "isCaptain": "boolean",
+          "userId": "string",
+          "username": "string",
+        },
+      ],
+      "members": [
+        "string",
+      ],
+      "namedMembers": [
+        {
+          "_id": "string",
+          "name": "string",
+        },
+      ],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Te has unido exitosamente al equipo: Equipo usuario <run>",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > POST /teams/:id/join repetido 1`] = `
+{
+  "body": {
+    "message": "Ya eres miembro de este equipo",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`teams > POST /teams/:id/leave 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "managerName": "string",
+      "memberProfiles": [
+        {
+          "displayName": "string",
+          "isCaptain": "boolean",
+          "userId": "string",
+          "username": "string",
+        },
+      ],
+      "members": [
+        "string",
+      ],
+      "namedMembers": [
+        {
+          "_id": "string",
+          "name": "string",
+        },
+      ],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Has salido del equipo Equipo usuario <run> correctamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > POST /teams/:id/leave sin ser miembro 1`] = `
+{
+  "body": {
+    "message": "No perteneces a este equipo",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`teams > POST /teams/:id/members 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "managerName": "string",
+      "memberProfiles": [
+        {
+          "displayName": "string",
+          "isCaptain": "boolean",
+          "userId": "string",
+          "username": "string",
+        },
+      ],
+      "members": [
+        "string",
+      ],
+      "namedMembers": [
+        {
+          "_id": "string",
+          "name": "string",
+        },
+      ],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Usuario agregado al equipo",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > POST /teams/:id/members como no capitán 1`] = `
+{
+  "body": {
+    "message": "Solo el capitán del equipo puede realizar esta acción",
+    "success": false,
+  },
+  "json": true,
+  "status": 403,
+}
+`;
+
+exports[`teams > POST /teams/:id/members con usuario inexistente 1`] = `
+{
+  "body": {
+    "message": "Usuario de la app no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`teams > POST /teams/:id/named-members 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "managerId": "string",
+      "managerName": "string",
+      "memberProfiles": [
+        {
+          "displayName": "string",
+          "isCaptain": "boolean",
+          "userId": "string",
+          "username": "string",
+        },
+      ],
+      "members": [
+        "string",
+      ],
+      "namedMembers": [
+        {
+          "_id": "string",
+          "name": "string",
+        },
+      ],
+      "teamName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Miembro agregado al roster",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > POST /teams/:id/named-members sin nombre 1`] = `
+{
+  "body": {
+    "message": "El nombre del miembro es requerido",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`teams > tournaments > GET /tournaments 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "category": "string",
+        "createdAt": "string",
+        "description": "string",
+        "endDate": "string",
+        "isActive": "boolean",
+        "logo": "string",
+        "startDate": "string",
+        "status": "string",
+        "teams": [
+          "string",
+        ],
+        "tournamentsName": "string",
+        "updatedAt": "string",
+      },
+    ],
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > tournaments > GET /tournaments/:id 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "description": "string",
+      "endDate": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "startDate": "string",
+      "status": "PENDIENTE",
+      "teams": [],
+      "tournamentsName": "string",
+      "updatedAt": "string",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > tournaments > GET /tournaments/:id inexistente 1`] = `
+{
+  "body": {
+    "message": "Torneo no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 404,
+}
+`;
+
+exports[`teams > tournaments > GET /tournaments/me/mis-torneos 1`] = `
+{
+  "body": {
+    "data": [
+      {
+        "_id": "string",
+        "category": "string",
+        "createdAt": "string",
+        "description": "string",
+        "endDate": "string",
+        "isActive": "boolean",
+        "logo": "string",
+        "startDate": "string",
+        "status": "string",
+        "teams": [
+          "string",
+        ],
+        "tournamentsName": "string",
+        "updatedAt": "string",
+      },
+    ],
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > tournaments > POST /tournaments/:id/register 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "category": "string",
+      "createdAt": "string",
+      "description": "string",
+      "endDate": "string",
+      "isActive": "boolean",
+      "logo": "string",
+      "startDate": "string",
+      "status": "PENDIENTE",
+      "teams": [
+        "string",
+      ],
+      "tournamentsName": "string",
+      "updatedAt": "string",
+    },
+    "message": "Enhorabuena, el equipo Equipo usuario <run> ha sido inscrito exitosamente.",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`teams > tournaments > POST /tournaments/:id/register con teamId inválido 1`] = `
+{
+  "body": {
+    "message": "Equipo no encontrado",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`teams > tournaments > POST /tournaments/:id/register de un equipo ajeno 1`] = `
+{
+  "body": {
+    "message": "Solo el capitán del equipo puede inscribirlo.",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`teams > tournaments > POST /tournaments/:id/register duplicado 1`] = `
+{
+  "body": {
+    "message": "El equipo ya está inscrito en este torneo.",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`users > GET /users/profile (después de actualizarlo) 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "authId": "string",
+      "avatar": "string",
+      "createdAt": "string",
+      "displayName": "string",
+      "email": "string",
+      "favoriteSports": [
+        "string",
+      ],
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`users > GET /users/profile sin token 1`] = `
+{
+  "body": {
+    "message": "Token no proporcionado",
+    "success": false,
+  },
+  "json": true,
+  "status": 401,
+}
+`;
+
+exports[`users > POST /users/profile/avatar 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "authId": "string",
+      "avatar": "string",
+      "createdAt": "string",
+      "displayName": "string",
+      "email": "string",
+      "favoriteSports": [
+        "string",
+      ],
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Avatar actualizado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`users > POST /users/profile/avatar con archivo que no es imagen 1`] = `
+{
+  "body": {
+    "error": "CUSTOM_ERROR",
+    "message": "Solo se permiten imágenes: image/jpeg, image/png, image/jpg, image/webp, image/avif",
+    "success": false,
+  },
+  "json": true,
+  "status": 400,
+}
+`;
+
+exports[`users > PUT /users/profile 1`] = `
+{
+  "body": {
+    "data": {
+      "_id": "string",
+      "authId": "string",
+      "avatar": "string",
+      "createdAt": "string",
+      "displayName": "string",
+      "email": "string",
+      "favoriteSports": [
+        "string",
+      ],
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Perfil actualizado exitosamente",
+    "success": true,
+  },
+  "json": true,
+  "status": 200,
+}
+`;
