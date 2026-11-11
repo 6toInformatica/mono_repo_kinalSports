@@ -1,31 +1,26 @@
 import { body, param } from 'express-validator';
-import { validateJWT } from './validate-JWT.js';
-import { checkValidators } from './handle-errors.js';
+import { checkValidators } from '../../middlewares/handle-errors.js';
+import { isFieldAvailable } from '../fields/field.service.js';
 import {
+  CLOSE_HOUR,
+  MAX_DURATION_MINUTES,
+  MIN_DURATION_MINUTES,
+  OPEN_HOUR,
+  validateBusinessHours,
   validateEndTimeAfterStartTime,
   validateFutureDate,
-  validateMinDuration,
   validateMaxDuration,
-  validateBusinessHours,
-} from '../helpers/validation-helpers.js';
-import Field from '../src/fields/field.model.js';
+  validateMinDuration,
+} from './reservation.rules.js';
 
-// Reglas de negocio de reservas
-const MIN_DURATION_MINUTES = 60;
-const MAX_DURATION_MINUTES = 180;
-const OPEN_HOUR = 6;
-const CLOSE_HOUR = 22;
-
-// Validaciones para crear reservación (POST /)
+// Crear reservación (POST /): formato, cancha disponible y reglas de horario
 export const validateCreateReservation = [
-  validateJWT,
   body('fieldId')
     .isMongoId()
     .withMessage('fieldId debe ser un ObjectId válido de MongoDB')
     .bail()
     .custom(async (fieldId) => {
-      const field = await Field.findById(fieldId).select('isActive');
-      if (!field || !field.isActive) {
+      if (!(await isFieldAvailable(fieldId))) {
         throw new Error('La cancha no existe o no está disponible');
       }
       return true;
@@ -49,9 +44,8 @@ export const validateCreateReservation = [
   checkValidators,
 ];
 
-// Validaciones para cancelar reservación (PUT /:id/cancel)
+// Cancelar reservación (PUT /:id/cancel)
 export const validateCancelReservation = [
-  validateJWT,
   param('id')
     .isMongoId()
     .withMessage('ID debe ser un ObjectId válido de MongoDB'),

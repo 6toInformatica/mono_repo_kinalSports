@@ -1,5 +1,11 @@
 'use strict';
 
+// Reglas de negocio de reservas
+export const MIN_DURATION_MINUTES = 60;
+export const MAX_DURATION_MINUTES = 180;
+export const OPEN_HOUR = 6;
+export const CLOSE_HOUR = 22;
+
 export const validateEndTimeAfterStartTime = (endTimeValue, { req }) => {
   const start = new Date(req.body.startTime);
   const end = new Date(endTimeValue);

@@ -1,362 +1,214 @@
 'use strict';
 
-import {
-  fetchTeams,
-  fetchTeamById,
-  fetchMyTeams,
-  addTeamMember,
-  removeTeamMember,
-  createTeam as createTeamService,
-  addNamedMember,
-  removeNamedMember,
-  addTeamMemberByUsername,
-  removeTeamMemberByCaptain,
-} from './team.service.js';
-import { uploadBufferToCloudinary } from '../../middlewares/file-uploader.js';
-import {
-  parseNamedMembers,
-  MAX_MEMBERS_BY_CATEGORY,
-} from '../../helpers/team-helpers.js';
-import { enrichTeamDetails } from '../../helpers/team-enrichment.js';
+import { sendError } from '../shared/errors.js';
+import * as teams from './team.service.js';
 
-/**
- * Listar todos los equipos activos.
- */
+/** Errores inesperados de las acciones de equipo: el mensaje original, con status propio */
+const actionError = (fallbackMessage, fallbackStatus = 500) => ({
+  fallbackStatus,
+  fallbackBody: (e) => ({
+    success: false,
+    message: e.message || fallbackMessage,
+  }),
+});
+
+/** Errores inesperados de las consultas: mensaje fijo y detalle en `error` */
+const queryError = (log, message) => ({
+  log,
+  fallbackBody: (e) => ({ success: false, message, error: e.message }),
+});
+
 export const getTeams = async (req, res) => {
   try {
-    const teams = await fetchTeams();
-    return res.status(200).json({
-      success: true,
-      data: teams,
-    });
+    return res
+      .status(200)
+      .json({ success: true, data: await teams.listTeams() });
   } catch (error) {
-    console.error('Error en getTeams controller:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al obtener los equipos deportivos',
-      error: error.message,
-    });
+    return sendError(
+      res,
+      error,
+      queryError(
+        'Error en getTeams controller:',
+        'Error al obtener los equipos deportivos'
+      )
+    );
   }
 };
 
-/**
- * Crear un equipo propiamente desde el usuario
- */
 export const createTeam = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const { teamName, category, namedMembers } = req.body;
-
-    if (!teamName || !category) {
-      return res.status(400).json({
-        success: false,
-        message: 'El nombre del equipo y la categoría son requeridos',
-      });
-    }
-
-    // Validar antes de subir el logo para no dejar imágenes huérfanas en Cloudinary
-    if (!Object.keys(MAX_MEMBERS_BY_CATEGORY).includes(category)) {
-      return res.status(400).json({
-        success: false,
-        message: 'La categoría debe ser FUTBOL_7 o FUTBOL_11',
-      });
-    }
-
-    let logo;
-    if (req.file) {
-      const folder =
-        process.env.CLOUDINARY_TEAMS_FOLDER || 'kinal_sports/teams';
-      const result = await uploadBufferToCloudinary(
-        req.file.buffer,
-        folder,
-        req.file.originalname
-      );
-      // Se guarda la URL completa, igual que server-admin, para que ambos clientes la usen directamente
-      logo = result.secure_url;
-    }
-
-    const data = {
-      teamName,
-      category,
-      managerId: userId,
-      members: [userId],
-      namedMembers: parseNamedMembers(namedMembers),
-      ...(logo && { logo }),
-    };
-
-    const newTeam = await createTeamService(data);
-    const teamData = await enrichTeamDetails(newTeam);
-
+    const team = await teams.createTeam(req.user.id, req.body, req.file);
     return res.status(201).json({
       success: true,
       message: 'Equipo creado exitosamente',
-      data: teamData,
+      data: team,
     });
   } catch (error) {
-    console.error('Error en createTeam controller:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al crear el equipo',
-      error: error.message,
-    });
+    return sendError(
+      res,
+      error,
+      queryError('Error en createTeam controller:', 'Error al crear el equipo')
+    );
   }
 };
 
-/**
- * Ver detalles de un equipo específico.
- */
 export const getTeamById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const team = await fetchTeamById(id);
-
-    if (!team) {
-      return res.status(404).json({
-        success: false,
-        message: 'Equipo no encontrado',
-      });
-    }
-
-    const teamData = await enrichTeamDetails(team);
-
-    return res.status(200).json({
-      success: true,
-      data: teamData,
-    });
+    return res
+      .status(200)
+      .json({ success: true, data: await teams.getTeam(req.params.id) });
   } catch (error) {
-    console.error('Error en getTeamById controller:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al obtener el detalle del equipo',
-      error: error.message,
-    });
+    return sendError(
+      res,
+      error,
+      queryError(
+        'Error en getTeamById controller:',
+        'Error al obtener el detalle del equipo'
+      )
+    );
   }
 };
 
-/**
- * Usuario se une a un equipo.
- */
-export const joinTeam = async (req, res) => {
-  try {
-    const { id: teamId } = req.params;
-    const userId = req.user.id;
-
-    const team = await addTeamMember(teamId, userId);
-
-    if (!team) {
-      return res.status(404).json({
-        success: false,
-        message: 'Equipo no encontrado',
-      });
-    }
-
-    const teamData = await enrichTeamDetails(team);
-
-    return res.status(200).json({
-      success: true,
-      message: `Te has unido exitosamente al equipo: ${team.teamName}`,
-      data: teamData,
-    });
-  } catch (error) {
-    const isClientError =
-      error.message.includes('Ya eres miembro') ||
-      error.message.includes('no está disponible') ||
-      error.message.includes('cupo máximo');
-    return res.status(isClientError ? 400 : 500).json({
-      success: false,
-      message: error.message || 'Error al intentar unirte al equipo',
-    });
-  }
-};
-
-/**
- * Ver mis equipos (donde soy miembro).
- */
 export const getMyTeams = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const teams = await fetchMyTeams(userId);
-
-    return res.status(200).json({
-      success: true,
-      data: teams,
-    });
+    return res
+      .status(200)
+      .json({ success: true, data: await teams.listMyTeams(req.user.id) });
   } catch (error) {
-    console.error('Error en getMyTeams controller:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al obtener tus equipos',
-      error: error.message,
-    });
+    return sendError(
+      res,
+      error,
+      queryError(
+        'Error en getMyTeams controller:',
+        'Error al obtener tus equipos'
+      )
+    );
   }
 };
 
-/**
- * Abandonar un equipo.
- */
-export const leaveTeam = async (req, res) => {
+export const joinTeam = async (req, res) => {
   try {
-    const { id: teamId } = req.params;
-    const userId = req.user.id;
-
-    const team = await removeTeamMember(teamId, userId);
-
-    if (!team) {
-      return res.status(404).json({
-        success: false,
-        message: 'Equipo no encontrado',
-      });
-    }
-
-    const teamData = await enrichTeamDetails(team);
-
+    const { teamName, team } = await teams.joinTeam(req.params.id, req.user.id);
     return res.status(200).json({
       success: true,
-      message: `Has salido del equipo ${team.teamName} correctamente`,
-      data: teamData,
+      message: `Te has unido exitosamente al equipo: ${teamName}`,
+      data: team,
     });
   } catch (error) {
-    const isClientError =
-      error.message.includes('No perteneces') ||
-      error.message.includes('Como manager');
-    return res.status(isClientError ? 400 : 500).json({
-      success: false,
-      message: error.message || 'Error al procesar el abandono del equipo',
+    return sendError(
+      res,
+      error,
+      actionError('Error al intentar unirte al equipo')
+    );
+  }
+};
+
+export const leaveTeam = async (req, res) => {
+  try {
+    const { teamName, team } = await teams.leaveTeam(
+      req.params.id,
+      req.user.id
+    );
+    return res.status(200).json({
+      success: true,
+      message: `Has salido del equipo ${teamName} correctamente`,
+      data: team,
     });
+  } catch (error) {
+    return sendError(
+      res,
+      error,
+      actionError('Error al procesar el abandono del equipo')
+    );
   }
 };
 
 export const addTeamNamedMember = async (req, res) => {
+  const { name } = req.body ?? {};
+  if (!name?.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'El nombre del miembro es requerido',
+    });
+  }
+
   try {
-    const { id } = req.params;
-    const { name } = req.body;
-
-    if (!name?.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'El nombre del miembro es requerido',
-      });
-    }
-
-    const team = await addNamedMember(id, name);
-
-    if (!team) {
-      return res.status(404).json({
-        success: false,
-        message: 'Equipo no encontrado',
-      });
-    }
-
-    const teamData = await enrichTeamDetails(team);
-
+    const team = await teams.addNamedMember(req.params.id, name);
     return res.status(200).json({
       success: true,
       message: 'Miembro agregado al roster',
-      data: teamData,
+      data: team,
     });
   } catch (error) {
-    return res.status(400).json({
-      success: false,
-      message: error.message || 'Error al agregar miembro al roster',
-    });
+    return sendError(
+      res,
+      error,
+      actionError('Error al agregar miembro al roster', 400)
+    );
   }
 };
 
 export const addTeamAppMember = async (req, res) => {
+  const { username } = req.body ?? {};
+  if (!username?.trim()) {
+    return res.status(400).json({
+      success: false,
+      message: 'El username del usuario es requerido',
+    });
+  }
+
   try {
-    const { id } = req.params;
-    const { username } = req.body;
-
-    if (!username?.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'El username del usuario es requerido',
-      });
-    }
-
-    const team = await addTeamMemberByUsername(id, username);
-
-    if (!team) {
-      return res.status(404).json({
-        success: false,
-        message: 'Equipo no encontrado',
-      });
-    }
-
-    const teamData = await enrichTeamDetails(team);
-
+    const team = await teams.addMemberByUsername(req.params.id, username);
     return res.status(200).json({
       success: true,
       message: 'Usuario agregado al equipo',
-      data: teamData,
+      data: team,
     });
   } catch (error) {
-    const isClientError =
-      error.message.includes('Ya eres miembro') ||
-      error.message.includes('no encontrado') ||
-      error.message.includes('no está disponible') ||
-      error.message.includes('cupo máximo');
-    return res.status(isClientError ? 400 : 500).json({
-      success: false,
-      message: error.message || 'Error al agregar usuario al equipo',
-    });
+    return sendError(
+      res,
+      error,
+      actionError('Error al agregar usuario al equipo')
+    );
   }
 };
 
 export const removeTeamAppMember = async (req, res) => {
   try {
-    const { id, userId } = req.params;
-    const team = await removeTeamMemberByCaptain(id, userId);
-
-    if (!team) {
-      return res.status(404).json({
-        success: false,
-        message: 'Equipo no encontrado',
-      });
-    }
-
-    const teamData = await enrichTeamDetails(team);
-
+    const team = await teams.removeMemberByCaptain(
+      req.params.id,
+      req.params.userId
+    );
     return res.status(200).json({
       success: true,
       message: 'Usuario eliminado del equipo',
-      data: teamData,
+      data: team,
     });
   } catch (error) {
-    const isClientError =
-      error.message.includes('no es miembro') ||
-      error.message.includes('No puedes quitar');
-    return res.status(isClientError ? 400 : 500).json({
-      success: false,
-      message: error.message || 'Error al eliminar usuario del equipo',
-    });
+    return sendError(
+      res,
+      error,
+      actionError('Error al eliminar usuario del equipo')
+    );
   }
 };
 
 export const removeTeamNamedMember = async (req, res) => {
   try {
-    const { id, memberId } = req.params;
-    const team = await removeNamedMember(id, memberId);
-
-    if (!team) {
-      return res.status(404).json({
-        success: false,
-        message: 'Equipo no encontrado',
-      });
-    }
-
-    const teamData = await enrichTeamDetails(team);
-
+    const team = await teams.removeNamedMember(
+      req.params.id,
+      req.params.memberId
+    );
     return res.status(200).json({
       success: true,
       message: 'Miembro eliminado del roster',
-      data: teamData,
+      data: team,
     });
   } catch (error) {
-    const isClientError = error.message.includes('no encontrado');
-    return res.status(isClientError ? 404 : 400).json({
-      success: false,
-      message: error.message || 'Error al eliminar miembro del roster',
-    });
+    return sendError(
+      res,
+      error,
+      actionError('Error al eliminar miembro del roster', 400)
+    );
   }
 };

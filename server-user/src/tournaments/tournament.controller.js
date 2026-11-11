@@ -1,114 +1,80 @@
 'use strict';
 
-import {
-  fetchTournaments,
-  fetchTournamentById,
-  fetchMyTournaments,
-  registerTeam,
-} from './tournament.service.js';
+import { sendError } from '../shared/errors.js';
+import * as tournaments from './tournament.service.js';
 
-/**
- * Listar torneos activos.
- */
+const queryError = (log, message) => ({
+  log,
+  fallbackBody: (e) => ({ success: false, message, error: e.message }),
+});
+
 export const getTournaments = async (req, res) => {
   try {
-    const torneos = await fetchTournaments();
-    return res.status(200).json({
-      success: true,
-      data: torneos,
-    });
+    return res
+      .status(200)
+      .json({ success: true, data: await tournaments.listTournaments() });
   } catch (error) {
-    console.error('Error en getTournaments controller:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al obtener los torneos deportivos',
-      error: error.message,
-    });
+    return sendError(
+      res,
+      error,
+      queryError(
+        'Error en getTournaments controller:',
+        'Error al obtener los torneos deportivos'
+      )
+    );
   }
 };
 
-/**
- * Detalle del torneo.
- */
 export const getTournamentById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const tournament = await fetchTournamentById(id);
-
-    if (!tournament) {
-      return res.status(404).json({
-        success: false,
-        message: 'Torneo no encontrado',
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: tournament,
-    });
+    const tournament = await tournaments.getTournament(req.params.id);
+    return res.status(200).json({ success: true, data: tournament });
   } catch (error) {
-    console.error('Error en getTournamentById controller:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al obtener el detalle del torneo',
-      error: error.message,
-    });
+    return sendError(
+      res,
+      error,
+      queryError(
+        'Error en getTournamentById controller:',
+        'Error al obtener el detalle del torneo'
+      )
+    );
   }
 };
 
-/**
- * Inscripción de equipo.
- */
 export const registerTeamToTournament = async (req, res) => {
   try {
-    const { id: tournamentId } = req.params;
-    const { teamId } = req.body;
-    const userId = req.user.id;
-
-    const { localTournament, teamName } = await registerTeam(
-      tournamentId,
-      teamId,
-      userId
+    const { tournament, teamName } = await tournaments.registerTeam(
+      req.params.id,
+      req.body.teamId,
+      req.user.id
     );
-
     return res.status(200).json({
       success: true,
       message: `Enhorabuena, el equipo ${teamName} ha sido inscrito exitosamente.`,
-      data: localTournament,
+      data: tournament,
     });
   } catch (error) {
-    const isClientError =
-      error.message.includes('no encontrado') ||
-      error.message.includes('Solo el capitán') ||
-      error.message.includes('no está disponible') ||
-      error.message.includes('ya está inscrito') ||
-      error.message.includes('no coincide');
-
-    return res.status(isClientError ? 400 : 500).json({
-      success: false,
-      message: error.message || 'Error al intentar inscribir al equipo',
+    return sendError(res, error, {
+      fallbackBody: (e) => ({
+        success: false,
+        message: e.message || 'Error al intentar inscribir al equipo',
+      }),
     });
   }
 };
 
-/**
- * Torneos de mis equipos.
- */
 export const getMyTournaments = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const tournaments = await fetchMyTournaments(userId);
-
-    return res.status(200).json({
-      success: true,
-      data: tournaments,
-    });
+    const data = await tournaments.listMyTournaments(req.user.id);
+    return res.status(200).json({ success: true, data });
   } catch (error) {
-    console.error('Error en getMyTournaments controller:', error);
-    return res.status(500).json({
-      success: false,
-      message: 'Error al obtener tus torneos participados',
-      error: error.message,
-    });
+    return sendError(
+      res,
+      error,
+      queryError(
+        'Error en getMyTournaments controller:',
+        'Error al obtener tus torneos participados'
+      )
+    );
   }
 };

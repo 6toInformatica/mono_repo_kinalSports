@@ -1,98 +1,104 @@
 'use strict';
 
-import Reservation from './reservation.model.js';
-import { getBusinessDayRange } from '../../helpers/validation-helpers.js';
+import {
+  BadRequestError,
+  ConflictError,
+  NotFoundError,
+} from '../shared/errors.js';
+import { reservationRepository } from './reservation.repository.js';
+import { getBusinessDayRange } from './reservation.rules.js';
+
+const CANCELLABLE_STATUSES = ['PENDING', 'CONFIRMED'];
 
 /**
- * Guardar nueva reservación.
+ * Crea una reserva pendiente si el horario está libre.
+ * Las reglas de formato, duración y horario ya las validó la capa HTTP.
  */
-export const registerReservation = async (reservationData, userId) => {
-  const reservation = new Reservation({
-    ...reservationData,
+export const createReservation = async (
+  userId,
+  { fieldId, startTime, endTime }
+) => {
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+
+  const conflicts = await reservationRepository.findConflicts(
+    fieldId,
+    start,
+    end
+  );
+  if (conflicts.length > 0) {
+    throw new ConflictError('Conflicto de horario con otras reservas', {
+      conflicts: conflicts.map((c) => ({
+        id: c._id,
+        startTime: c.startTime,
+        endTime: c.endTime,
+        status: c.status,
+      })),
+    });
+  }
+
+  const reservation = await reservationRepository.create({
+    fieldId,
+    startTime,
+    endTime,
     userId,
     status: 'PENDING',
     lastModifiedBy: userId,
   });
 
-  await reservation.save();
-
   // Verificación posterior al insert: MongoDB standalone no tiene transacciones, así que
   // dos solicitudes simultáneas pueden pasar el chequeo previo. Si ahora existe otra reserva
   // solapada creada antes (ObjectId menor), esta se descarta y solo sobrevive la primera.
-  const conflicts = await Reservation.findConflictingReservations(
+  const overlapping = await reservationRepository.findConflicts(
     reservation.fieldId,
     reservation.startTime,
     reservation.endTime,
     reservation._id
   );
-  const lostRace = conflicts.some(
+  const lostRace = overlapping.some(
     (other) => other._id.toString() < reservation._id.toString()
   );
-
   if (lostRace) {
-    await Reservation.deleteOne({ _id: reservation._id });
-    const error = new Error('Conflicto de horario con otras reservas');
-    error.statusCode = 409;
-    throw error;
+    await reservationRepository.deleteById(reservation._id);
+    throw new ConflictError('Conflicto de horario con otras reservas');
   }
 
   return reservation;
 };
 
-/**
- * Cancelar una reservación si pertenece al usuario y su estado lo permite.
- */
-export const cancelUserReservation = async (reservationId, userId) => {
-  const reservation = await Reservation.findOne({
-    _id: reservationId,
-    userId,
-  });
-
-  if (!reservation) return null;
-
-  if (!['PENDING', 'CONFIRMED'].includes(reservation.status)) {
-    throw new Error(
-      `No se puede cancelar una reserva con estado ${reservation.status}`
+/** El usuario cancela su propia reserva, si aún no inicia y su estado lo permite */
+export const cancelReservation = async (reservationId, userId) => {
+  const reservation = await reservationRepository.findOwnedBy(
+    reservationId,
+    userId
+  );
+  if (!reservation) {
+    throw new NotFoundError(
+      'Reserva no encontrada o no pertenece al usuario autenticado'
     );
   }
 
+  if (!CANCELLABLE_STATUSES.includes(reservation.status)) {
+    throw new BadRequestError(
+      `No se puede cancelar una reserva con estado ${reservation.status}`
+    );
+  }
   if (reservation.startTime <= new Date()) {
-    throw new Error(
+    throw new BadRequestError(
       'No se puede cancelar una reserva que ya inició o finalizó'
     );
   }
 
   reservation.status = 'CANCELLED';
   reservation.lastModifiedBy = userId;
-  await reservation.save();
-
-  return reservation;
+  return reservationRepository.save(reservation);
 };
 
-/**
- * Obtener historial de reservaciones del usuario.
- */
-export const fetchUserReservationHistory = async (userId) => {
-  return await Reservation.find({ userId })
-    .populate(
-      'fieldId',
-      'fieldName photo pricePerHour fieldType capacity isActive'
-    )
-    .sort({ startTime: -1 });
-};
+export const getReservationHistory = (userId) =>
+  reservationRepository.findHistory(userId);
 
-/**
- * Consultar lapsos de tiempo ocupados para un campo en una fecha.
- */
-export const fetchOccupiedSlots = async (fieldId, date) => {
-  // El día se interpreta en la zona horaria del negocio, no en UTC
+/** Horarios ocupados de la cancha en un día (interpretado en la zona horaria del negocio) */
+export const getOccupiedSlots = (fieldId, date) => {
   const { start, end } = getBusinessDayRange(date);
-
-  // Incluye reservas que se traslapan con el día (no solo las que inician en él)
-  return await Reservation.find({
-    fieldId,
-    status: { $nin: ['CANCELLED', 'NO_SHOW'] },
-    startTime: { $lt: end },
-    endTime: { $gt: start },
-  }).select('startTime endTime -_id');
+  return reservationRepository.findOccupiedSlots(fieldId, start, end);
 };

@@ -11,14 +11,14 @@ import {
   addTeamAppMember,
   removeTeamAppMember,
 } from './team.controller.js';
-import { uploadTeamImage } from '../../middlewares/file-uploader.js';
-import { authorizeTeamCaptain } from '../../middlewares/team-validators.js';
+import { imageUpload } from '../../middlewares/file-uploader.js';
+import { authorizeTeamCaptain } from './team.middleware.js';
 
 const router = Router();
 
 router.get('/', getTeams);
 router.get('/me/mis-equipos', getMyTeams);
-router.post('/', uploadTeamImage.single('logo'), createTeam);
+router.post('/', imageUpload.single('logo'), createTeam);
 router.get('/:id', getTeamById);
 router.post('/:id/join', joinTeam);
 router.post('/:id/leave', leaveTeam);

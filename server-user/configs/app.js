@@ -4,7 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { dbConnection } from './db.js';
+import { closeDatabase, dbConnection } from './db.js';
 import { requestLimit } from '../middlewares/request-limit.js';
 import { corsOptions } from './cors-configuration.js';
 import { helmetConfiguration } from './helmet-configuration.js';
@@ -61,6 +61,38 @@ const routes = (app) => {
   });
 };
 
+/**
+ * Apagado ordenado: deja de aceptar conexiones, espera a que terminen las peticiones
+ * en curso (máximo 10 s) y después cierra MongoDB.
+ */
+const registerShutdown = (server) => {
+  let closing = false;
+
+  const shutdown = (signal) => {
+    if (closing) return;
+    closing = true;
+    console.log(`Received ${signal}. Shutting down User Server...`);
+
+    const forceExit = globalThis.setTimeout(() => process.exit(1), 10_000);
+    forceExit.unref();
+
+    server.close(async () => {
+      try {
+        await closeDatabase();
+        process.exit(0);
+      } catch (error) {
+        console.error('Error during shutdown:', error.message);
+        process.exit(1);
+      }
+    });
+    server.closeIdleConnections();
+  };
+
+  for (const signal of ['SIGINT', 'SIGTERM', 'SIGUSR2']) {
+    process.once(signal, () => shutdown(signal));
+  }
+};
+
 export const initServer = async () => {
   const app = express();
   const PORT = process.env.PORT;
@@ -73,10 +105,12 @@ export const initServer = async () => {
 
     app.use(errorHandler);
 
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`KinalSports User Server running on port ${PORT}`);
       console.log(`Health check: http://localhost:${PORT}${BASE_PATH}/health`);
     });
+
+    registerShutdown(server);
   } catch (err) {
     console.error(`Error starting User Server: ${err.message}`);
     process.exit(1);
