@@ -37,7 +37,15 @@ export async function request(method, url, options = {}) {
     body = buildForm(form);
   }
 
-  const response = await fetch(url, { method, headers: finalHeaders, body });
+  let response;
+  try {
+    response = await fetch(url, { method, headers: finalHeaders, body });
+  } catch (error) {
+    // Error de red (ECONNRESET, ECONNREFUSED...): indicar qué llamada falló
+    throw new Error(`${method} ${url}: ${error.cause?.code ?? error.message}`, {
+      cause: error,
+    });
+  }
   const text = await response.text();
   const contentType = response.headers.get("content-type") || "";
   let data = text;
