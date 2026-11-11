@@ -10,15 +10,21 @@ async function findMessages(to) {
   return messages;
 }
 
-// Espera un correo para `to` cuyo asunto o cuerpo contenga `pathFragment` y devuelve el token del enlace
+/** IDs de los correos ya recibidos para `to` (para ignorarlos después con `exclude`) */
+export const messageIds = async (to) =>
+  new Set((await findMessages(to)).map((message) => message.ID));
+
+// Espera un correo para `to` cuyo asunto o cuerpo contenga `pathFragment` y devuelve el token del enlace.
+// `exclude` descarta correos anteriores: un envío en segundo plano puede llegar después de otro más nuevo.
 export async function waitForToken(
   to,
   pathFragment,
-  { timeoutMs = 15_000, after = 0 } = {},
+  { timeoutMs = 15_000, after = 0, exclude = new Set() } = {},
 ) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     for (const summary of await findMessages(to)) {
+      if (exclude.has(summary.ID)) continue;
       if (new Date(summary.Created).getTime() < after) continue;
       const response = await fetch(
         `${urls.mailpit}/api/v1/message/${summary.ID}`,

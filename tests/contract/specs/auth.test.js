@@ -5,7 +5,7 @@ import { http } from "../lib/http.js";
 import { contract } from "../lib/shape.js";
 import { urls, users } from "../lib/config.js";
 import { login } from "../lib/session.js";
-import { waitForToken } from "../lib/mailpit.js";
+import { messageIds, waitForToken } from "../lib/mailpit.js";
 import { decodeJwt, newUser, png, textFile } from "../lib/fixtures.js";
 
 const services = [
@@ -34,6 +34,8 @@ describe.each(services)("%s", (name, via) => {
   });
 
   describe("registro y verificación", () => {
+    let previousMails = new Set();
+
     test("POST /auth/register sin datos", async () => {
       expect(
         contract(await http.post(`${base}/auth/register`, { form: {} })),
@@ -69,6 +71,10 @@ describe.each(services)("%s", (name, via) => {
     });
 
     test("POST /auth/resend-verification", async () => {
+      // El correo del registro sale en segundo plano y, en frío, puede llegar después del
+      // reenvío con un token ya reemplazado: se espera y se descarta antes de reenviar
+      await waitForToken(fresh.email, "verify-email");
+      previousMails = await messageIds(fresh.email);
       const response = await http.post(`${base}/auth/resend-verification`, {
         json: { email: fresh.email },
       });
@@ -90,7 +96,9 @@ describe.each(services)("%s", (name, via) => {
     });
 
     test("POST /auth/verify-email válido", async () => {
-      const token = await waitForToken(fresh.email, "verify-email");
+      const token = await waitForToken(fresh.email, "verify-email", {
+        exclude: previousMails,
+      });
       const response = await http.post(`${base}/auth/verify-email`, {
         json: { token },
       });
