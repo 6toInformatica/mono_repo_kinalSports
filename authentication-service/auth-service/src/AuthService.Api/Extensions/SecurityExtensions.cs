@@ -5,37 +5,26 @@ namespace AuthService.Api.Extensions;
 public static class SecurityExtensions
 {
     private static readonly string[] DefaultAllowedOrigins = ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173"];
-    private static readonly string[] DefaultAdminOrigins = ["http://localhost:5173"];
-    private static readonly string[] AllowedHttpMethods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"];
-    private static readonly string[] AdminHttpMethods = ["GET", "POST", "PUT", "DELETE"];
-    private static readonly string[] AdminAllowedHeaders = ["Content-Type", "Authorization"];
+
     public static IServiceCollection AddSecurityPolicies(this IServiceCollection services, IConfiguration configuration)
     {
-        // Configurar CORS
+        // CORS: solo los orígenes configurados (Security:AllowedOrigins).
+        // Las apps móviles no envían Origin, así que no les afecta.
+        var allowedOrigins = configuration.GetSection("Security:AllowedOrigins").Get<string[]>();
+        if (allowedOrigins is null || allowedOrigins.Length == 0)
+        {
+            allowedOrigins = DefaultAllowedOrigins;
+        }
+
         services.AddCors(options =>
         {
             options.AddPolicy("DefaultCorsPolicy", builder =>
             {
-                var allowedOrigins = configuration.GetSection("Security:AllowedOrigins").Get<string[]>()
-                    ?? DefaultAllowedOrigins;
-
-                builder.SetIsOriginAllowed(origin => true)
+                builder.WithOrigins(allowedOrigins)
                        .AllowAnyHeader()
                        .AllowAnyMethod()
                        .AllowCredentials()
                        .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
-            });
-
-            // Política restrictiva para endpoints administrativos
-            options.AddPolicy("AdminCorsPolicy", builder =>
-            {
-                var adminOrigins = configuration.GetSection("Security:AdminAllowedOrigins").Get<string[]>()
-                    ?? DefaultAdminOrigins;
-
-                builder.SetIsOriginAllowed(origin => true)
-                       .AllowAnyHeader()
-                       .AllowAnyMethod()
-                       .AllowCredentials();
             });
         });
 

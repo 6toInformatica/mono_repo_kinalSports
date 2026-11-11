@@ -9,9 +9,6 @@ using Microsoft.AspNetCore.Hosting.Server.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// FIX: Bypass SSL (Cloudinary, etc.)
-System.Net.ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-
 // Configure Serilog from appsettings.json only (avoid duplicate sinks)
 builder.Host.UseSerilog((context, services, loggerConfiguration) =>
     loggerConfiguration
@@ -88,11 +85,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Health check endpoints - both versions for compatibility
-// Standard health check endpoint
-app.MapHealthChecks("/health");
-
-// Custom health endpoint to match Node.js response format
+// Health: /health (formato compatible con auth-node) y /api/v1/health (HealthController)
 app.MapGet("/health", () =>
 {
     var response = new
@@ -102,8 +95,6 @@ app.MapGet("/health", () =>
     };
     return Results.Ok(response);
 });
-
-app.MapHealthChecks("/api/v1/health");
 
 // Startup log: addresses and health endpoint
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
@@ -134,29 +125,31 @@ app.Lifetime.ApplicationStarted.Register(() =>
     }
 });
 
-// Initialize database and seed data
+// Migraciones y datos iniciales. EF Core es el único dueño del esquema (auth-node lo comparte).
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    var passwordHasher = scope.ServiceProvider.GetRequiredService<AuthService.Application.Interfaces.IPasswordHashService>();
 
     try
     {
-        logger.LogInformation("Checking database connection...");
-
-        // Ensure database is created (similar to Sequelize sync in Node.js)
-        await context.Database.EnsureCreatedAsync();
-
-        logger.LogInformation("Database ready. Running seed data...");
-        await DataSeeder.SeedAsync(context);
-
+        logger.LogInformation("Initializing database...");
+        var adminPassword = app.Configuration["Seed:AdminPassword"];
+        await DatabaseInitializer.InitializeAsync(context, passwordHasher, adminPassword, logger);
         logger.LogInformation("Database initialization completed successfully");
     }
     catch (Exception ex)
     {
         logger.LogError(ex, "An error occurred while initializing the database");
-        throw; // Re-throw to stop the application
+        throw; // Detiene la aplicación
     }
+}
+
+// Modo migrador (servicio auth-migrator de docker-compose): prepara la base y termina
+if (args.Contains("--migrate-only"))
+{
+    return;
 }
 
 app.Run();

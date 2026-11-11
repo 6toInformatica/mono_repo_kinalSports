@@ -2,7 +2,7 @@ using AuthService.Application.Interfaces;
 using Konscious.Security.Cryptography;
 using System.Security.Cryptography;
 using System.Text;
-namespace AuthService.Application.Services;
+namespace AuthService.Infrastructure.Security;
 
 public class PasswordHashService : IPasswordHashService
 {

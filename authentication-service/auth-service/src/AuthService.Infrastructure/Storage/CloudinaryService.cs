@@ -1,16 +1,19 @@
 using AuthService.Application.Interfaces;
+using AuthService.Infrastructure.Options;
 using CloudinaryDotNet;
 using CloudinaryDotNet.Actions;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 
-namespace AuthService.Application.Services;
+namespace AuthService.Infrastructure.Storage;
 
-public class CloudinaryService(IConfiguration configuration) : ICloudinaryService
+public class CloudinaryService(IOptions<CloudinaryOptions> options) : ICloudinaryService
 {
+    private readonly CloudinaryOptions _settings = options.Value;
+
     private readonly Cloudinary _cloudinary = new(new Account(
-        configuration["CloudinarySettings:CloudName"],
-        configuration["CloudinarySettings:ApiKey"],
-        configuration["CloudinarySettings:ApiSecret"]
+        options.Value.CloudName,
+        options.Value.ApiKey,
+        options.Value.ApiSecret
     ));
 
     public async Task<string> UploadImageAsync(IFileData imageFile, string fileName)
@@ -19,7 +22,7 @@ public class CloudinaryService(IConfiguration configuration) : ICloudinaryServic
         {
             using var stream = new MemoryStream(imageFile.Data);
 
-            var folder = configuration["CloudinarySettings:Folder"]
+            var folder = _settings.Folder
                          ?? "auth_service/profiles";
 
             var cleanName = Path.GetFileNameWithoutExtension(fileName);
@@ -49,7 +52,7 @@ public class CloudinaryService(IConfiguration configuration) : ICloudinaryServic
     {
         try
         {
-            var folder = configuration["CloudinarySettings:Folder"]
+            var folder = _settings.Folder
                          ?? "auth_service/profiles";
 
             var withoutVersion = fileName.Contains('/')
@@ -77,10 +80,14 @@ public class CloudinaryService(IConfiguration configuration) : ICloudinaryServic
     }
 
 
+    // URL base de entrega: la configurada o, si falta, la de la cuenta configurada (CloudName)
+    private string BaseUrl =>
+        _settings.BaseUrl ?? $"https://res.cloudinary.com/{_settings.CloudName}/image/upload/";
+
     public string GetDefaultAvatarUrl()
     {
-        var baseUrl = configuration["CloudinarySettings:BaseUrl"] ?? "https://res.cloudinary.com/dug3apxt3/image/upload/";
-        var defaultPath = configuration["CloudinarySettings:DefaultAvatarPath"] ?? "auth_service/profiles/avatarDefault-1749508519496_oam3k3";
+        var baseUrl = BaseUrl;
+        var defaultPath = _settings.DefaultAvatarPath ?? "auth_service/profiles/avatarDefault-1749508519496_oam3k3";
         // Asegurar que tenga extensión .png
         if (!defaultPath.EndsWith(".png"))
             defaultPath += ".png";
@@ -89,13 +96,12 @@ public class CloudinaryService(IConfiguration configuration) : ICloudinaryServic
 
     public string GetFullImageUrl(string fileName)
     {
-        var baseUrl = configuration["CloudinarySettings:BaseUrl"]
-                      ?? "https://res.cloudinary.com/dqx1m6nxh/image/upload/";
+        var baseUrl = BaseUrl;
 
         if (string.IsNullOrWhiteSpace(fileName))
         {
             var version = "v1774318088";
-            var defaultFile = configuration["CloudinarySettings:DefaultAvatarPath"] ?? "avatarDefault-1749508519496_oam3k3";
+            var defaultFile = _settings.DefaultAvatarPath ?? "avatarDefault-1749508519496_oam3k3";
             if (!defaultFile.EndsWith(".png"))
                 defaultFile += ".png";
             var fileNameOnly = defaultFile.Split('/').Last();
@@ -113,7 +119,7 @@ public class CloudinaryService(IConfiguration configuration) : ICloudinaryServic
             return $"{baseUrl}{fileName}";
         }
 
-        var folder = configuration["CloudinarySettings:Folder"] ?? "auth_service/profiles";
+        var folder = _settings.Folder ?? "auth_service/profiles";
         var pathToUse = fileName.Contains('/')
             ? fileName
             : $"{folder}/{fileName}";

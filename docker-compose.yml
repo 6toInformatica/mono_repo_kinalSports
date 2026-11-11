@@ -2,7 +2,7 @@ name: kinal-sports
 
 services:
   postgres:
-    image: postgres:13
+    image: postgres:18
     container_name: pg-kinal-sports
     restart: unless-stopped
     environment:
@@ -12,7 +12,8 @@ services:
     ports:
       - "${POSTGRES_PORT:-5435}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # PostgreSQL 18+ guarda los datos en /var/lib/postgresql/<versión>/docker
+      - postgres18_data:/var/lib/postgresql
     healthcheck:
       test:
         [
@@ -43,15 +44,43 @@ services:
     networks:
       - kinal-network
 
+  # Aplica las migraciones de EF Core (dueño del esquema de autenticación) y termina.
+  # auth-service y auth-node esperan a que finalice; después funcionan de forma independiente.
+  auth-migrator:
+    build:
+      context: ./authentication-service/auth-service
+      dockerfile: ../../dockerfiles/Dockerfile.auth-service
+      target: migrator
+    container_name: kinal_auth_migrator
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: >-
+        Host=postgres;Port=5432;Database=${POSTGRES_DB:-kinal_sports};
+        Username=${POSTGRES_USER:-KinalSports};Password=${POSTGRES_PASSWORD:-KinalSports2027!}
+      JwtSettings__SecretKey: ${JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
+      JwtSettings__Issuer: ${JWT_ISSUER:-AuthService}
+      JwtSettings__Audience: ${JWT_AUDIENCE:-AuthService}
+      # Admin inicial (solo se crea si la base no tiene usuarios). Valor por defecto solo para desarrollo
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-Admin1234!}
+    networks:
+      - kinal-network
+
   auth-service:
     build:
       context: ./authentication-service/auth-service
       dockerfile: ../../dockerfiles/Dockerfile.auth-service
+      target: dev
     container_name: kinal_auth_service
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
+      auth-migrator:
+        condition: service_completed_successfully
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:5156
@@ -63,6 +92,8 @@ services:
       JwtSettings__SecretKey: ${JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
       JwtSettings__Issuer: ${JWT_ISSUER:-AuthService}
       JwtSettings__Audience: ${JWT_AUDIENCE:-AuthService}
+      # Admin inicial (solo se crea si la base no tiene usuarios). Valor por defecto solo para desarrollo
+      Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-Admin1234!}
       InternalServiceToken: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
       SmtpSettings__Enabled: "true"
       SmtpSettings__Host: ${SMTP_HOST:-smtp.gmail.com}
@@ -90,6 +121,8 @@ services:
       - /src/src/AuthService.Application/obj
       - /src/src/AuthService.Domain/bin
       - /src/src/AuthService.Domain/obj
+      - /src/src/AuthService.Infrastructure/bin
+      - /src/src/AuthService.Infrastructure/obj
       - /src/src/AuthService.Persistence/bin
       - /src/src/AuthService.Persistence/obj
     ports:
@@ -112,6 +145,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      auth-migrator:
+        condition: service_completed_successfully
     environment:
       NODE_ENV: development
       PORT: 3007
@@ -323,5 +358,7 @@ networks:
     driver: bridge
 
 volumes:
+  # postgres_data (PostgreSQL 13) ya no se usa: se conserva solo como respaldo de la migración
   postgres_data:
+  postgres18_data:
   mongo_data:
