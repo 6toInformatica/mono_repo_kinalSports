@@ -16,3 +16,8 @@ overrides:
   uuid@<11.1.1: ^11.1.1
   # glob 13 (de @expo/cli y @expo/fingerprint): GHSA-3g3m-2fjr-6pw4, corregido en 14.0.2
   glob@>=13.0.0 <14.0.2: ^14.0.4
+auditConfig:
+  ignoreGhsas:
+    # "Malware in client-admin": es un paquete de npm con el mismo nombre que la carpeta
+    # client-admin. El nuestro es local (@kinal/client-admin) y nunca se descarga de npm.
+    - GHSA-rmg4-7869-233j
