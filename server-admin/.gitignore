@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-pnpm-lock.yaml
 package-lock.json
 yarn.lock
 
@@ -45,3 +44,4 @@ Thumbs.db
 # Build
 dist/
 build/
+dist/

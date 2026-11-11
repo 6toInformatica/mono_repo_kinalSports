@@ -2,7 +2,7 @@
 
 Microservicio de administracion para la plataforma Kinal Sports. Gestiona campos deportivos, reservas, equipos y torneos. Proporciona una API RESTful para el panel admin (`client-admin`).
 
-Implementa arquitectura modular con Express.js y MongoDB.
+Implementa arquitectura modular con NestJS, TypeScript y MongoDB.
 
 ## Descripcion
 
@@ -37,15 +37,17 @@ Este servicio es consumido por **client-admin** y tambien expone lecturas a **se
 
 ### Seguridad
 
-- Validacion JWT en rutas protegidas
-- Token interno para comunicacion entre microservicios
-- Rate limiting, Helmet, CORS
-- Validacion con express-validator
+- Guards de NestJS: `JwtAuthGuard` (JWT HS256), `RolesGuard` (`@Roles`), `AuthOrInternalGuard`
+- Token interno (`x-internal-token`) para comunicacion entre microservicios
+- Rate limiting, Helmet, CORS limitado a `ADMIN_ALLOWED_ORIGINS`
+- Validacion de peticiones con las mismas reglas y mensajes de la version Express
+- Las imagenes se suben a Cloudinary solo despues de autorizar y validar la peticion
 
 ## Tecnologias
 
-- **Express.js** 5.x, **Node.js**, **Mongoose** 9.x, **MongoDB**
-- **Cloudinary** + Multer para imagenes
+- **NestJS** 12, **TypeScript** 6, **Node.js** 24+ (Docker usa Node 26)
+- **Mongoose** 9 con `@nestjs/mongoose`, **MongoDB**
+- **Cloudinary** + Multer (en memoria) para imagenes
 - **JWT** (tokens emitidos por auth-service)
 
 ## Endpoints API
@@ -120,30 +122,27 @@ Respuesta esperada:
 
 ```
 server-admin/
-├── configs/
-│   ├── app.js
-│   ├── cors.configuration.js
-│   ├── db.js
-│   ├── helmet.configuration.js
-│   └── rateLimit.configuration.js
-├── middlewares/
-├── src/
-│   ├── fields/
-│   ├── reservations/
-│   ├── teams/
-│   └── tournaments/
-├── helpers/
-├── utils/
-│   └── authClient.js         # Cliente hacia auth-service
-├── index.js
-└── package.json
+└── src/
+    ├── main.ts           # arranque: CORS, helmet, rate limit, prefijo, apagado ordenado
+    ├── app.module.ts
+    ├── config/           # variables validadas con zod y ajustes HTTP
+    ├── common/           # guards, pipes, validacion, subida de imagenes, errores
+    ├── integrations/     # auth-service (perfiles) y Cloudinary
+    ├── health/
+    ├── fields/
+    ├── teams/
+    ├── tournaments/
+    └── reservations/
 ```
+
+Cada modulo tiene su esquema de Mongoose, sus reglas de validacion, un servicio con la
+logica de negocio y un controlador que solo arma las respuestas.
 
 ## Configuracion
 
 ### Requisitos
 
-- Node.js 18+
+- Node.js 24+
 - pnpm 10+
 - MongoDB 6+ (Docker usa mongo:7)
 - Cuenta Cloudinary
@@ -153,12 +152,13 @@ server-admin/
 Copia `.env.example` a `.env`:
 
 ```env
-PORT=3002
-URI_MONGODB=mongodb://localhost:27017/kinal-sports-admin
+PORT=3009
+URI_MONGODB=mongodb://localhost:27020/kinalSports
 ADMIN_ALLOWED_ORIGINS=http://localhost:5173
 JWT_SECRET=your-jwt-secret-key-here
-JWT_ISSUER=auth-service
-JWT_AUDIENCE=admin-service
+JWT_ISSUER=AuthService
+JWT_AUDIENCE=AuthService
+INTERNAL_SERVICE_TOKEN=your-internal-token
 AUTH_SERVICE_URL=http://localhost:5156/api/v1
 CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=your-api-key
@@ -177,8 +177,11 @@ pnpm run dev
 ### Scripts
 
 ```bash
-pnpm run dev      # Desarrollo con nodemon
-node index.js     # Produccion
+pnpm dev         # desarrollo: compila y reinicia con nodemon
+pnpm build       # compila a dist/
+pnpm start       # ejecuta dist/main.js
+pnpm typecheck
+pnpm lint
 ```
 
 ## Integracion con Microservicios

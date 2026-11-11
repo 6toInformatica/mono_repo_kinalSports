@@ -19,4 +19,10 @@ export default defineConfig([
   ...serverAdmin,
   ...serverUser,
   ...authNode,
+  // En TypeScript estas reglas base no entienden tipos ni parámetros de constructor:
+  // las cubren el compilador y @typescript-eslint (configurado en cada proyecto)
+  {
+    files: ["**/*.ts", "**/*.tsx"],
+    rules: { "no-unused-vars": "off", "no-undef": "off" },
+  },
 ]);

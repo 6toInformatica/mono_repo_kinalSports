@@ -202,6 +202,7 @@ services:
     build:
       context: ./server-admin
       dockerfile: ../dockerfiles/Dockerfile.server-admin
+      target: dev
     container_name: kinal_server_admin
     restart: unless-stopped
     depends_on:
@@ -228,20 +229,22 @@ services:
     volumes:
       - ./server-admin:/app
       - /app/node_modules
+      - /app/dist
     ports:
       - "${SERVER_ADMIN_PORT:-3009}:3009"
-    command: sh -c "CI=true pnpm install && node_modules/.bin/nodemon --legacy-watch index.js"
     healthcheck:
       test:
         [
-          "CMD-SHELL",
-          "curl -fsS http://localhost:3009/kinalSportsAdmin/v1/health || exit 1",
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3009/kinalSportsAdmin/v1/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
         ]
       interval: 10s
       timeout: 5s
       retries: 10
-      # El contenedor ejecuta pnpm install al arrancar (puede tardar ~2 min)
-      start_period: 180s
+      # Compila TypeScript al arrancar
+      start_period: 60s
     networks:
       - kinal-network
 
