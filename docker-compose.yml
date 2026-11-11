@@ -140,6 +140,7 @@ services:
     build:
       context: ./authentication-service/auth-node
       dockerfile: ../../dockerfiles/Dockerfile.auth-node
+      target: dev
     container_name: kinal_auth_node
     restart: unless-stopped
     depends_on:
@@ -155,9 +156,6 @@ services:
       DB_NAME: ${POSTGRES_DB:-kinal_sports}
       DB_USERNAME: ${POSTGRES_USER:-KinalSports}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-KinalSports2027!}
-      DEFAULT_CONNECTION: >-
-        Host=postgres;Port=5432;Database=${POSTGRES_DB:-kinal_sports};
-        Username=${POSTGRES_USER:-KinalSports};Password=${POSTGRES_PASSWORD:-KinalSports2027!}
       JWT_SECRET: ${JWT_SECRET:-MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!}
       JWT_ISSUER: ${JWT_ISSUER:-AuthService}
       JWT_AUDIENCE: ${JWT_AUDIENCE:-AuthService}
@@ -187,7 +185,12 @@ services:
       - "${AUTH_NODE_PORT:-3007}:3007"
     healthcheck:
       test:
-        ["CMD-SHELL", "curl -fsS http://localhost:3007/api/v1/health || exit 1"]
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3007/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
