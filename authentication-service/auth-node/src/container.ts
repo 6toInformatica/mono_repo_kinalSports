@@ -1,5 +1,6 @@
 import type { AppConfig } from './config/env.ts';
 import { prisma } from './infrastructure/database/prisma.ts';
+import { createKmhEmailSender } from './infrastructure/email/kmh-email.sender.ts';
 import { createSmtpEmailSender } from './infrastructure/email/smtp-email.sender.ts';
 import { argon2PasswordHasher } from './infrastructure/security/argon2-password.hasher.ts';
 import { createJwtTokenService } from './infrastructure/security/jwt-token.service.ts';
@@ -33,7 +34,7 @@ import { PrismaUserRepository } from './modules/users/infrastructure/prisma-user
 
 /**
  * Raíz de composición: el único lugar que conoce las implementaciones concretas
- * (Prisma, Argon2, JWT, SMTP, Cloudinary). Los casos de uso solo ven los puertos.
+ * (Prisma, Argon2, JWT, correo, Cloudinary). Los casos de uso solo ven los puertos.
  */
 export const createContainer = (config: AppConfig) => {
   const users = new PrismaUserRepository(prisma);
@@ -49,7 +50,10 @@ export const createContainer = (config: AppConfig) => {
     refreshTokens,
     tokens,
     passwords: argon2PasswordHasher,
-    emails: createSmtpEmailSender(config.smtp, config.frontendUrl),
+    emails:
+      config.mailProvider === 'smtp'
+        ? createSmtpEmailSender(config.smtp, config.frontendUrl)
+        : createKmhEmailSender(config.kmh, config.frontendUrl),
     images,
     present,
     uploadPath: config.upload.path,

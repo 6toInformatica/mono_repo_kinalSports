@@ -123,6 +123,22 @@ pnpm docker:down          # detener
 > las variables `${...}` del compose (Compose solo lee `.env` automaticamente), por lo que se
 > aplicarian los valores por defecto y las credenciales de SMTP/Cloudinary quedarian vacias.
 
+### Correos (Kinal Mail Hub)
+
+auth-service y auth-node envian los correos (verificacion, recuperacion, bienvenida) por la API REST de
+Kinal Mail Hub (`POST https://mail.lab.kinal.edu.gt/api/v1/messages`). Agrega tu API key a `.env.docker`:
+
+```bash
+KMH_PROJECT_API_KEY=<API key REST emitida para el proyecto>
+# Opcionales (estos son los valores por defecto)
+# MAIL_PROVIDER=kmh
+# KMH_API_BASE_URL=https://mail.lab.kinal.edu.gt
+# KMH_MAIL_FROM=kinal-sports@am-delta.in6am.mail.kinal.test
+```
+
+Los correos se ven en la Bandeja de Kinal Mail Hub. Con `MAIL_PROVIDER=smtp` se vuelve al SMTP anterior;
+las pruebas de contrato lo usan para leer los tokens desde su Mailpit local.
+
 | Servicio           | Puerto host       | URL base                                    |
 | ------------------ | ----------------- | ------------------------------------------- |
 | postgres           | 5435              | `localhost:5435`                            |

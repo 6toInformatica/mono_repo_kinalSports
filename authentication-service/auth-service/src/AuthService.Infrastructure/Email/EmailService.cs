@@ -16,61 +16,22 @@ public class EmailService(
     private readonly SmtpOptions _smtp = smtpOptions.Value;
     private readonly string? _frontendUrl = appOptions.Value.FrontendUrl;
 
-    public async Task SendEmailVerificationAsync(string email, string username, string token)
+    public Task SendEmailVerificationAsync(string email, string username, string token)
     {
-        var subject = "Verifica tu correo electrónico - Kinal Sports";
-        var verificationUrl = $"{_frontendUrl}/verify-email?token={token}";
-
-        var body = $@"
-            <h2>¡Bienvenido a Kinal Sports, {username}!</h2>
-            <p>Por favor, verifica tu correo electrónico para tu cuenta de Kinal Sports haciendo clic en el siguiente enlace:</p>
-            <a href='{verificationUrl}' style='background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>
-                Verificar correo
-            </a>
-            <p>Si no puedes hacer clic en el enlace, copia y pega esta URL en tu navegador:</p>
-            <p>{verificationUrl}</p>
-            <p>Este enlace expirará en 24 horas.</p>
-            <p>Si no creaste una cuenta, ignora este correo.</p>
-        ";
-
-        await SendEmailAsync(email, subject, body);
+        var (subject, body) = EmailTemplates.Verification(_frontendUrl, username, token);
+        return SendEmailAsync(email, subject, body);
     }
 
-    public async Task SendPasswordResetAsync(string email, string username, string token)
+    public Task SendPasswordResetAsync(string email, string username, string token)
     {
-        var subject = "Restablece tu contraseña - Kinal Sports";
-        var resetUrl = $"{_frontendUrl}/reset-password?token={token}";
-
-        var body = $@"
-            <h2>Solicitud de restablecimiento de contraseña - Kinal Sports</h2>
-            <p>Hola {username},</p>
-            <p>Este mensaje es de Kinal Sports.</p>
-            <p>Solicitaste restablecer tu contraseña. Haz clic en el siguiente enlace para restablecerla:</p>
-            <a href='{resetUrl}' style='background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>
-                Restablecer contraseña
-            </a>
-            <p>Si no puedes hacer clic en el enlace, copia y pega esta URL en tu navegador:</p>
-            <p>{resetUrl}</p>
-            <p>Este enlace expirará en 1 hora.</p>
-            <p>Si no solicitaste esto, ignora este correo y tu contraseña permanecerá sin cambios.</p>
-        ";
-
-        await SendEmailAsync(email, subject, body);
+        var (subject, body) = EmailTemplates.PasswordReset(_frontendUrl, username, token);
+        return SendEmailAsync(email, subject, body);
     }
 
-    public async Task SendWelcomeEmailAsync(string email, string username)
+    public Task SendWelcomeEmailAsync(string email, string username)
     {
-        var subject = "¡Bienvenido a Kinal Sports!";
-
-        var body = $@"
-            <h2>¡Bienvenido a Kinal Sports, {username}!</h2>
-            <p>Tu cuenta ha sido verificada y activada exitosamente.</p>
-            <p>Ahora puedes disfrutar de todas las funciones de nuestra plataforma.</p>
-            <p>Si tienes alguna pregunta, no dudes en contactar a nuestro equipo de soporte.</p>
-            <p>¡Gracias por unirte a nosotros!</p>
-        ";
-
-        await SendEmailAsync(email, subject, body);
+        var (subject, body) = EmailTemplates.Welcome(username);
+        return SendEmailAsync(email, subject, body);
     }
 
     private async Task SendEmailAsync(string to, string subject, string body)
