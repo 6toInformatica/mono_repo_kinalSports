@@ -87,9 +87,8 @@ export default function useTeams() {
     setActionLoading(true);
     setError(null);
     try {
-      const response = await userClient.post("/teams", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      // Sin Content-Type manual: la plataforma lo arma con el boundary del multipart
+      const response = await userClient.post("/teams", formData);
       return response.data.data ?? response.data;
     } catch (err) {
       setError(err.response?.data?.message ?? "Error al crear el equipo");

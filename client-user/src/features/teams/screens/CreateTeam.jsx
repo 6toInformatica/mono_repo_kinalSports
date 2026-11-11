@@ -52,7 +52,7 @@ export default function CreateTeam({ navigation }) {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ["images"],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
@@ -90,7 +90,7 @@ export default function CreateTeam({ navigation }) {
         formData.append("logo", {
           uri: imageUri,
           name: filename,
-          type: `image/${ext}`,
+          type: `image/${ext === "jpg" ? "jpeg" : ext}`,
         });
       }
       try {

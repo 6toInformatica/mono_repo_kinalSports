@@ -358,7 +358,6 @@ services:
       - "${CLIENT_USER_EXPO_PORT:-19000}:19000"
       - "${CLIENT_USER_EXPO_DEVTOOLS_PORT:-19001}:19001"
       - "${CLIENT_USER_EXPO_INSPECTOR_PORT:-19002}:19002"
-    command: sh -c "CI=true pnpm install && pnpm exec expo start --host lan --port 8081"
     networks:
       - kinal-network
 

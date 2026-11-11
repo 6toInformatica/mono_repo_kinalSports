@@ -81,12 +81,10 @@ export default function ProfileScreen() {
           type: `image/${ext === "jpg" ? "jpeg" : ext}`,
         });
 
+        // Sin Content-Type manual: la plataforma lo arma con el boundary del multipart
         const response = await userClient.post(
           "/users/profile/avatar",
           formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          },
         );
         const updated = response.data.data ?? response.data;
 
