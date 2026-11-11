@@ -116,6 +116,9 @@ services:
       CloudinarySettings__BaseUrl: ${CLOUDINARY_BASE_URL:-https://res.cloudinary.com/b3xvlule/image/upload/}
       CloudinarySettings__Folder: ${CLOUDINARY_FOLDER:-auth_service/profiles}
       CloudinarySettings__DefaultAvatarPath: ${CLOUDINARY_DEFAULT_AVATAR_PATH:-auth_service/profiles/avatarDefault-1749508519496_oam3k3}
+    # mail.lab.kinal.edu.gt no está en el DNS público (solo en el interno del colegio)
+    extra_hosts:
+      - "mail.lab.kinal.edu.gt:${KMH_HOST_IP:-181.114.7.76}"
     env_file:
       - path: .env.docker
         required: false
@@ -186,6 +189,9 @@ services:
       CLOUDINARY_FOLDER: ${CLOUDINARY_FOLDER:-auth_service/profiles}
       CLOUDINARY_DEFAULT_AVATAR_FILENAME: ${CLOUDINARY_DEFAULT_AVATAR_FILENAME:-avatarDefault-1749508519496_oam3k3}
       CHOKIDAR_USEPOLLING: "true"
+    # mail.lab.kinal.edu.gt no está en el DNS público (solo en el interno del colegio)
+    extra_hosts:
+      - "mail.lab.kinal.edu.gt:${KMH_HOST_IP:-181.114.7.76}"
     env_file:
       - path: .env.docker
         required: false

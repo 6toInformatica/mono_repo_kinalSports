@@ -136,6 +136,9 @@ KMH_PROJECT_API_KEY=<API key REST emitida para el proyecto>
 # KMH_MAIL_FROM=kinal-sports@am-delta.in6am.mail.kinal.test
 ```
 
+`mail.lab.kinal.edu.gt` no esta publicado en el DNS publico, asi que el compose lo fija con `extra_hosts`
+(IP por defecto `181.114.7.76`; si cambia, define `KMH_HOST_IP` en `.env.docker`).
+
 Los correos se ven en la Bandeja de Kinal Mail Hub. Con `MAIL_PROVIDER=smtp` se vuelve al SMTP anterior;
 las pruebas de contrato lo usan para leer los tokens desde su Mailpit local.
 
