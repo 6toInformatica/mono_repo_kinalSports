@@ -38,7 +38,7 @@ export function VerifyEmail() {
         {state.message}
       </p>
       {state.status !== "loading" && (
-        <Link href="/" className="font-semibold text-main-blue underline">
+        <Link href="/" className="font-semibold text-brand underline">
           Ir al inicio de sesión
         </Link>
       )}

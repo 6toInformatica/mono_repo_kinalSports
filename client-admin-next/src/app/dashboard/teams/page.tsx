@@ -1,10 +1,7 @@
+import { TeamsSection } from "@/features/teams/TeamsSection";
+
+export const metadata = { title: "Equipos · Kinal Sports Admin" };
+
 export default function Page() {
-  return (
-    <section>
-      <h1 className="text-2xl font-bold text-main-blue">Equipos</h1>
-      <p className="mt-2 text-gray-600">
-        Esta sección se implementa en la fase 6.4.
-      </p>
-    </section>
-  );
+  return <TeamsSection />;
 }

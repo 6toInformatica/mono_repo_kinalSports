@@ -1,10 +1,9 @@
-export default function Page() {
-  return (
-    <section>
-      <h1 className="text-2xl font-bold text-main-blue">Usuarios</h1>
-      <p className="mt-2 text-gray-600">
-        Esta sección se implementa en la fase 6.4.
-      </p>
-    </section>
-  );
+import { UsersSection } from "@/features/users/UsersSection";
+import { getCurrentUser } from "@/server/current-user";
+
+export const metadata = { title: "Usuarios · Kinal Sports Admin" };
+
+export default async function Page() {
+  const user = await getCurrentUser();
+  return <UsersSection currentUserId={user?.id} />;
 }

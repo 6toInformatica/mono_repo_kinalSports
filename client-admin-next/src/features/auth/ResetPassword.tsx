@@ -39,7 +39,7 @@ export function ResetPassword() {
     return (
       <div className="flex flex-col items-center gap-4 text-center">
         <p className="text-gray-700">{message.text}</p>
-        <Link href="/" className="font-semibold text-main-blue underline">
+        <Link href="/" className="font-semibold text-brand underline">
           Ir al inicio de sesión
         </Link>
       </div>
@@ -74,7 +74,7 @@ export function ResetPassword() {
       <button
         type="submit"
         disabled={loading || !token}
-        className="rounded-lg bg-main-blue px-4 py-2 font-semibold text-white disabled:opacity-60"
+        className="rounded-lg bg-brand px-4 py-2 font-semibold text-white disabled:opacity-60"
       >
         {loading ? "Guardando..." : "Restablecer contraseña"}
       </button>

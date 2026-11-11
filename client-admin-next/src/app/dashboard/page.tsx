@@ -1,6 +1,9 @@
-import { redirect } from "next/navigation";
+import { OverviewSection } from "@/features/overview/OverviewSection";
+import { getCurrentUser } from "@/server/current-user";
 
-// /dashboard abre la primera sección, igual que client-admin
-export default function DashboardIndex() {
-  redirect("/dashboard/fields");
+export const metadata = { title: "Vista general · Kinal Sports Admin" };
+
+export default async function Page() {
+  const user = await getCurrentUser();
+  return <OverviewSection firstName={user?.name?.split(" ")[0]} />;
 }
