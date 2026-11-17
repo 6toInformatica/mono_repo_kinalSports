@@ -14,6 +14,7 @@
     "client-admin-next"
   ],
   "scripts": {
+    "test": "pnpm -r --filter=!@kinal/contract-tests --if-present test",
     "prepare": "husky install",
     "lint": "pnpm -r --filter './server-*' run lint && pnpm --filter authentication-service/auth-node run lint && pnpm --filter @kinal/client-admin run lint && pnpm --filter @kinal/client-admin-next run lint",
     "format": "pnpm -r --filter './server-*' run format || true",

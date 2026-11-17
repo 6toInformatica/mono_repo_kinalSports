@@ -1,0 +1,10 @@
+# Pruebas unitarias de todos los servicios (no necesitan Docker).
+# Las pruebas de contrato se corren aparte con "pnpm test:contract".
+echo "[Husky] Ejecutando pruebas unitarias..."
+pnpm test
+status=$?
+if [ $status -ne 0 ]; then
+  echo ""
+  echo "✖ Fallaron pruebas unitarias. Corrígelas antes de hacer push."
+  exit 1
+fi
