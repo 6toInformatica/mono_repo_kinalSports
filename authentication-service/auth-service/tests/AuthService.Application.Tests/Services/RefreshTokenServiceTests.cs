@@ -116,6 +116,18 @@ public class RefreshTokenServiceTests
     }
 
     [Fact]
+    public async Task Rotar_responde_401_si_el_usuario_ya_no_existe()
+    {
+        Stored("raw");
+        _users.GetByIdAsync(Arg.Any<string>()).Returns((User)null!);
+
+        var error = await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _sut.RotateAsync("raw"));
+
+        Assert.Equal("La cuenta está desactivada", error.Message);
+        await _repo.DidNotReceive().AddAsync(Arg.Any<RefreshToken>());
+    }
+
+    [Fact]
     public async Task Logout_solo_revoca_un_token_activo()
     {
         var active = Stored("activo");

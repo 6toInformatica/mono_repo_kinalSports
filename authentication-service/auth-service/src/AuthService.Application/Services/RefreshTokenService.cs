@@ -73,7 +73,7 @@ public class RefreshTokenService : IRefreshTokenService
 
         // Un usuario desactivado no puede seguir renovando su sesión
         var user = await _userRepository.GetByIdAsync(token.UserId);
-        if (!user.Status)
+        if (user is null || !user.Status)
             throw new UnauthorizedAccessException("La cuenta está desactivada");
 
         var (newRaw, famId) = await CreateAsync(token.UserId, token.FamilyId);
