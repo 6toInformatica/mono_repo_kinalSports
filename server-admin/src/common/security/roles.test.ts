@@ -22,7 +22,8 @@ describe('RolesGuard', () => {
     }).compile();
     guard = moduleRef.get(RolesGuard);
     reflector = moduleRef.get(Reflector);
-  });
+    // El primer compile de Nest puede pasar de 10 s cuando la máquina está cargada.
+  }, 30_000);
 
   const allow = (roles?: string[]) =>
     vi.spyOn(reflector, 'getAllAndOverride').mockReturnValue(roles);
