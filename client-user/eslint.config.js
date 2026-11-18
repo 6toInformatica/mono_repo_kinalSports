@@ -55,6 +55,24 @@ export default [
     },
   },
   {
+    // Pruebas con jest-expo: globales de Jest
+    files: [scoped("**/*.test.{js,jsx}")],
+    languageOptions: {
+      globals: {
+        describe: "readonly",
+        it: "readonly",
+        test: "readonly",
+        expect: "readonly",
+        jest: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+        Buffer: "readonly",
+      },
+    },
+  },
+  {
     ignores: [scoped("node_modules/**"), scoped(".expo/**"), scoped("dist/**")],
   },
 ];

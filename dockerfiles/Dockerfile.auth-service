@@ -28,7 +28,8 @@ COPY src/AuthService.Application/AuthService.Application.csproj src/AuthService.
 COPY src/AuthService.Infrastructure/AuthService.Infrastructure.csproj src/AuthService.Infrastructure/
 COPY src/AuthService.Persistence/AuthService.Persistence.csproj src/AuthService.Persistence/
 COPY src/AuthService.Api/AuthService.Api.csproj src/AuthService.Api/
-RUN dotnet restore AuthService.sln
+# Solo la API y sus dependencias (el proyecto de pruebas no entra en la imagen)
+RUN dotnet restore src/AuthService.Api/AuthService.Api.csproj
 
 COPY src/ src/
 
