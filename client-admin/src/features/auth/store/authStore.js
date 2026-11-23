@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
   login as loginRequest,
+  logout as logoutRequest,
   register as registerRequest,
   forgotPassword as forgotPasswordRequest,
   resetPassword as resetPasswordRequest,
@@ -23,12 +24,12 @@ export const useAuthStore = create(
       isAuthenticated: false,
       sessionMessage: null,
       checkAuth: () => {
-        const token = get().token;
-        const role = get().user?.role;
+        const user = get().user;
+        const role = user?.role;
         const isAdmin = role === 'ADMIN_ROLE';
 
-        // Si hay token pero el rol no es admin, limpiamos la sesión.
-        if (token && !isAdmin) {
+        // Si hay sesión pero el rol no es admin, limpiamos la sesión.
+        if (user && !isAdmin) {
           set({
             user: null,
             token: null,
@@ -43,11 +44,12 @@ export const useAuthStore = create(
 
         set({
           isLoadingAuth: false,
-          isAuthenticated: Boolean(token) && isAdmin,
+          isAuthenticated: Boolean(user) && isAdmin,
         });
       },
 
       logout: ({ message } = {}) => {
+        logoutRequest().catch(() => undefined);
         resetAppStores();
         set({
           user: null,
@@ -69,6 +71,7 @@ export const useAuthStore = create(
           const role = data?.userDetails?.role;
           if (role !== 'ADMIN_ROLE') {
             const message = 'No tienes permisos para acceder como administrador.';
+            logoutRequest().catch(() => undefined);
 
             set({
               user: null,
@@ -84,10 +87,12 @@ export const useAuthStore = create(
             return { success: false, error: message };
           }
 
+          // Los tokens viajan en cookies httpOnly (kinal_access y kinal_refresh) emitidas
+          // por el backend; no se persisten en localStorage para evitar robo por XSS.
           set({
             user: data.userDetails,
-            token: data.accessToken || data.token,
-            refreshToken: data.refreshToken,
+            token: null,
+            refreshToken: null,
             expiresAt: resolveExpiresAt(data.expiresIn, data.expiresAt),
             isAuthenticated: true,
             loading: false,
@@ -141,8 +146,16 @@ export const useAuthStore = create(
           return { success: false, error: message };
         }
       },
-      // ...rest of store logic
     }),
-    { name: 'auth-store' }
+    {
+      name: 'auth-store',
+      // Seguridad (XSS): antes se persistían token y refreshToken en localStorage;
+      // ahora viven únicamente en cookies httpOnly y aquí solo se guardan metadatos de UI.
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+        expiresAt: state.expiresAt,
+      }),
+    }
   )
 );

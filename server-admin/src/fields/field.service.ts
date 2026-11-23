@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import type { Model, QueryFilter } from 'mongoose';
+import { RedisCacheService } from '../common/cache/redis-cache.service.js';
 import type { UploadedImage } from '../common/upload/image-upload.interceptor.js';
 import type { Env } from '../config/env.validation.js';
 import { CloudinaryService } from '../integrations/cloudinary.service.js';
@@ -15,35 +16,92 @@ export interface ListFieldsQuery {
   page?: string | number;
   limit?: string | number;
   isActive?: string | boolean;
+  fieldType?: string;
+  capacity?: string;
+  maxPricePerHour?: string | number;
+  search?: string;
 }
+
+const FIELDS_CACHE_PREFIX = 'kinal:fields:';
+const FIELDS_CACHE_TTL_SECONDS = 120;
 
 @Injectable()
 export class FieldService {
   readonly #folder: string;
+  readonly #cache: RedisCacheService | undefined;
 
   constructor(
     @InjectModel(FIELD_MODEL) private readonly fields: Model<Field>,
     private readonly images: CloudinaryService,
-    config: ConfigService<Env, true>
+    config: ConfigService<Env, true>,
+    @Optional() cache?: RedisCacheService
   ) {
     this.#folder = config.get('CLOUDINARY_FOLDER', { infer: true });
+    this.#cache = cache;
   }
 
-  /** Canchas con paginación (por defecto solo las activas) */
-  async list({ page = 1, limit = 10, isActive = true }: ListFieldsQuery) {
-    // isActive llega como texto desde la query; Mongoose lo convierte a booleano
-    const filter = { isActive } as QueryFilter<Field>;
+  /** Canchas con paginación y filtros opcionales (Cache-Aside en Redis con invalidación al mutar) */
+  async list({
+    page = 1,
+    limit = 10,
+    isActive = true,
+    fieldType,
+    capacity,
+    maxPricePerHour,
+    search,
+  }: ListFieldsQuery = {}) {
+    // isActive llega como texto desde la query o booleano desde QUERY body
+    const filter: Record<string, unknown> = { isActive };
+    if (fieldType) filter.fieldType = String(fieldType).trim();
+    if (capacity) filter.capacity = String(capacity).trim();
+    if (maxPricePerHour !== undefined && maxPricePerHour !== '') {
+      filter.pricePerHour = { $lte: Number(maxPricePerHour) };
+    }
+    if (typeof search === 'string' && search.trim()) {
+      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.fieldName = { $regex: escaped, $options: 'i' };
+    }
+
     const pageNumber = parseInt(String(page));
     const limitNumber = parseInt(String(limit));
+    const activeKey = String(isActive) !== 'false';
+    const extraFilterKey =
+      fieldType || capacity || maxPricePerHour !== undefined || search
+        ? `:${fieldType ?? ''}:${capacity ?? ''}:${maxPricePerHour ?? ''}:${search?.trim() ?? ''}`
+        : '';
+    const cacheKey = `${FIELDS_CACHE_PREFIX}page:${pageNumber}:${limitNumber}:${activeKey}${extraFilterKey}`;
 
+    const cached = await this.#cache?.get<{
+      fields: unknown[];
+      total: number;
+    }>(cacheKey);
+    if (cached) {
+      return {
+        fields: cached.fields,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(cached.total / Number(limit)),
+          totalRecords: cached.total,
+          limit,
+        },
+      };
+    }
+
+    const mongoFilter = filter as QueryFilter<Field>;
     const [fields, total] = await Promise.all([
       this.fields
-        .find(filter)
+        .find(mongoFilter)
         .limit(limitNumber)
         .skip((pageNumber - 1) * limitNumber)
         .sort({ createdAt: -1 }),
-      this.fields.countDocuments(filter),
+      this.fields.countDocuments(mongoFilter),
     ]);
+
+    await this.#cache?.set(
+      cacheKey,
+      { fields, total },
+      FIELDS_CACHE_TTL_SECONDS
+    );
 
     return {
       fields,
@@ -57,8 +115,16 @@ export class FieldService {
     };
   }
 
-  findById(id: string) {
-    return this.fields.findById(id);
+  async findById(id: string) {
+    const cacheKey = `${FIELDS_CACHE_PREFIX}id:${id}`;
+    const cached = await this.#cache?.get<Field>(cacheKey);
+    if (cached) return cached;
+
+    const field = await this.fields.findById(id);
+    if (field) {
+      await this.#cache?.set(cacheKey, field, FIELDS_CACHE_TTL_SECONDS);
+    }
+    return field;
   }
 
   /** Crea la cancha; la imagen se sube solo si los datos son válidos */
@@ -77,6 +143,7 @@ export class FieldService {
       if (image) await this.images.destroyByUrl(field.photo);
       throw error;
     }
+    await this.#cache?.delByPrefix(FIELDS_CACHE_PREFIX);
     return field;
   }
 
@@ -112,14 +179,17 @@ export class FieldService {
 
     // Reemplazada: se borra la anterior (la imagen por defecto no se toca)
     if (image) await this.images.destroyByUrl(current.photo);
+    await this.#cache?.delByPrefix(FIELDS_CACHE_PREFIX);
     return updated;
   }
 
-  setActive(id: string, isActive: boolean) {
-    return this.fields.findByIdAndUpdate(
+  async setActive(id: string, isActive: boolean) {
+    const updated = await this.fields.findByIdAndUpdate(
       id,
       { isActive },
       { returnDocument: 'after' }
     );
+    await this.#cache?.delByPrefix(FIELDS_CACHE_PREFIX);
+    return updated;
   }
 }

@@ -11,9 +11,12 @@ namespace AuthService.Api.Controllers;
 [Route("api/v1/[controller]")]
 public class UsersController(IUserManagementService userManagementService) : ControllerBase
 {
+    private string? CurrentUserId() =>
+        User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
     private async Task<bool> CurrentUserIsAdmin()
     {
-        var userId = User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+        var userId = CurrentUserId();
         if (string.IsNullOrEmpty(userId)) return false;
         var roles = await userManagementService.GetUserRolesAsync(userId);
         return roles.Contains(RoleConstants.ADMIN_ROLE);
@@ -37,6 +40,11 @@ public class UsersController(IUserManagementService userManagementService) : Con
     [Authorize]
     public async Task<ActionResult<IReadOnlyList<string>>> GetUserRoles(string userId)
     {
+        if (CurrentUserId() != userId && !await CurrentUserIsAdmin())
+        {
+            return StatusCode(403, new { success = false, message = "Forbidden" });
+        }
+
         var roles = await userManagementService.GetUserRolesAsync(userId);
         return Ok(roles);
     }

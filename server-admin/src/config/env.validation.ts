@@ -28,6 +28,7 @@ const envSchema = z.object({
   JWT_AUDIENCE: z.string().optional(),
   INTERNAL_SERVICE_TOKEN: z.string().optional(),
   AUTH_SERVICE_URL: z.string().optional(),
+  REDIS_URL: z.string().optional(),
   CLOUDINARY_CLOUD_NAME: z.string().optional(),
   CLOUDINARY_API_KEY: z.string().optional(),
   CLOUDINARY_API_SECRET: z.string().optional(),

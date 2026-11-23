@@ -30,7 +30,7 @@
   "author": "Braulio Echeverria",
   "license": "MIT",
   "engines": {
-    "node": ">=24"
+    "node": ">=22.13.0"
   },
   "dependencies": {
     "@fastify/cors": "^11.4.1",
@@ -62,10 +62,5 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.2",
     "vitest": "^5.1.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "minimatch": "^11.0.1"
-    }
   }
 }

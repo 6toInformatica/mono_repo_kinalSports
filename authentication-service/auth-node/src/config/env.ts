@@ -50,6 +50,8 @@ const envSchema = z.object({
   JWT_AUDIENCE: optionalText,
 
   INTERNAL_SERVICE_TOKEN: optionalText,
+  SEED_ADMIN_PASSWORD: optionalText,
+  REDIS_URL: optionalText,
 
   ALLOWED_ORIGINS: csv,
   // Enlaces de los correos de verificación y recuperación
@@ -116,6 +118,8 @@ export const config = {
   port: env.PORT,
   basePath: '/api/v1',
   internalServiceToken: env.INTERNAL_SERVICE_TOKEN,
+  seedAdminPassword: env.SEED_ADMIN_PASSWORD,
+  redisUrl: env.REDIS_URL,
   frontendUrl: env.FRONTEND_URL,
   database: {
     host: env.DB_HOST,

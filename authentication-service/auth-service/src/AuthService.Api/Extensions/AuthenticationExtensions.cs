@@ -29,6 +29,18 @@ public static class AuthenticationExtensions
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
                 ClockSkew = TimeSpan.Zero
             };
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    if (string.IsNullOrEmpty(context.Token) &&
+                        context.Request.Cookies.TryGetValue("kinal_access", out var cookieToken))
+                    {
+                        context.Token = cookieToken;
+                    }
+                    return Task.CompletedTask;
+                }
+            };
         });
 
         return services;

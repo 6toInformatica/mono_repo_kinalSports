@@ -1,3 +1,4 @@
+import type { CacheStore } from '../../../infrastructure/cache/redis-cache.ts';
 import type {
   ImageStorage,
   UserRepository,
@@ -21,6 +22,7 @@ export interface AuthDeps {
   emails: EmailSender;
   images: ImageStorage;
   present: UserPresenter;
+  cache?: CacheStore;
   /** Carpeta de subidas temporales (para reconocer archivos locales) */
   uploadPath: string;
   cloudinary: { baseUrl: string; folder: string };

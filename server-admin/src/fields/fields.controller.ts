@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  QueryMethod,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -39,6 +40,19 @@ export class FieldsController {
   async list(@Query() query: ListFieldsQuery) {
     try {
       const { fields, pagination } = await this.fields.list(query);
+      return { success: true, data: fields, pagination };
+    } catch (error) {
+      throw toHttpError(error, withDetail('Error al obtener los campos'));
+    }
+  }
+
+  // Método HTTP QUERY: consulta segura e idempotente con filtros estructurados en el body
+  @QueryMethod()
+  @HttpCode(200)
+  @UseGuards(AuthOrInternalGuard)
+  async queryFields(@Body() body: ListFieldsQuery = {}) {
+    try {
+      const { fields, pagination } = await this.fields.list(body);
       return { success: true, data: fields, pagination };
     } catch (error) {
       throw toHttpError(error, withDetail('Error al obtener los campos'));

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { refreshSession } from "./auth-api";
 import { isSameOrigin } from "./origin";
-import { parseSessionUser, writeSession } from "./session";
+import { parseSessionUser, readAccessTokenRole, writeSession } from "./session";
 
 describe("isSameOrigin", () => {
   const request = (headers: Record<string, string>) =>
@@ -62,6 +62,15 @@ describe("session cookies", () => {
     expect(parseSessionUser(undefined)).toBeNull();
     expect(parseSessionUser("{roto")).toBeNull();
     expect(parseSessionUser('{"id":"1"}')).toBeNull();
+  });
+
+  it("readAccessTokenRole lee el rol del payload JWT e ignora tokens no JWT", () => {
+    const payload = Buffer.from(
+      JSON.stringify({ sub: "usr_1", role: "ADMIN_ROLE" }),
+    ).toString("base64url");
+    expect(readAccessTokenRole(`hdr.${payload}.sig`)).toBe("ADMIN_ROLE");
+    expect(readAccessTokenRole("opaque-token")).toBeNull();
+    expect(readAccessTokenRole(undefined)).toBeNull();
   });
 });
 

@@ -4,7 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import { closeDatabase, dbConnection } from './db.js';
+import { closeDatabase, dbConnection, isDatabaseConnected } from './db.js';
 import { requestLimit } from '../middlewares/request-limit.js';
 import { corsOptions } from './cors-configuration.js';
 import { helmetConfiguration } from './helmet-configuration.js';
@@ -35,8 +35,9 @@ const routes = (app) => {
   app.use(`${BASE_PATH}/fields`, fieldRoutes);
 
   app.get(`${BASE_PATH}/health`, (req, res) => {
-    res.status(200).json({
-      status: 'Healthy',
+    const healthy = isDatabaseConnected();
+    res.status(healthy ? 200 : 503).json({
+      status: healthy ? 'Healthy' : 'Unhealthy',
       timestamp: new Date().toISOString(),
       service: 'KinalSports User Server',
     });
@@ -93,12 +94,34 @@ const registerShutdown = (server) => {
   }
 };
 
+const validateEnv = () => {
+  const missing = [];
+  if (!process.env.URI_MONGODB?.trim()) {
+    missing.push('URI_MONGODB: requerida');
+  }
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    missing.push('JWT_SECRET: requerida (mínimo 32 caracteres)');
+  }
+  if (
+    process.env.NODE_ENV === 'production' &&
+    !process.env.INTERNAL_SERVICE_TOKEN?.trim()
+  ) {
+    missing.push('INTERNAL_SERVICE_TOKEN: requerida en producción');
+  }
+  if (missing.length > 0) {
+    throw new Error(
+      `Configuración inválida de server-user:\n  - ${missing.join('\n  - ')}`
+    );
+  }
+};
+
 export const initServer = async () => {
   const app = express();
-  const PORT = process.env.PORT;
+  const PORT = process.env.PORT || 3008;
   app.set('trust proxy', 1);
 
   try {
+    validateEnv();
     await dbConnection();
     middlewares(app);
     routes(app);

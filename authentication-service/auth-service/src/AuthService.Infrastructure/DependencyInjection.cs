@@ -1,4 +1,5 @@
 using AuthService.Application.Interfaces;
+using AuthService.Infrastructure.Cache;
 using AuthService.Infrastructure.Email;
 using AuthService.Infrastructure.Options;
 using AuthService.Infrastructure.Security;
@@ -18,6 +19,7 @@ public static class DependencyInjection
         services.Configure<AppOptions>(configuration.GetSection(AppOptions.SectionName));
         services.Configure<CloudinaryOptions>(configuration.GetSection(CloudinaryOptions.SectionName));
 
+        services.AddSingleton<ICacheService, RedisCacheService>();
         services.AddScoped<IPasswordHashService, PasswordHashService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ICloudinaryService, CloudinaryService>();

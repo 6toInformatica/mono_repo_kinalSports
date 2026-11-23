@@ -1,3 +1,4 @@
+import { userProfileCacheKey } from '../../../../infrastructure/cache/redis-cache.ts';
 import {
   BadRequestError,
   NotFoundError,
@@ -11,7 +12,7 @@ import {
 
 /** Verifica el email con el token del correo y activa la cuenta */
 export const makeVerifyEmail =
-  ({ users, emails }: Pick<AuthDeps, 'users' | 'emails'>) =>
+  ({ users, emails, cache }: Pick<AuthDeps, 'users' | 'emails' | 'cache'>) =>
   async (token: string) => {
     if (!token || token.length < MIN_SECURE_TOKEN_LENGTH) {
       throw new UnauthorizedError('Token inválido para verificación de email');
@@ -29,6 +30,7 @@ export const makeVerifyEmail =
     }
 
     await users.markEmailAsVerified(user.id);
+    await cache?.del(userProfileCacheKey(user.id));
     inBackground('welcome', () => emails.sendWelcome(user.email, user.name));
 
     return {

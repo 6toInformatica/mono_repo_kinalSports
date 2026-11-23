@@ -364,28 +364,26 @@ describe.each(services)("%s", (name, via) => {
     });
   });
 
-  if (name === "auth-node") {
-    test("POST /auth/profile/picture/avatar", async () => {
-      const relogin = await login(fresh.username, {
-        via,
-        password: "Nueva12345!",
-      });
-      const response = await http.post(`${base}/auth/profile/picture/avatar`, {
-        token: relogin.token,
-        form: { avatar: png() },
-      });
-      expect(contract(response)).toMatchSnapshot();
+  test("POST /auth/profile/picture/avatar", async () => {
+    const relogin = await login(fresh.username, {
+      via,
+      password: "Nueva12345!",
     });
-  }
+    const response = await http.post(`${base}/auth/profile/picture/avatar`, {
+      token: relogin.token,
+      form: { avatar: png() },
+    });
+    expect(contract(response)).toMatchSnapshot();
+  });
+
+  test("GET /auth/users como admin", async () => {
+    const response = await http.get(`${base}/auth/users`, {
+      token: admin.token,
+    });
+    expect(contract(response)).toMatchSnapshot();
+  });
 
   if (name === "auth-service") {
-    test("GET /auth/users como admin", async () => {
-      const response = await http.get(`${base}/auth/users`, {
-        token: admin.token,
-      });
-      expect(contract(response)).toMatchSnapshot();
-    });
-
     test("GET /api/v1/health", async () => {
       expect(contract(await http.get(`${base}/health`))).toMatchSnapshot();
     });

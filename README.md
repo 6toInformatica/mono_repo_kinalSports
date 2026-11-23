@@ -1,11 +1,29 @@
 # KinalSports Monorepo
 
-Plataforma de gestion y reservas de espacios deportivos construida con arquitectura de microservicios.
+Plataforma integral de gestion y reservas de espacios deportivos construida con arquitectura de microservicios.
 
-Repositorio remoto: `https://github.com/6toInformatica/mono_repo_kinalSports.git`  
-Rama por defecto: `master`
+- **Repositorio remoto:** `https://github.com/6toInformatica/mono_repo_kinalSports.git`
+- **Rama principal:** `master`
 
-## Arquitectura del Sistema
+---
+
+## Tabla de Contenidos
+
+1. [Arquitectura del Sistema](#1-arquitectura-del-sistema)
+2. [Decisiones Arquitectonicas y Pedagogicas](#2-decisiones-arquitectonicas-y-pedagogicas)
+3. [Estructura del Monorepo](#3-estructura-del-monorepo)
+4. [Requisitos Previos](#4-requisitos-previos)
+5. [Guia Paso a Paso: Levantar con Docker (Recomendado)](#5-guia-paso-a-paso-levantar-con-docker-recomendado)
+6. [Guia Paso a Paso: Desarrollo Local (Sin Docker)](#6-guia-paso-a-paso-desarrollo-local-sin-docker)
+7. [Puertos y Health Checks](#7-puertos-y-health-checks)
+8. [Scripts Globales y por Servicio](#8-scripts-globales-y-por-servicio)
+9. [Pruebas Unitarias y de Contrato](#9-pruebas-unitarias-y-de-contrato)
+10. [Seguridad y Reglas de Negocio](#10-seguridad-y-reglas-de-negocio)
+11. [Documentacion por Servicio](#11-documentacion-por-servicio)
+
+---
+
+## 1. Arquitectura del Sistema
 
 ```
    +------------------+  +--------------------+       +-------------------+
@@ -19,324 +37,264 @@ Rama por defecto: `master`
                        v                                        v
           +------------+----------------+            +---------+---------+
           | auth-service (.NET 10) :5156|            | auth-node :3007   |
-          | PostgreSQL 18               |            | PostgreSQL 18     |
+          | PostgreSQL 18 + Redis 7     |            | PostgreSQL 18     |
           +------------+----------------+            +---------+---------+
                        |                                        |
                        v                                        v
           +------------+----------------+            +---------+---------+
           | server-admin :3009          |            | server-user :3008 |
           | /kinalSportsAdmin/v1        |            | /kinalSportsUser/v1
-          | MongoDB                     |            | MongoDB (compartida)
+          | MongoDB 7 + Redis 7         |            | MongoDB 7 + Redis 7
           +-----------------------------+            +-------------------+
 ```
 
 ### Regla de consumo
 
-| Stack   | Cliente                          | Autenticacion       | API de negocio |
-| ------- | -------------------------------- | ------------------- | -------------- |
-| Admin   | client-admin / client-admin-next | auth-service (.NET) | server-admin   |
-| Usuario | client-user (Expo)               | auth-node (Node)    | server-user    |
+| Stack       | Cliente                              | Autenticacion (Dev)      | Autenticacion (Prod)  | API de Negocio          |
+| :---------- | :----------------------------------- | :----------------------- | :-------------------- | :---------------------- |
+| **Admin**   | `client-admin` / `client-admin-next` | `auth-service` (.NET 10) | `auth-node` (Node.js) | `server-admin` (NestJS) |
+| **Usuario** | `client-user` (Expo)                 | `auth-node` (Node.js)    | `auth-node` (Node.js) | `server-user` (Express) |
 
-Ambos servicios de autenticacion comparten PostgreSQL (mismas tablas, mismo hash Argon2id, mismos claims JWT `sub`/`role`
-y mismo secreto/issuer/audience), por lo que son **intercambiables**: si uno cae, el otro puede atender a cualquier usuario.
+### Tecnologias por Servicio
 
-El esquema de PostgreSQL lo administran **solo las migraciones de EF Core** (servicio `auth-migrator` en Docker, que corre
-antes de auth-service y auth-node). auth-node usa Prisma unicamente para leer el esquema (`prisma db pull`); nunca migra.
+| Servicio            | Stack                                                                                          |
+| :------------------ | :--------------------------------------------------------------------------------------------- |
+| `auth-node`         | Node.js 22+, Fastify 5, TypeScript, Prisma 7 (PostgreSQL 18), Redis Cache-Aside, JWT, Argon2id |
+| `auth-service`      | .NET 10, ASP.NET Core, EF Core 10, Npgsql, Redis Cache-Aside, Clean Architecture               |
+| `server-admin`      | NestJS 12, TypeScript, MongoDB 7, Mongoose 9, Redis Cache-Aside, HTTP `QUERY`                  |
+| `server-user`       | Node.js 22+, Express 5, MongoDB 7, Mongoose 9, Redis Cache-Aside, HTTP `QUERY`                 |
+| `client-admin`      | React 19, Vite 8, TailwindCSS 4, React Router 7, Zustand 5 (sesion con cookies `httpOnly`)     |
+| `client-admin-next` | Next.js 16 (App Router), React 19, TypeScript, TailwindCSS 4 (BFF con cookies `httpOnly`)      |
+| `client-user`       | React Native 0.88, Expo SDK 58, React Navigation 7, Zustand 5 (`expo-secure-store`)            |
 
-Los dos paneles admin tienen la misma funcionalidad y conviven contra los mismos backends:
+---
 
-- **client-admin** (React + Vite): guarda la sesion en el navegador.
-- **client-admin-next** (Next.js): los tokens viven en cookies httpOnly. El navegador solo llama a rutas de Next
-  (`/api/session`, `/api/backend/...`), que agregan el token, renuevan la sesion y protegen las paginas desde el servidor.
-  Incluye ademas una vista general con indicadores del dia.
+## 2. Decisiones Arquitectonicas y Pedagogicas
 
-## Alcance funcional
+1. **Intercambiabilidad `.NET 10` ↔ `Node.js` (Desarrollo vs Produccion):**
+   - **En clase y desarrollo (`docker-compose.yml`):** Corren simultaneamente `auth-service` (.NET 10, Clean Architecture) y `auth-node` (Fastify + TypeScript, Arquitectura Hexagonal) sobre la misma base PostgreSQL 18. Ambos usan los mismos parametros de Argon2id y firman el mismo JWT (`HS256`).
+   - **En produccion (`docker-compose.prod.yml`):** Para desplegar en servidores sin runtime de Microsoft (.NET), `auth-node` asume el **100% de la autenticacion** (tanto movil como admin) e inicializa por si mismo el esquema PostgreSQL, los roles base y el administrador inicial sin depender de `auth-migrator`.
+2. **Microservicios Independientes dentro de un Monorepo:**
+   - Cada carpeta de servicio posee su propio `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` y `Dockerfile` multi-stage (`dev` y `runtime`), demostrando que cada servicio puede desarrollarse en un monorepo y desplegarse de manera autonoma.
+3. **Seguridad de Sesion: Cookies `httpOnly` en Web vs `SecureStore` en Movil:**
+   - En aplicaciones web (`client-admin` y `client-admin-next`), **nunca se guarda el JWT ni el refresh token en `localStorage`** (vulnerable a robo de sesion mediante XSS). Ambos paneles operan con **cookies `httpOnly`** (`kinal_access` y `kinal_refresh`).
+   - En la app movil (`client-user`), donde no aplica el modelo de cookies de navegador, los tokens se guardan en el llavero nativo cifrado del sistema operativo (`expo-secure-store`).
+4. **Caché Distribuida `Cache-Aside` con Redis (`redis:7-alpine`):**
+   - `auth-node`, `auth-service`, `server-admin` y `server-user` comparten Redis para cachear perfiles (`kinal:user:profile:<id>`, TTL 60 s) y el catalogo de canchas (`kinal:fields:*`, TTL 120 s), con **invalidacion automatica entre microservicios** al cambiar fotos, roles o canchas, y degradacion elegante a memoria local si `REDIS_URL` no esta definido.
+5. **Metodo HTTP `QUERY` (IETF Safe Method with Body):**
+   - Para consultas de solo lectura que requieren enviar criterios o identificadores en el cuerpo JSON sin exponerlos en la URL ni abusar de `POST`, se implementa el metodo `QUERY` en `/api/v1/auth/profile/by-id`, `/api/v1/auth/profile/by-username` y `/fields` (`server-admin` y `server-user`).
 
-| Actor   | Cliente                         | Funcionalidades                                                         |
-| ------- | ------------------------------- | ----------------------------------------------------------------------- |
-| Admin   | client-admin, client-admin-next | Canchas, reservas, equipos, torneos, usuarios (y vista general en Next) |
-| Usuario | client-user                     | Canchas, reservas, equipos, torneos, perfil                             |
+---
 
-### Reglas de negocio
-
-| Modulo   | Regla                                                                                                                                                    |
-| -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Reservas | Inicio en el futuro, cancha existente y activa, duracion de 1 a 3 horas, horario 06:00-22:00 (`America/Guatemala`, configurable con `BUSINESS_TIMEZONE`) |
-| Reservas | El usuario cancela solo reservas `PENDING`/`CONFIRMED` que aun no inician; el admin no confirma reservas ya iniciadas                                    |
-| Equipos  | No se puede unir a equipos inactivos; cupo de miembros: 12 (`FUTBOL_7`) y 18 (`FUTBOL_11`)                                                               |
-| Torneos  | Inscripcion solo por el capitan, con equipo activo, torneo activo en `PENDIENTE` sin iniciar y misma categoria                                           |
-
-## Estructura del Monorepo
+## 3. Estructura del Monorepo
 
 ```
 kinalSports/
 ├── authentication-service/
-│   ├── auth-node/          # Auth Fastify + TypeScript + Prisma (stack movil/usuario)
-│   └── auth-service/       # Auth .NET 10, Clean Architecture (stack admin, dueño del esquema)
-├── server-admin/           # API administrativa, NestJS + TypeScript (MongoDB)
-├── server-user/            # API de usuarios, Express por capas (MongoDB)
-├── client-admin/           # Panel web admin (React + Vite)
-├── client-admin-next/      # Panel web admin (Next.js 16, sesion con cookies httpOnly)
-├── client-user/            # App movil (React Native + Expo SDK 58)
-├── tests/contract/         # Pruebas de contrato HTTP (Vitest) de todas las rutas
+│   ├── auth-node/          # Auth Fastify + TypeScript + Prisma (PostgreSQL + Redis)
+│   └── auth-service/       # Auth .NET 10, Clean Architecture (PostgreSQL + Redis)
+├── server-admin/           # API administrativa, NestJS + TypeScript (MongoDB + Redis)
+├── server-user/            # API de usuarios, Express 5 por capas (MongoDB + Redis)
+├── client-admin/           # Panel web admin SPA (React 19 + Vite 8, cookies httpOnly)
+├── client-admin-next/      # Panel web admin BFF (Next.js 16, cookies httpOnly)
+├── client-user/            # App movil (React Native + Expo SDK 58, SecureStore)
+├── tests/contract/         # Pruebas de contrato HTTP E2E (Vitest)
 ├── scripts/seed/           # Datos iniciales (usuarios, canchas, equipos, torneos, reservas)
-├── docker-compose.yml      # Orquestacion de todos los servicios
-├── dockerfiles/            # Dockerfiles por servicio (multi-stage)
-├── .husky/                 # Git hooks (pre-commit, commit-msg)
-├── package.json            # Configuracion raiz del monorepo
-└── pnpm-workspace.yaml     # Workspaces, overrides de seguridad y configuracion de audit
+├── docker-compose.yml      # Orquestacion de desarrollo (.NET 10 + Node.js + Postgres + Mongo + Redis)
+├── docker-compose.prod.yml # Orquestacion de produccion (100% Node.js + Postgres + Mongo + Redis)
+├── dockerfiles/            # Dockerfiles multi-stage por servicio (etapas dev y runtime)
+├── .husky/                 # Git hooks (pre-commit con lint-staged + dotnet format, commit-msg)
+├── package.json            # Scripts globales del monorepo
+└── pnpm-workspace.yaml     # Workspaces, overrides de seguridad y allowBuilds
 ```
 
-## Requisitos Previos
+---
 
-- **Node.js**: 22.13+ (`.nvmrc` fija 24 para desarrollo local; las imagenes de Docker usan Node 26)
-- **pnpm**: 10 (version fijada en `packageManager`; Docker instala la misma)
-- **.NET SDK**: 10.0 (para auth-service; version fijada en `global.json`)
-- **PostgreSQL**: 18 (Docker usa `postgres:18`)
-- **MongoDB**: 7+ (Docker usa `mongo:7`)
-- **Docker + Docker Compose**: recomendado para levantar el stack completo
-- **Git**: 2.30+
+## 4. Requisitos Previos
 
-## Instalacion Global
+- **Node.js:** `>=22.13.0` (`.nvmrc` fija Node 24 para local; los contenedores usan Node 26)
+- **pnpm:** `10+`
+- **.NET SDK:** `10.0.x` (requerido para `auth-service` en desarrollo; no requerido en `docker-compose.prod.yml`)
+- **PostgreSQL:** `18` (Docker usa `postgres:18`)
+- **MongoDB:** `7+` (Docker usa `mongo:7`)
+- **Redis:** `7+` (Docker usa `redis:7-alpine`; opcional en local gracias al fallback en memoria)
+- **Docker + Docker Compose:** Recomendado para levantar todo el ecosistema con un solo comando
+
+---
+
+## 5. Guia Paso a Paso: Levantar con Docker (Recomendado)
+
+### Paso 1: Clonar e instalar dependencias
 
 ```bash
 git clone https://github.com/6toInformatica/mono_repo_kinalSports.git
 cd kinalSports
 pnpm install
-# Husky se configura automaticamente tras la instalacion (script prepare)
 ```
 
-## Docker (recomendado)
+### Paso 2: Configurar `.env.docker` (opcional en desarrollo, obligatorio en produccion)
 
-Las credenciales (PostgreSQL, JWT, SMTP, Cloudinary, token interno) se definen en `.env.docker` en la raiz (no se versiona).
+Crea un archivo `.env.docker` en la raiz (ignorado por Git) para definir credenciales de correo (Kinal Mail Hub) y Cloudinary, o secretos de produccion:
 
-```bash
-pnpm docker:up            # equivale a: docker compose --env-file .env.docker up --build -V
-pnpm docker:up:detached   # igual, en segundo plano
-pnpm docker:logs          # seguir logs
-pnpm docker:down          # detener
+```env
+# Requeridos en docker-compose.prod.yml (en desarrollo tienen valores por defecto)
+POSTGRES_USER=KinalSports
+POSTGRES_PASSWORD=TuPasswordSeguroPostgres!
+JWT_SECRET=UnaClaveSecretaDeAlMenos32CaracteresParaHS256!
+INTERNAL_SERVICE_TOKEN=TokenInternoEntreMicroservicios2026!
+SEED_ADMIN_PASSWORD=Admin1234!
+
+# Kinal Mail Hub (API REST de correo)
+KMH_PROJECT_API_KEY=<tu-api-key-de-kmh>
+
+# Cloudinary (subida de imagenes de perfil, canchas y equipos)
+CLOUDINARY_CLOUD_NAME=b3xvlule
+CLOUDINARY_API_KEY=<tu-api-key>
+CLOUDINARY_API_SECRET=<tu-api-secret>
 ```
 
-> `-V` recrea los volumenes anonimos de `node_modules`, para que una reconstruccion no use dependencias viejas.
+> **Nota sobre Kinal Mail Hub:** `mail.lab.kinal.edu.gt` solo existe en el DNS interno del colegio; `docker-compose.yml` lo resuelve mediante `extra_hosts` (`181.114.7.76`, configurable con `KMH_HOST_IP`). Con `MAIL_PROVIDER=smtp` se puede alternar a SMTP/Mailpit.
 
-> Importante: `docker compose up` sin `--env-file .env.docker` NO usa ese archivo para resolver
-> las variables `${...}` del compose (Compose solo lee `.env` automaticamente), por lo que se
-> aplicarian los valores por defecto y las credenciales de SMTP/Cloudinary quedarian vacias.
-
-### Correos (Kinal Mail Hub)
-
-auth-service y auth-node envian los correos (verificacion, recuperacion, bienvenida) por la API REST de
-Kinal Mail Hub (`POST https://mail.lab.kinal.edu.gt/api/v1/messages`). Agrega tu API key a `.env.docker`:
+### Paso 3A: Iniciar en modo Desarrollo (incluye `.NET 10` y `Node.js`)
 
 ```bash
-KMH_PROJECT_API_KEY=<API key REST emitida para el proyecto>
-# Opcionales (estos son los valores por defecto)
-# MAIL_PROVIDER=kmh
-# KMH_API_BASE_URL=https://mail.lab.kinal.edu.gt
-# KMH_MAIL_FROM=kinal-sports@am-delta.in6am.mail.kinal.test
+pnpm docker:up            # Construye y levanta en primer plano
+pnpm docker:up:detached   # Construye y levanta en segundo plano (-d)
+pnpm db:seed              # Pobla usuarios, canchas, equipos, torneos y reservas de prueba
 ```
 
-`mail.lab.kinal.edu.gt` no esta publicado en el DNS publico, asi que el compose lo fija con `extra_hosts`
-(IP por defecto `181.114.7.76`; si cambia, define `KMH_HOST_IP` en `.env.docker`).
-
-Los correos se ven en la Bandeja de Kinal Mail Hub. Con `MAIL_PROVIDER=smtp` se vuelve al SMTP anterior;
-las pruebas de contrato lo usan para leer los tokens desde su Mailpit local.
-
-| Servicio           | Puerto host       | URL base                                    |
-| ------------------ | ----------------- | ------------------------------------------- |
-| postgres           | 5435              | `localhost:5435`                            |
-| mongodb            | 27020             | `localhost:27020`                           |
-| auth-service       | 5156              | `http://localhost:5156/api/v1`              |
-| auth-node          | 3007              | `http://localhost:3007/api/v1`              |
-| server-admin       | 3009              | `http://localhost:3009/kinalSportsAdmin/v1` |
-| server-user        | 3008              | `http://localhost:3008/kinalSportsUser/v1`  |
-| client-admin       | 5173              | `http://localhost:5173`                     |
-| client-admin-next  | 3000              | `http://localhost:3000`                     |
-| client-user (Expo) | 8081, 19000-19002 | Metro bundler                               |
-
-Health checks utiles:
+### Paso 3B: Iniciar en modo Produccion (100% `Node.js`, sin `.NET`)
 
 ```bash
-curl http://localhost:5156/health
-curl http://localhost:3007/api/v1/health
-curl http://localhost:3009/kinalSportsAdmin/v1/health
-curl http://localhost:3008/kinalSportsUser/v1/health
+pnpm docker:prod:up       # Usa docker-compose.prod.yml (etapas runtime, auth-node al 100%)
+pnpm docker:prod:logs     # Ver logs de produccion
+pnpm docker:prod:down     # Detener contenedores de produccion
 ```
 
-En Windows, si un contenedor de desarrollo no detecta cambios en el codigo montado, reinicialo:
-`docker compose restart <servicio>`.
+---
 
-## Variables de Entorno
+## 6. Guia Paso a Paso: Desarrollo Local (Sin Docker)
 
-Cada servicio tiene su propio `.env.example`. Copialo a `.env` y ajusta valores:
+### Paso 1: Copiar archivos `.env` de cada servicio
 
-| Servicio          | Archivo                                                                                                                                  |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| auth-node         | `authentication-service/auth-node/.env.example`                                                                                          |
-| auth-service      | `authentication-service/auth-service/src/AuthService.Api/appsettings.Development.example.json` (copiar a `appsettings.Development.json`) |
-| server-admin      | `server-admin/.env.example`                                                                                                              |
-| server-user       | `server-user/.env.example`                                                                                                               |
-| client-admin      | `client-admin/.env.example`                                                                                                              |
-| client-admin-next | `client-admin-next/.env.example` (copiar a `.env.local`)                                                                                 |
-| client-user       | `client-user/.env.example`                                                                                                               |
+| Servicio            | Archivo plantilla                                                                              | Archivo destino                                                                        |
+| :------------------ | :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------- |
+| `auth-node`         | `authentication-service/auth-node/.env.example`                                                | `authentication-service/auth-node/.env`                                                |
+| `auth-service`      | `authentication-service/auth-service/src/AuthService.Api/appsettings.Development.example.json` | `authentication-service/auth-service/src/AuthService.Api/appsettings.Development.json` |
+| `server-admin`      | `server-admin/.env.example`                                                                    | `server-admin/.env`                                                                    |
+| `server-user`       | `server-user/.env.example`                                                                     | `server-user/.env`                                                                     |
+| `client-admin`      | `client-admin/.env.example`                                                                    | `client-admin/.env`                                                                    |
+| `client-admin-next` | `client-admin-next/.env.example`                                                               | `client-admin-next/.env.local`                                                         |
+| `client-user`       | `client-user/.env.example`                                                                     | `client-user/.env`                                                                     |
 
-Ejemplo minimo para desarrollo local (sin Docker):
+> **Importante:** `JWT_SECRET` e `INTERNAL_SERVICE_TOKEN` deben tener exactamente el mismo valor en `auth-node`, `auth-service`, `server-admin` y `server-user`.
 
-```bash
-# client-admin/.env
-VITE_AUTH_URL=http://localhost:5156/api/v1
-VITE_ADMIN_URL=http://localhost:3009/kinalSportsAdmin/v1
-
-# client-admin-next/.env.local (solo las lee el servidor de Next)
-AUTH_API_URL=http://localhost:5156/api/v1
-ADMIN_API_URL=http://localhost:3009/kinalSportsAdmin/v1
-
-# client-user/.env (emulador Android: 10.0.2.2 apunta al localhost del host;
-# en un dispositivo fisico usa la IP LAN de tu computadora)
-EXPO_PUBLIC_AUTH_URL=http://10.0.2.2:3007/api/v1/auth
-EXPO_PUBLIC_USER_URL=http://10.0.2.2:3008/kinalSportsUser/v1
-```
-
-`INTERNAL_SERVICE_TOKEN` debe tener el mismo valor en auth-node, server-admin y server-user, y en auth-service
-como `InternalServiceToken` (en `appsettings.Development.json` o variable de entorno).
-
-CORS (`ALLOWED_ORIGINS`, `ADMIN_ALLOWED_ORIGINS`) solo necesita los clientes que llaman a los backends desde el
-navegador. client-admin-next llama desde su servidor, asi que no requiere CORS. `FRONTEND_URL` admite un solo valor:
-los enlaces de los correos apuntan a client-admin (5173), y client-admin-next tiene las mismas rutas
-`/verify-email` y `/reset-password` por si se cambia a 3000.
-
-## Scripts Disponibles
-
-### Comandos globales (desde raiz)
+### Paso 2: Levantar los servicios
 
 ```bash
-pnpm lint            # Lint en server-*, auth-node, client-admin y client-admin-next
-pnpm format          # Formatear server-*
-pnpm commit          # Commit interactivo con Commitizen
-pnpm lint:changed    # ESLint sobre archivos staged
-pnpm contract:up     # Stack para pruebas de contrato (Mailpit, rate limits altos)
-pnpm db:seed         # Carga los datos iniciales (idempotente)
-pnpm db:reset        # Borra todos los datos y vuelve a cargar los iniciales
-pnpm test:contract   # Pruebas de contrato contra el stack levantado
-```
-
-### Comandos por servicio
-
-```bash
-pnpm --filter auth-node dev
-pnpm --filter auth-service dev
-pnpm --filter server-admin dev
-pnpm --filter server-user dev
-pnpm --filter @kinal/client-admin dev
-pnpm --filter @kinal/client-admin-next dev
-pnpm --filter client-user start   # Expo (no tiene script dev)
-```
-
-### Ejecutar varios servicios Node en paralelo
-
-```bash
-pnpm -r --parallel --filter server-admin --filter server-user --filter auth-node run dev
-```
-
-## Flujo de Desarrollo Local (sin Docker)
-
-```bash
-# Terminal 1 - Auth .NET (admin); aplica las migraciones de EF Core
+# Terminal 1 - Auth .NET (opcional si usas solo auth-node, ya que auth-node tambien inicializa el esquema)
 pnpm --filter auth-service dev
 
-# Terminal 2 - Auth Node (movil/usuario)
+# Terminal 2 - Auth Node
 pnpm --filter auth-node dev
 
-# Terminal 3 - Management API
+# Terminal 3 - Server Admin (NestJS)
 pnpm --filter server-admin dev
 
-# Terminal 4 - User API
+# Terminal 4 - Server User (Express)
 pnpm --filter server-user dev
 
-# Terminal 5 - Frontend Admin (uno o ambos)
+# Terminal 5 - Panel Admin (elige Vite o Next.js, o ambos)
 pnpm --filter @kinal/client-admin dev
 pnpm --filter @kinal/client-admin-next dev
 
-# Terminal 6 - App movil
+# Terminal 6 - App Movil (Expo)
 pnpm --filter client-user start
 ```
 
-Asegurate de tener PostgreSQL y MongoDB corriendo localmente con las URIs configuradas en cada `.env`.
+---
 
-## Pruebas
+## 7. Puertos y Health Checks
 
-Las pruebas de contrato (`tests/contract/`) cubren las rutas HTTP de los cuatro backends y fijan el status y la forma de
-cada respuesta. Ver [tests/contract/README.md](./tests/contract/README.md).
+| Servicio              | Puerto Host | URL Base / Conexion                         | Health Check                                           |
+| :-------------------- | :---------- | :------------------------------------------ | :----------------------------------------------------- |
+| `postgres`            | `5435`      | `localhost:5435`                            | `pg_isready`                                           |
+| `mongodb`             | `27020`     | `mongodb://localhost:27020/kinalSports`     | `mongosh ping`                                         |
+| `redis`               | `6379`      | `redis://localhost:6379`                    | `redis-cli ping`                                       |
+| `auth-service` (.NET) | `5156`      | `http://localhost:5156/api/v1`              | `GET http://localhost:5156/health`                     |
+| `auth-node`           | `3007`      | `http://localhost:3007/api/v1`              | `GET http://localhost:3007/api/v1/health`              |
+| `server-admin`        | `3009`      | `http://localhost:3009/kinalSportsAdmin/v1` | `GET http://localhost:3009/kinalSportsAdmin/v1/health` |
+| `server-user`         | `3008`      | `http://localhost:3008/kinalSportsUser/v1`  | `GET http://localhost:3008/kinalSportsUser/v1/health`  |
+| `client-admin`        | `5173`      | `http://localhost:5173`                     | —                                                      |
+| `client-admin-next`   | `3000`      | `http://localhost:3000`                     | —                                                      |
+| `client-user`         | `8081`      | Metro Bundler (`19000-19002`)               | —                                                      |
 
-```bash
-pnpm contract:up && pnpm db:reset && pnpm test:contract
-```
+---
 
-## Commit Conventions
-
-Usamos [Conventional Commits](https://www.conventionalcommits.org/) (el asunto va en minusculas):
-
-```
-<tipo>(<scope>): <descripcion>
-
-Tipos: feat, fix, chore, docs, refactor, test, perf, ci, build, style
-Scope: auth-node, auth-service, server-admin, server-user, client-admin, client-admin-next, client-user
-```
-
-Ejemplos:
+## 8. Scripts Globales y por Servicio
 
 ```bash
-feat(server-admin): add tournament CRUD endpoints
-fix(auth-node): correct JWT expiration handling
-docs(readme): align ports with docker-compose
+# Calidad y pruebas (desde la raiz)
+pnpm test                 # Ejecuta las 275 pruebas unitarias (Node.js + .NET 10)
+pnpm lint                 # Ejecuta ESLint en todos los proyectos JS/TS
+pnpm format               # Formatea codigo con Prettier
+pnpm commit               # Asistente interactivo de Conventional Commits (Commitizen)
+
+# Datos de prueba y pruebas E2E de contrato
+pnpm db:seed              # Siembra datos iniciales de forma idempotente
+pnpm db:reset             # Limpia las bases y vuelve a sembrar desde cero
+pnpm contract:up          # Levanta el stack con Mailpit para pruebas de contrato
+pnpm test:contract        # Ejecuta la suite de pruebas de contrato HTTP
 ```
 
-Los hooks de Husky ejecutan lint-staged y validacion de mensaje de commit. El primer commit en una rama huerfana omite el pre-commit automaticamente.
+---
 
-## Documentacion de Servicios
+## 9. Pruebas Unitarias y de Contrato
 
-- [Auth Node (Node.js)](./authentication-service/auth-node/README.md)
-- [Auth Service (.NET)](./authentication-service/auth-service/README.md)
-- [Server Admin](./server-admin/README.md)
-- [Server User](./server-user/README.md)
-- [Client Admin](./client-admin/README.md)
-- [Client Admin Next](./client-admin-next/README.md)
-- [Client User (Expo)](./client-user/README.md)
+1. **Pruebas Unitarias (`pnpm test`):**
+   - Cada paquete cuenta con su propia bateria de pruebas aisladas (Vitest en Node/React/Next, Jest en Expo React Native y xUnit v3 en .NET 10). No requieren bases de datos ni contenedores levantados.
+2. **Pruebas de Contrato HTTP (`tests/contract/`):**
+   - Verifican de caja negra que `auth-node` y `auth-service` respondan con el mismo contrato, y validan los flujos completos de `server-admin` y `server-user`. Ver [tests/contract/README.md](./tests/contract/README.md).
 
-Guías de recreacion del auth-service (.NET):
+---
 
-- [GUIA_RAPIDA.md](./authentication-service/auth-service/GUIA_RAPIDA.md)
-- [FLUJO_RECREACION_PASO_A_PASO.md](./authentication-service/auth-service/FLUJO_RECREACION_PASO_A_PASO.md)
+## 10. Seguridad y Reglas de Negocio
 
-## Tecnologias Principales
+### Seguridad
 
-| Servicio          | Stack                                                                   |
-| ----------------- | ----------------------------------------------------------------------- |
-| auth-node         | Node.js, Fastify 5, TypeScript, Prisma 7 (PostgreSQL), JWT, Argon2      |
-| auth-service      | .NET 10, ASP.NET Core, EF Core 10, Npgsql, Clean Architecture           |
-| server-admin      | NestJS 12, TypeScript, MongoDB, Mongoose 9                              |
-| server-user       | Node.js, Express 5, MongoDB, Mongoose 9 (controller/service/repository) |
-| client-admin      | React 19, Vite 8, TailwindCSS, React Router, Zustand                    |
-| client-admin-next | Next.js 16 (App Router), React 19, TypeScript, TailwindCSS 4            |
-| client-user       | React Native 0.88, Expo SDK 58, React Navigation, Zustand               |
+- **Hashing:** Argon2id con parametros identicos entre Node.js y .NET 10.
+- **Tokens y Sesiones:** JWT `HS256` (15 min) + Refresh Token opaco rotativo (30 dias). Reutilizar un refresh token rotado revoca toda la familia de sesion.
+- **Cookies `httpOnly` en Web:** `kinal_access` y `kinal_refresh` viajan con `HttpOnly; SameSite=Lax; Path=/` (y `Secure` en produccion). Ningun frontend web guarda tokens en `localStorage`.
+- **Autorizacion y Anti-IDOR:** Verificacion de roles en cada endpoint administrativo y proteccion de `GET /api/v1/users/:userId/roles` (solo propio usuario o `ADMIN_ROLE`).
 
-## Seguridad
+### Reglas de Negocio
 
-- Argon2id (mismos parametros en auth-node y auth-service) para hashing de contrasenas
-- JWT HS256 de 15 minutos validando issuer y audience, con refresh tokens rotativos de 30 dias
-- El reset de contrasena cierra todas las sesiones; un usuario desactivado no puede renovar su sesion
-- client-admin-next: tokens en cookies httpOnly, chequeo de origen (CSRF) y renovacion de sesion en el servidor
-- Rate limiting en endpoints sensibles
-- Helmet / NetEscapades para headers de seguridad
-- CORS restringido a los origenes configurados
-- Token interno (`x-internal-token`) entre servicios: server-user -> server-admin, y server-admin/server-user ->
-  `profile/by-id` / `profile/by-username` de los servicios de auth
-- Los secretos no se versionan: van en `.env.docker` o en `appsettings.Development.json` (ambos ignorados por git)
+| Modulo            | Regla                                                                                                                      |
+| :---------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| **Reservas**      | Inicio en el futuro, cancha existente y activa, duracion de 1 a 3 horas, horario `06:00` a `22:00` (`America/Guatemala`).  |
+| **Cancelaciones** | El usuario solo cancela reservas `PENDING`/`CONFIRMED` que aun no inician; el admin no confirma reservas ya iniciadas.     |
+| **Equipos**       | No se permite unirse a equipos inactivos; cupo maximo de miembros: `12` (`FUTBOL_7`) y `18` (`FUTBOL_11`).                 |
+| **Torneos**       | Inscripcion exclusiva por el capitan, con equipo activo, torneo activo en `PENDIENTE` sin iniciar y de la misma categoria. |
 
-## Autor
+---
 
-**Braulio Echeverria**
+## 11. Documentacion por Servicio
 
-## Licencia
+Todos los READMEs de los microservicios y clientes siguen una estructura uniforme (Rol, Stack, Estructura, Instalacion, Variables de Entorno, Scripts, Arquitectura/Seguridad y Endpoints):
 
-MIT
+- [Auth Node (Fastify + TypeScript)](./authentication-service/auth-node/README.md)
+- [Auth Service (.NET 10 Clean Architecture)](./authentication-service/auth-service/README.md)
+  - [Guia Rapida de Recreacion (.NET)](./authentication-service/auth-service/GUIA_RAPIDA.md)
+  - [Flujo de Recreacion Paso a Paso (.NET)](./authentication-service/auth-service/FLUJO_RECREACION_PASO_A_PASO.md)
+- [Server Admin (NestJS + MongoDB)](./server-admin/README.md)
+- [Server User (Express 5 + MongoDB)](./server-user/README.md)
+- [Client Admin (React + Vite)](./client-admin/README.md)
+- [Client Admin Next (Next.js 16 BFF)](./client-admin-next/README.md)
+- [Client User (React Native + Expo)](./client-user/README.md)
+- [Pruebas de Contrato](./tests/contract/README.md)
+
+---
+
+## Autor y Licencia
+
+**Braulio Echeverria** — Licencia MIT.

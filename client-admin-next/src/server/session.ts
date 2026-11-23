@@ -80,3 +80,22 @@ export const parseSessionUser = (
     return null;
   }
 };
+
+/**
+ * Extrae el claim `role` del payload del access token JWT (si es un JWT válido)
+ * para corroborar que coincida con el rol en la cookie de sesión.
+ */
+export const readAccessTokenRole = (
+  accessToken: string | undefined,
+): string | null => {
+  if (!accessToken) return null;
+  const parts = accessToken.split(".");
+  if (parts.length !== 3 || !parts[1]) return null;
+  try {
+    const json = Buffer.from(parts[1], "base64url").toString("utf8");
+    const payload = JSON.parse(json) as { role?: unknown };
+    return typeof payload.role === "string" ? payload.role : null;
+  } catch {
+    return null;
+  }
+};

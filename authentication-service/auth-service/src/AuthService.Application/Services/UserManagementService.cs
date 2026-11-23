@@ -6,7 +6,11 @@ using AuthService.Domain.Interfaces;
 
 namespace AuthService.Application.Services;
 
-public class UserManagementService(IUserRepository users, IRoleRepository roles, ICloudinaryService cloudinary) : IUserManagementService
+public class UserManagementService(
+    IUserRepository users,
+    IRoleRepository roles,
+    ICloudinaryService cloudinary,
+    ICacheService? cacheService = null) : IUserManagementService
 {
     public async Task<UserResponseDto> UpdateUserRoleAsync(string userId, string roleName)
     {
@@ -39,6 +43,10 @@ public class UserManagementService(IUserRepository users, IRoleRepository roles,
 
         // Update role using repository method
         await users.UpdateUserRoleAsync(userId, role.Id);
+        if (cacheService is not null)
+        {
+            await cacheService.RemoveAsync($"kinal:user:profile:{userId}");
+        }
 
         // Reload user with updated roles
         user = await users.GetByIdAsync(userId);

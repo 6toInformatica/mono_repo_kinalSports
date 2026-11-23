@@ -1,5 +1,28 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`auth-node > GET /auth/users como admin 1`] = `
+{
+  "body": [
+    {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "string",
+      "status": "boolean",
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+  ],
+  "json": true,
+  "status": 200,
+}
+`;
+
 exports[`auth-node > GET /health 1`] = `
 {
   "body": {
@@ -692,6 +715,31 @@ exports[`auth-service > GET /health 1`] = `
   "body": {
     "status": "Healthy",
     "timestamp": "string",
+  },
+  "json": true,
+  "status": 200,
+}
+`;
+
+exports[`auth-service > POST /auth/profile/picture/avatar 1`] = `
+{
+  "body": {
+    "data": {
+      "createdAt": "string",
+      "email": "string",
+      "id": "string",
+      "isEmailVerified": "boolean",
+      "name": "string",
+      "phone": "string",
+      "profilePicture": "string",
+      "role": "USER_ROLE",
+      "status": true,
+      "surname": "string",
+      "updatedAt": "string",
+      "username": "string",
+    },
+    "message": "Foto de perfil actualizada exitosamente",
+    "success": true,
   },
   "json": true,
   "status": 200,

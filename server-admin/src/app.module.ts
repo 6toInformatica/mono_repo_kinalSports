@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
+import { CacheModule } from './common/cache/cache.module.js';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
 import { SecurityModule } from './common/security/security.module.js';
 import { type Env, validateEnv } from './config/env.validation.js';
@@ -23,6 +24,7 @@ import { TournamentsModule } from './tournaments/tournaments.module.js';
         maxPoolSize: 10,
       }),
     }),
+    CacheModule,
     SecurityModule,
     IntegrationsModule,
     FieldsModule,

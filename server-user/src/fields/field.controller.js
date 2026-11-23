@@ -20,6 +20,43 @@ export const getFields = async (req, res) => {
   }
 };
 
+/**
+ * Método HTTP QUERY: consulta segura e idempotente de canchas con filtros en el body JSON
+ * ({ page, limit, isActive, fieldType, capacity, maxPricePerHour, search }).
+ */
+export const queryFields = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      isActive = true,
+      fieldType,
+      capacity,
+      maxPricePerHour,
+      search,
+    } = req.body ?? {};
+    const { fields, pagination } = await listFields({
+      page,
+      limit,
+      isActive,
+      fieldType,
+      capacity,
+      maxPricePerHour,
+      search,
+    });
+    return res.status(200).json({ success: true, data: fields, pagination });
+  } catch (error) {
+    return sendError(res, error, {
+      log: 'Error en queryFields controller:',
+      fallbackBody: (e) => ({
+        success: false,
+        message: 'Error al obtener los campos deportivos',
+        error: e.message,
+      }),
+    });
+  }
+};
+
 export const getFieldById = async (req, res) => {
   try {
     const field = await getField(req.params.id);

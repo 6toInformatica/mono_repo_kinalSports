@@ -5,6 +5,7 @@ import {
   clearSession,
   COOKIE,
   parseSessionUser,
+  readAccessTokenRole,
   writeSession,
 } from "@/server/session";
 
@@ -33,7 +34,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 
-  if (request.cookies.get(COOKIE.access)?.value) return NextResponse.next();
+  const existingAccess = request.cookies.get(COOKIE.access)?.value;
+  if (existingAccess) {
+    const tokenRole = readAccessTokenRole(existingAccess);
+    if (tokenRole && tokenRole !== ADMIN_ROLE) {
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
+    return NextResponse.next();
+  }
 
   // Venció el access token: se renueva antes de mostrar la página
   const renewed = await refreshSession(refreshToken!);
@@ -41,6 +49,11 @@ export async function proxy(request: NextRequest) {
     const response = NextResponse.redirect(new URL("/", request.url));
     clearSession(response);
     return response;
+  }
+
+  const renewedRole = readAccessTokenRole(renewed.accessToken);
+  if (renewedRole && renewedRole !== ADMIN_ROLE) {
+    return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 
   // Las páginas de esta misma petición ya ven el token nuevo

@@ -1,2 +1,6 @@
 allowBuilds:
   '@scarf/scarf': false
+  '@swc/core': false
+  esbuild: true
+overrides:
+  minimatch: ^11.0.1

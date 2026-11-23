@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { AppConfig } from '../../config/env.ts';
 import type { TokenService } from '../../modules/auth/application/ports.ts';
 import type { UserRepository } from '../../modules/users/application/ports.ts';
+import { AUTH_COOKIE, readCookie } from '../cookies.ts';
 
 interface SessionDeps {
   tokens: TokenService;
@@ -9,13 +10,16 @@ interface SessionDeps {
 }
 
 /**
- * Valida el access token (cabecera Authorization: Bearer o x-token) y carga el usuario.
- * Solo por cabeceras: en el body o la query string el token puede quedar en logs.
+ * Valida el access token (cabecera Authorization: Bearer, x-token o cookie httpOnly kinal_access)
+ * y carga el usuario.
  */
 export const authenticate =
   (config: AppConfig, { tokens, users }: SessionDeps) =>
   async (request: FastifyRequest, reply: FastifyReply) => {
-    const header = request.headers['x-token'] || request.headers.authorization;
+    const header =
+      request.headers['x-token'] ||
+      request.headers.authorization ||
+      readCookie(request, AUTH_COOKIE.access);
 
     if (!header) {
       return reply.code(401).send({

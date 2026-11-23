@@ -1,5 +1,11 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { Container } from '../../../../container.ts';
+import {
+  AUTH_COOKIE,
+  clearAuthCookies,
+  readCookie,
+  setAuthCookies,
+} from '../../../../http/cookies.ts';
 import { isAppError } from '../../../../shared/domain/errors.ts';
 import type { RegisterInput } from '../../application/use-cases/register-user.ts';
 import type { ResendOutcome } from '../../application/use-cases/resend-verification.ts';
@@ -59,6 +65,7 @@ export const createAuthHandlers = ({ auth }: Container) => ({
         String(emailOrUsername),
         String(password)
       );
+      setAuthCookies(reply, result);
       return reply.code(200).send(result);
     } catch (error) {
       return sendFlowError(request, reply, error, 401, 'Error en el login');
@@ -112,15 +119,19 @@ export const createAuthHandlers = ({ auth }: Container) => ({
   },
 
   async refresh(request: FastifyRequest, reply: FastifyReply) {
-    const { refreshToken } = bodyOf(request);
+    const refreshToken =
+      (request.body as Body | undefined)?.refreshToken ??
+      readCookie(request, AUTH_COOKIE.refresh);
     if (!refreshToken) {
       return reply.code(400).send({ message: 'Refresh token requerido' });
     }
     try {
       const session = await auth.refreshSession(String(refreshToken));
+      setAuthCookies(reply, session);
       return reply.code(200).send(session);
     } catch (error) {
       if (isAppError(error)) {
+        clearAuthCookies(reply);
         return reply.code(error.status).send({ message: error.message });
       }
       throw error;
@@ -128,11 +139,13 @@ export const createAuthHandlers = ({ auth }: Container) => ({
   },
 
   async logout(request: FastifyRequest, reply: FastifyReply) {
-    const { refreshToken } = bodyOf(request);
-    if (!refreshToken) {
-      return reply.code(400).send({ message: 'Refresh token requerido' });
+    const refreshToken =
+      (request.body as Body | undefined)?.refreshToken ??
+      readCookie(request, AUTH_COOKIE.refresh);
+    clearAuthCookies(reply);
+    if (refreshToken) {
+      await auth.logout(String(refreshToken));
     }
-    await auth.logout(String(refreshToken));
     return reply.code(200).send({ message: 'Sesión cerrada' });
   },
 });

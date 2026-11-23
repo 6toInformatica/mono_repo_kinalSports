@@ -1,179 +1,149 @@
-# Client Admin - Panel Administrativo Web
+# Client Admin — Panel Administrativo Web (React + Vite)
 
-Frontend web para administradores de la plataforma KinalSports construido con React 19 y Vite.
+Aplicacion web SPA (Single Page Application) para administradores de KinalSports construida con **React 19**, **Vite 8**, **TailwindCSS 4** y **Zustand 5**.
 
-## Descripcion
+---
 
-Aplicacion web SPA (Single Page Application) que permite a administradores gestionar campos deportivos, confirmar/rechazar reservas, administrar usuarios, torneos y equipos.
+## 1. Rol en la Arquitectura
 
-Consume:
+- Permite a los administradores (`ADMIN_ROLE`) gestionar **canchas deportivas**, **confirmar o cancelar reservaciones**, **administrar equipos**, **torneos** y **roles de usuarios**.
+- En desarrollo (`docker-compose.yml`) consume `auth-service` (.NET 10) y `server-admin` (NestJS).
+- En produccion (`docker-compose.prod.yml`) consume `auth-node` (Node.js) y `server-admin` (NestJS) y se sirve como bundle estatico optimizado mediante **Nginx sin privilegios**.
 
-- **auth-service** (.NET) para autenticacion, registro y gestion de usuarios/roles
-- **server-admin** para operaciones de negocio (campos, reservas, equipos, torneos)
+---
 
-## Tech Stack
+## 2. Stack Tecnologico
 
-- **Framework**: React 19.2
-- **Build Tool**: Vite 7.x
-- **Routing**: React Router DOM 7.x
-- **UI Components**: Material Tailwind React 2.x
-- **Styling**: TailwindCSS 4.x
-- **Icons**: Heroicons React 2.x
-- **HTTP Client**: Axios 1.x
-- **State Management**: Zustand 5.x
-- **Formularios**: React Hook Form 7.x
-- **Notificaciones**: React Hot Toast 2.x
+- **UI y Bundler:** React 19.3, Vite 8, TailwindCSS 4 (`@tailwindcss/vite`), Heroicons React 2
+- **Ruteo y Estado:** React Router DOM 7, Zustand 5 (persistencia selectiva con `partialize`)
+- **Formularios y Alertas:** React Hook Form 7, React Hot Toast 2
+- **Cliente HTTP y Pruebas:** Axios 1 (`withCredentials: true`), Vitest 5 + Testing Library
 
-## Instalacion
+---
 
-```bash
-pnpm install
-cp .env.example .env
-pnpm dev
-```
-
-> **pnpm 11:** si `pnpm install` falla con `ERR_PNPM_IGNORED_BUILDS` (esbuild), asegurate de que `pnpm-workspace.yaml` tenga `allowBuilds: esbuild: true`, o ejecuta `pnpm approve-builds esbuild`.
-
-## Variables de Entorno
-
-El proyecto usa variables con prefijo `VITE_`. Copia el archivo de ejemplo:
-
-```bash
-cp .env.example .env
-```
-
-| Variable                   | Requerida | Descripcion                      |
-| -------------------------- | --------- | -------------------------------- |
-| `VITE_AUTH_URL`            | Si        | URL base de auth-service (.NET)  |
-| `VITE_ADMIN_URL`           | Si        | URL base de server-admin         |
-| `VITE_CLOUDINARY_BASE_URL` | No        | Base de Cloudinary para imagenes |
-
-```env
-VITE_AUTH_URL=http://localhost:5156/api/v1
-VITE_ADMIN_URL=http://localhost:3009/kinalSportsAdmin/v1
-VITE_CLOUDINARY_BASE_URL=https://res.cloudinary.com/<tu-cloud-name>/image/upload/
-```
-
-El archivo `.env` no debe versionarse.
-
-## Estructura
-
-Organizacion por features:
+## 3. Estructura del Proyecto
 
 ```
 client-admin/
 ├── public/
 ├── src/
 │   ├── app/
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   ├── layouts/
-│   │   └── router/               # AppRoutes.jsx (router activo)
+│   │   ├── main.jsx                    # Punto de entrada React
+│   │   ├── App.jsx                     # Proveedores globales y Toaster
+│   │   ├── layouts/                    # Layout del dashboard con navegacion lateral
+│   │   └── router/
+│   │       └── AppRoutes.jsx           # Definicion de rutas publicas y protegidas (ADMIN_ROLE)
 │   ├── features/
-│   │   ├── auth/
-│   │   ├── fields/
-│   │   ├── reservations/
-│   │   ├── teams/
-│   │   ├── tournaments/
-│   │   └── users/
-│   ├── shared/
-│   │   ├── api/
-│   │   ├── components/
-│   │   └── utils/
-│   └── styles/
+│   │   ├── auth/                       # Login, registro, verificacion, reset, RoleGuard y authStore
+│   │   ├── fields/                     # Listado, creacion, edicion y activacion de canchas
+│   │   ├── reservations/               # Gestion y filtro de reservaciones
+│   │   ├── teams/                      # Gestion de equipos, capitanes y miembros
+│   │   ├── tournaments/                # Gestion de torneos deportivos
+│   │   └── users/                      # Listado de usuarios y cambio de rol (ADMIN_ROLE / USER_ROLE)
+│   └── shared/
+│       ├── api/
+│       │   ├── api.js                  # Instancias axiosAuth y axiosAdmin (withCredentials: true)
+│       │   ├── auth.js                 # Llamadas a /auth/* y /users/*
+│       │   ├── admin.js                # Llamadas a /fields, /reservations, /teams y /tournaments
+│       │   └── sessionRefresh.js       # Renovacion automatica de sesion con cookie httpOnly
+│       ├── components/                 # Componentes UI reutilizables
+│       └── utils/                      # Formateadores de fechas e imagenes de Cloudinary
 ├── .env.example
 ├── vite.config.js
 └── package.json
 ```
 
-Nota de mantenimiento: existen archivos de router duplicados no usados (`AppRouter.jsx`, `routes/AppRoutes.jsx`). El router activo es `src/app/router/AppRoutes.jsx`.
+---
 
-## Scripts
+## 4. Instalacion y Puesta en Marcha
 
-```bash
-pnpm dev       # Desarrollo con HMR (http://localhost:5173)
-pnpm build     # Build para produccion -> dist/
-pnpm preview   # Vista previa del build
-pnpm lint      # ESLint
-```
-
-## Paginas y Rutas
-
-Router activo: `src/app/router/AppRoutes.jsx`
-
-### Rutas publicas
-
-| Ruta              | Componente        | Descripcion            |
-| ----------------- | ----------------- | ---------------------- |
-| `/`               | AuthPage          | Login y registro       |
-| `/verify-email`   | VerifyEmailPage   | Verificacion de correo |
-| `/reset-password` | ResetPasswordPage | Restablecer contrasena |
-| `/unauthorized`   | UnauthorizedPage  | Acceso denegado        |
-
-### Rutas protegidas (`ADMIN_ROLE`)
-
-| Ruta                      | Componente   | Descripcion                  |
-| ------------------------- | ------------ | ---------------------------- |
-| `/dashboard/fields`       | Fields       | Gestion de campos deportivos |
-| `/dashboard/reservations` | Reservations | Reservas                     |
-| `/dashboard/teams`        | Teams        | Equipos                      |
-| `/dashboard/tournaments`  | Tournaments  | Torneos                      |
-| `/dashboard/users`        | Users        | Gestion de usuarios          |
-
-Protegidas por `ProtectedRoute` y `RoleGuard` (solo `ADMIN_ROLE`).
-
-## Autenticacion
-
-1. Login en `LoginForm`
-2. POST a `{VITE_AUTH_URL}/auth/login` (auth-service)
-3. JWT persistido en Zustand (`authStore`, middleware `persist`)
-4. Peticiones a server-admin con `Authorization: Bearer <token>`
-
-```jsx
-<ProtectedRoute>
-  <RoleGuard allowedRoles={['ADMIN_ROLE']}>
-    <DashboardPage />
-  </RoleGuard>
-</ProtectedRoute>
-```
-
-## Servicios API
-
-En `src/shared/api/`:
-
-- **`api.js`** — instancias Axios (`authApi`, `adminApi`) con interceptores
-- **`auth.js`** — login, registro, verificacion, usuarios (auth-service)
-- **`admin.js`** — campos, reservas, equipos, torneos (server-admin)
-
-## Dependencias con Otros Servicios
-
-| Servicio     | Rol                                        |
-| ------------ | ------------------------------------------ |
-| auth-service | Autenticacion y gestion de usuarios/roles  |
-| server-admin | CRUD de campos, reservas, equipos, torneos |
-
-Ambos deben estar corriendo para funcionalidad completa.
-
-## Build y Deployment
+### Opcion A: Desde la raiz del monorepo
 
 ```bash
-pnpm build
-pnpm preview
+pnpm install
+cp client-admin/.env.example client-admin/.env
+pnpm --filter @kinal/client-admin dev
 ```
 
-Configura en el hosting las mismas variables `VITE_*` que en `.env` (Vite las embebe en build time).
+### Opcion B: Como paquete individual
 
-## Notas de Desarrollo
+```bash
+cd client-admin
+pnpm install
+cp .env.example .env
+pnpm dev
+```
 
-- Puerto dev: **5173** (default de Vite; Docker usa el mismo)
-- HMR y Fast Refresh activados
-- Variables deben prefijarse con `VITE_`
-- Assets en `public/` se sirven desde la raiz
+---
 
-## Autor
+## 5. Variables de Entorno (`.env`)
 
-**Braulio Echeverria**
+Copia `.env.example` a `.env`:
 
-## Licencia
+```env
+# En desarrollo con .NET (5156) o con auth-node (3007)
+VITE_AUTH_URL=http://localhost:5156/api/v1
+VITE_ADMIN_URL=http://localhost:3009/kinalSportsAdmin/v1
+VITE_CLOUDINARY_BASE_URL=https://res.cloudinary.com/b3xvlule/image/upload/
+```
 
-MIT
+| Variable                   | Requerida | Descripcion                                                            |
+| :------------------------- | :-------- | :--------------------------------------------------------------------- |
+| `VITE_AUTH_URL`            | Si        | URL base del servicio de autenticacion (`auth-service` o `auth-node`). |
+| `VITE_ADMIN_URL`           | Si        | URL base de `server-admin`.                                            |
+| `VITE_CLOUDINARY_BASE_URL` | No        | Prefijo de Cloudinary para resolver `public_id` de imagenes.           |
+
+---
+
+## 6. Scripts Disponibles
+
+```bash
+pnpm --filter @kinal/client-admin dev       # Servidor de desarrollo con HMR (http://localhost:5173)
+pnpm --filter @kinal/client-admin build     # Compila el bundle de produccion en dist/
+pnpm --filter @kinal/client-admin preview   # Sirve localmente el bundle compilado
+pnpm --filter @kinal/client-admin test      # Ejecuta las 15 pruebas unitarias con Vitest
+pnpm --filter @kinal/client-admin lint      # Ejecuta ESLint
+```
+
+---
+
+## 7. Seguridad de Sesion: Cookies `httpOnly` vs `localStorage`
+
+> **Nota pedagogica para clase:** Anteriormente era habitual en SPAs guardar el `accessToken` JWT y el `refreshToken` dentro de `localStorage`. Sin embargo, cualquier vulnerabilidad XSS (Cross-Site Scripting) permitiria a un script malicioso leer `window.localStorage` y robar la sesion del administrador. Por ello, **la practica correcta de seguridad es almacenar los tokens en cookies `httpOnly`**.
+
+1. **Emision (`POST /auth/login`):** `axiosAuth` envia las credenciales con `withCredentials: true`. El backend (`auth-service` o `auth-node`) adjunta las cookies `httpOnly` `kinal_access` (15 min) y `kinal_refresh` (30 dias) con `SameSite=Lax`.
+2. **Almacenamiento en el navegador (`authStore.js`):** El middleware `persist` de Zustand usa `partialize` para guardar en `localStorage` **unicamente** metadatos no sensibles de la interfaz (`{ user, isAuthenticated, expiresAt }`), excluyendo por completo `token` y `refreshToken`.
+3. **Renovacion transparente (`sessionRefresh.js`):** Cuando `kinal_access` vence y una peticion responde `401` o `403 TOKEN_EXPIRED`, el interceptor llama una sola vez a `POST /auth/refresh` (enviando automaticamente la cookie `kinal_refresh`) y reintenta las peticiones en vuelo.
+
+---
+
+## 8. Rutas de la Aplicacion
+
+### Rutas Publicas
+
+| Ruta              | Vista               | Descripcion                                               |
+| :---------------- | :------------------ | :-------------------------------------------------------- |
+| `/`               | `AuthPage`          | Inicio de sesion, registro y recuperacion de contrasena   |
+| `/verify-email`   | `VerifyEmailPage`   | Confirmacion de cuenta desde el enlace enviado por correo |
+| `/reset-password` | `ResetPasswordPage` | Cambio de contrasena con token de recuperacion            |
+| `/unauthorized`   | `UnauthorizedPage`  | Aviso de acceso restringido a `ADMIN_ROLE`                |
+
+### Rutas Protegidas (`ProtectedRoute` + `RoleGuard` para `ADMIN_ROLE`)
+
+| Ruta                      | Vista          | Descripcion                                             |
+| :------------------------ | :------------- | :------------------------------------------------------ |
+| `/dashboard/fields`       | `Fields`       | Creacion, edicion y activacion/desactivacion de canchas |
+| `/dashboard/reservations` | `Reservations` | Confirmacion, cancelacion y filtrado de reservaciones   |
+| `/dashboard/teams`        | `Teams`        | Administracion de equipos, capitanes y miembros         |
+| `/dashboard/tournaments`  | `Tournaments`  | Creacion, edicion y eliminacion de torneos              |
+| `/dashboard/users`        | `Users`        | Listado de usuarios y asignacion de roles               |
+
+---
+
+## 9. Integracion con Otros Servicios
+
+| Servicio                     | Relacion                                                                           |
+| :--------------------------- | :--------------------------------------------------------------------------------- |
+| `auth-service` / `auth-node` | Inicio/cierre de sesion con cookies `httpOnly` y administracion de usuarios/roles. |
+| `server-admin`               | Operaciones de negocio sobre canchas, reservaciones, equipos y torneos.            |
+| `client-admin-next`          | Implementacion alternativa en Next.js 16 (patron BFF) con la misma funcionalidad.  |

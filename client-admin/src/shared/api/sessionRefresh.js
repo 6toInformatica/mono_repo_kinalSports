@@ -53,21 +53,24 @@ export async function performTokenRefresh(axiosAuth) {
   }
 
   isRefreshing = true;
-  const refreshToken = useAuthStore.getState().refreshToken;
+  const { refreshToken, isAuthenticated } = useAuthStore.getState();
 
-  if (!refreshToken) {
+  // En el navegador la sesión usa la cookie httpOnly kinal_refresh; si no hay sesión
+  // activa ni refreshToken en memoria, se cierra la sesión.
+  if (!refreshToken && !isAuthenticated) {
     isRefreshing = false;
     handleSessionExpired();
     throw new Error('No refresh token');
   }
 
   try {
-    const response = await axiosAuth.post('/auth/refresh', { refreshToken });
+    const body = refreshToken ? { refreshToken } : {};
+    const response = await axiosAuth.post('/auth/refresh', body);
     const { accessToken, refreshToken: newRefreshToken, expiresIn, userDetails } = response.data;
 
     useAuthStore.setState({
-      token: accessToken,
-      refreshToken: newRefreshToken,
+      token: refreshToken ? accessToken : null,
+      refreshToken: refreshToken ? newRefreshToken : null,
       expiresAt: resolveExpiresAt(expiresIn, response.data.expiresAt),
       user: userDetails || useAuthStore.getState().user,
       isAuthenticated: true,
@@ -85,9 +88,9 @@ export async function performTokenRefresh(axiosAuth) {
 }
 
 export async function tryRefreshSession(axiosAuth) {
-  const { isAuthenticated, refreshToken, expiresAt } = useAuthStore.getState();
+  const { isAuthenticated, expiresAt } = useAuthStore.getState();
 
-  if (!isAuthenticated || !refreshToken) return;
+  if (!isAuthenticated) return;
 
   if (expiresAt && expiresAt > Date.now() && Date.now() < expiresAt - 60_000) {
     return;

@@ -24,21 +24,74 @@ namespace AuthService.Api.Controllers
             _userManagementService = userManagementService;
             _refreshTokenService = refreshTokenService;
         }
+        private const string AccessCookieName = "kinal_access";
+        private const string RefreshCookieName = "kinal_refresh";
+
+        private void SetAuthCookies(string accessToken, string refreshToken, int expiresInSeconds = 900)
+        {
+            var isProd = HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsProduction();
+            Response.Cookies.Append(AccessCookieName, accessToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = isProd,
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
+                MaxAge = TimeSpan.FromSeconds(expiresInSeconds),
+            });
+            Response.Cookies.Append(RefreshCookieName, refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = isProd,
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
+                MaxAge = TimeSpan.FromDays(30),
+            });
+        }
+
+        private void ClearAuthCookies()
+        {
+            var isProd = HttpContext.RequestServices.GetRequiredService<IWebHostEnvironment>().IsProduction();
+            var options = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = isProd,
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
+            };
+            Response.Cookies.Delete(AccessCookieName, options);
+            Response.Cookies.Delete(RefreshCookieName, options);
+        }
+
         [HttpPost("refresh")]
         [AllowAnonymous]
-        public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto dto)
+        public async Task<IActionResult> Refresh([FromBody] RefreshRequestDto? dto)
         {
-            var result = await _refreshTokenService.RotateAsync(dto.RefreshToken);
+            var refreshToken = !string.IsNullOrWhiteSpace(dto?.RefreshToken)
+                ? dto.RefreshToken
+                : Request.Cookies[RefreshCookieName];
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                return BadRequest(new { message = "Refresh token requerido" });
+            }
+            var result = await _refreshTokenService.RotateAsync(refreshToken);
+            SetAuthCookies(result.AccessToken, result.RefreshToken, result.ExpiresIn);
             return Ok(result);
         }
 
-        // El refresh token es la credencial (igual que en /refresh y en auth-node),
+        // El refresh token es la credencial (en body o en la cookie httpOnly kinal_refresh),
         // así se puede cerrar sesión aunque el access token ya haya expirado
         [HttpPost("logout")]
         [AllowAnonymous]
-        public async Task<IActionResult> Logout([FromBody] RefreshRequestDto dto)
+        public async Task<IActionResult> Logout([FromBody] RefreshRequestDto? dto)
         {
-            await _refreshTokenService.RevokeAsync(dto.RefreshToken);
+            var refreshToken = !string.IsNullOrWhiteSpace(dto?.RefreshToken)
+                ? dto.RefreshToken
+                : Request.Cookies[RefreshCookieName];
+            ClearAuthCookies();
+            if (!string.IsNullOrWhiteSpace(refreshToken))
+            {
+                await _refreshTokenService.RevokeAsync(refreshToken);
+            }
             return Ok(new { message = "Sesión cerrada" });
         }
 
@@ -73,8 +126,8 @@ namespace AuthService.Api.Controllers
             });
         }
 
-        // Solo servicios internos: expone email y teléfono
-        [HttpPost("profile/by-username")]
+        // Solo servicios internos: expone email y teléfono (soporta QUERY y POST)
+        [AcceptVerbs("QUERY", "POST", Route = "profile/by-username")]
         [InternalServiceToken]
         public async Task<ActionResult<object>> GetProfileByUsername([FromBody] GetProfileByUsernameDto request)
         {
@@ -105,8 +158,8 @@ namespace AuthService.Api.Controllers
             });
         }
 
-        // Solo servicios internos: expone email y teléfono
-        [HttpPost("profile/by-id")]
+        // Solo servicios internos: expone email y teléfono (soporta QUERY y POST)
+        [AcceptVerbs("QUERY", "POST", Route = "profile/by-id")]
         [InternalServiceToken]
         public async Task<ActionResult<object>> GetProfileById([FromBody] GetProfileByIdDto request)
         {
@@ -152,6 +205,7 @@ namespace AuthService.Api.Controllers
         public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto loginDto)
         {
             var result = await _authService.LoginAsync(loginDto);
+            SetAuthCookies(result.AccessToken, result.RefreshToken, result.ExpiresIn);
             return Ok(result);
         }
 
@@ -227,6 +281,7 @@ namespace AuthService.Api.Controllers
         }
 
         [HttpPost("profile/picture")]
+        [HttpPost("profile/picture/avatar")]
         [Authorize]
         [RequestSizeLimit(10 * 1024 * 1024)]
         [EnableRateLimiting("ApiPolicy")]
@@ -241,7 +296,8 @@ namespace AuthService.Api.Controllers
                 return Unauthorized(new { success = false, message = "Token inválido" });
             }
 
-            if (dto.ProfilePicture == null || dto.ProfilePicture.Size == 0)
+            var picture = dto.ProfilePicture ?? dto.Avatar;
+            if (picture == null || picture.Size == 0)
             {
                 return BadRequest(new
                 {
@@ -252,7 +308,7 @@ namespace AuthService.Api.Controllers
 
             var result = await _authService.UpdateProfilePictureAsync(
                 userIdClaim.Value,
-                dto.ProfilePicture);
+                picture);
 
             return Ok(new
             {

@@ -44,6 +44,23 @@ services:
     networks:
       - kinal-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: kinal_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - kinal-network
+
   # Aplica las migraciones de EF Core (dueño del esquema de autenticación) y termina.
   # auth-service y auth-node esperan a que finalice; después funcionan de forma independiente.
   auth-migrator:
@@ -95,6 +112,7 @@ services:
       # Admin inicial (solo se crea si la base no tiene usuarios). Valor por defecto solo para desarrollo
       Seed__AdminPassword: ${SEED_ADMIN_PASSWORD:-Admin1234!}
       InternalServiceToken: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       # Correo por Kinal Mail Hub (API REST). La API key va en .env.docker: KMH_PROJECT_API_KEY=...
       Email__Provider: ${MAIL_PROVIDER:-kmh}
       KinalMailHub__BaseUrl: ${KMH_API_BASE_URL:-https://mail.lab.kinal.edu.gt}
@@ -169,6 +187,8 @@ services:
       JWT_ISSUER: ${JWT_ISSUER:-AuthService}
       JWT_AUDIENCE: ${JWT_AUDIENCE:-AuthService}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-Admin1234!}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
       # Correo por Kinal Mail Hub (API REST). La API key va en .env.docker: KMH_PROJECT_API_KEY=...
       MAIL_PROVIDER: ${MAIL_PROVIDER:-kmh}
@@ -239,6 +259,7 @@ services:
       ADMIN_ALLOWED_ORIGINS: ${FRONTEND_URL:-http://localhost:5173}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-service:5156/api/v1}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       CHOKIDAR_USEPOLLING: "true"
     env_file:
       - path: .env.docker
@@ -289,6 +310,7 @@ services:
       ADMIN_SERVICE_URL: http://server-admin:3009/kinalSportsAdmin/v1
       AUTH_NODE_URL: ${AUTH_NODE_URL:-http://auth-node:3007/api/v1}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:-KinalSportsInternalSecretToken2026!}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-b3xvlule}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
@@ -321,6 +343,7 @@ services:
     build:
       context: .
       dockerfile: dockerfiles/Dockerfile.client-admin
+      target: dev
     container_name: kinal_client_admin
     restart: unless-stopped
     depends_on:
@@ -413,3 +436,4 @@ networks:
 volumes:
   postgres18_data:
   mongo_data:
+  redis_data:

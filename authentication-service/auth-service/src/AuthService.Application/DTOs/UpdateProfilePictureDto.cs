@@ -5,4 +5,5 @@ namespace AuthService.Application.DTOs;
 public class UpdateProfilePictureDto
 {
     public IFileData? ProfilePicture { get; set; }
+    public IFileData? Avatar { get; set; }
 }

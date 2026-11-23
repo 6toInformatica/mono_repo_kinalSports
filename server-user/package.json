@@ -41,13 +41,5 @@
     "@vitest/coverage-v8": "^5.1.0",
     "nodemon": "^3.1.14",
     "vitest": "^5.1.0"
-  },
-  "pnpm": {
-    "ignoredBuiltDependencies": [
-      "@scarf/scarf"
-    ],
-    "overrides": {
-      "minimatch": "^11.0.1"
-    }
   }
 }

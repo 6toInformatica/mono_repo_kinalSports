@@ -45,9 +45,17 @@ export const rolesRoutes =
       return reply.code(200).send(updated);
     });
 
-    app.get<UserIdRoute>('/:userId/roles', async (request, reply) =>
-      reply.code(200).send(await roles.getUserRoles(request.params.userId))
-    );
+    app.get<UserIdRoute>('/:userId/roles', async (request, reply) => {
+      if (
+        request.userId !== request.params.userId &&
+        !isAdmin(request.user?.roles ?? [])
+      ) {
+        return forbidden(reply);
+      }
+      return reply
+        .code(200)
+        .send(await roles.getUserRoles(request.params.userId));
+    });
 
     app.get<RoleNameRoute>('/by-role/:roleName', async (request, reply) => {
       if (!isAdmin(request.user?.roles ?? [])) return forbidden(reply);

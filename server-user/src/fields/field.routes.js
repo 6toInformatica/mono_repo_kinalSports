@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { getFields, getFieldById } from './field.controller.js';
+import { getFields, getFieldById, queryFields } from './field.controller.js';
 
 const router = Router();
 
-// Rutas GET - Públicas para usuarios
+// Rutas GET y QUERY - Públicas para usuarios (QUERY permite enviar filtros en el body)
 router.get('/', getFields);
+router.query('/', queryFields);
 router.get('/:id', getFieldById);
 
 export default router;

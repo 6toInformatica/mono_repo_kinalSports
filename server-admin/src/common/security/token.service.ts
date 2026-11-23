@@ -30,13 +30,30 @@ export class TokenService {
     });
   }
 
-  /** Token de la cabecera x-token o Authorization: Bearer */
+  /** Token de la cabecera x-token, Authorization: Bearer o cookie httpOnly kinal_access */
   extractToken(req: Request) {
     return (
       req.header('x-token') ||
       req.header('Authorization')?.replace('Bearer ', '') ||
+      this.#readCookie(req.header('cookie'), 'kinal_access') ||
       undefined
     );
+  }
+
+  #readCookie(header: string | undefined, name: string) {
+    if (!header) return undefined;
+    for (const part of header.split(';')) {
+      const [rawKey, ...rest] = part.trim().split('=');
+      if (rawKey === name) {
+        const value = rest.join('=');
+        try {
+          return decodeURIComponent(value);
+        } catch {
+          return value;
+        }
+      }
+    }
+    return undefined;
   }
 
   /** Lanza los errores de jsonwebtoken (TokenExpiredError, JsonWebTokenError) */

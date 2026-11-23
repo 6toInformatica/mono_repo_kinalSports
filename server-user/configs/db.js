@@ -43,3 +43,5 @@ export const closeDatabase = async () => {
   await mongoose.connection.close();
   console.log('MongoDB | Database connection closed successfully');
 };
+
+export const isDatabaseConnected = () => mongoose.connection.readyState === 1;

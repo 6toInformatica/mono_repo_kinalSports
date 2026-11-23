@@ -62,6 +62,14 @@ export const sendError = (
     });
   }
 
+  if (error?.name === 'CastError') {
+    return res.status(400).json({
+      success: false,
+      message: 'ID inválido',
+      error: 'INVALID_ID',
+    });
+  }
+
   if (log) console.error(log, error);
   return res
     .status(fallbackStatus)

@@ -27,6 +27,7 @@ export const SECURE_TOKEN = 'a'.repeat(43);
 export const fakeDeps = () => {
   const deps = {
     users: {
+      findAll: vi.fn().mockResolvedValue([]),
       findById: vi.fn(),
       findByEmailOrUsername: vi.fn(),
       findByEmail: vi.fn(),

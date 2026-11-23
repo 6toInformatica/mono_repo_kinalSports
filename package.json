@@ -11,11 +11,13 @@
     "server-admin",
     "server-user",
     "client-admin",
-    "client-admin-next"
+    "client-admin-next",
+    "client-user",
+    "tests/contract"
   ],
   "scripts": {
     "test": "pnpm -r --filter=!@kinal/contract-tests --if-present test",
-    "prepare": "husky install",
+    "prepare": "husky",
     "lint": "pnpm --filter=server-admin --filter=server-user run lint && pnpm --filter=auth-node run lint && pnpm --filter @kinal/client-admin run lint && pnpm --filter @kinal/client-admin-next run lint",
     "format": "pnpm --filter=server-admin --filter=server-user run format || true",
     "commit": "cz",
@@ -24,6 +26,9 @@
     "docker:up:detached": "docker compose --env-file .env.docker up --build -V -d",
     "docker:down": "docker compose --env-file .env.docker down",
     "docker:logs": "docker compose --env-file .env.docker logs -f",
+    "docker:prod:up": "docker compose -f docker-compose.prod.yml --env-file .env.docker up --build -d",
+    "docker:prod:down": "docker compose -f docker-compose.prod.yml --env-file .env.docker down",
+    "docker:prod:logs": "docker compose -f docker-compose.prod.yml --env-file .env.docker logs -f",
     "db:seed": "node scripts/seed/seed.mjs",
     "db:reset": "node scripts/seed/seed.mjs --reset",
     "contract:up": "docker compose -f docker-compose.yml -f tests/contract/compose.contract.yml --env-file .env.docker up --build -V -d",
@@ -53,9 +58,6 @@
     "husky": "^9.1.7",
     "lint-staged": "^15.5.2",
     "prettier": "^3.9.10"
-  },
-  "dependencies": {
-    "express-async-handler": "^1.2.0"
   },
   "packageManager": "pnpm@10.29.2",
   "engines": {

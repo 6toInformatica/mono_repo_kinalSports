@@ -5,6 +5,7 @@ import axios from 'axios';
 /** Cliente de server-admin (fuente de verdad de los torneos), con el token interno */
 const adminClient = axios.create({
   baseURL: process.env.ADMIN_SERVICE_URL,
+  timeout: 5_000,
   headers: { 'Content-Type': 'application/json' },
 });
 

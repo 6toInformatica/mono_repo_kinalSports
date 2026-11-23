@@ -79,12 +79,12 @@ exports[`fields (público) > GET /fields/:id 1`] = `
 exports[`fields (público) > GET /fields/:id con id inválido 1`] = `
 {
   "body": {
-    "error": "Cast to ObjectId failed for value "abc" (type string) at path "_id" for model "Field"",
-    "message": "Error al obtener el detalle del campo deportivo",
+    "error": "INVALID_ID",
+    "message": "ID inválido",
     "success": false,
   },
   "json": true,
-  "status": 500,
+  "status": 400,
 }
 `;
 

@@ -1,3 +1,4 @@
 namespace AuthService.Application.DTOs;
 
-public record RefreshRequestDto(string RefreshToken);
+public record RefreshRequestDto(string? RefreshToken = null);
+

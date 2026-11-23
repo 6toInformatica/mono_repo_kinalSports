@@ -3,7 +3,9 @@ import type { AppConfig } from '../../../../config/env.ts';
 import type { Container } from '../../../../container.ts';
 import { authenticate } from '../../../../http/hooks/authenticate.ts';
 import { requireInternalToken } from '../../../../http/hooks/internal-token.ts';
+import { withAuthRateLimit } from '../../../../http/plugins/rate-limit.ts';
 import { singleFileUpload } from '../../../../http/upload.ts';
+import { isAdmin } from '../../../roles/domain/roles.ts';
 
 type Body = Record<string, unknown> | undefined;
 
@@ -13,7 +15,7 @@ const profileResponse = (data: unknown) => ({
   data,
 });
 
-/** Rutas de perfil (bajo /auth): el propio, la foto y las consultas internas */
+/** Rutas de perfil (bajo /auth): el propio, la foto, listado admin y consultas internas */
 export const profileRoutes =
   (config: AppConfig, container: Container): FastifyPluginAsync =>
   async (app) => {
@@ -25,6 +27,23 @@ export const profileRoutes =
       reply
         .code(200)
         .send(profileResponse(await users.getProfile(request.userId!)))
+    );
+
+    await app.register(
+      withAuthRateLimit(config, async (limited) => {
+        limited.get(
+          '/users',
+          { preHandler: requireUser },
+          async (request, reply) => {
+            if (!isAdmin(request.user?.roles ?? [])) {
+              return reply
+                .code(403)
+                .send({ success: false, message: 'Forbidden' });
+            }
+            return reply.code(200).send(await users.listUsers());
+          }
+        );
+      })
     );
 
     const updatePicture = async (
@@ -59,11 +78,13 @@ export const profileRoutes =
       updatePicture
     );
 
-    // Solo para servicios internos (exponen email y teléfono)
-    app.post(
-      '/profile/by-id',
-      { preHandler: internalOnly },
-      async (request, reply) => {
+    // Solo para servicios internos (exponen email y teléfono).
+    // Acepta QUERY (método HTTP seguro e idempotente con body) y POST (retrocompatibilidad).
+    app.route({
+      method: ['QUERY', 'POST'],
+      url: '/profile/by-id',
+      preHandler: internalOnly,
+      handler: async (request, reply) => {
         const userId = (request.body as Body)?.userId;
         if (!userId) {
           return reply
@@ -73,13 +94,14 @@ export const profileRoutes =
         return reply
           .code(200)
           .send(profileResponse(await users.getProfile(String(userId))));
-      }
-    );
+      },
+    });
 
-    app.post(
-      '/profile/by-username',
-      { preHandler: internalOnly },
-      async (request, reply) => {
+    app.route({
+      method: ['QUERY', 'POST'],
+      url: '/profile/by-username',
+      preHandler: internalOnly,
+      handler: async (request, reply) => {
         const username = (request.body as Body)?.username;
         if (typeof username !== 'string' || !username.trim()) {
           return reply
@@ -89,6 +111,6 @@ export const profileRoutes =
         return reply
           .code(200)
           .send(profileResponse(await users.getProfileByUsername(username)));
-      }
-    );
+      },
+    });
   };

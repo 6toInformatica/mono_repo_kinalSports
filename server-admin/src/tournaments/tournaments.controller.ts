@@ -91,7 +91,7 @@ export class TournamentsController {
   @Roles(ADMIN_ROLE)
   @UseInterceptors(ImageUpload('logo'), ValidateRequest(updateTournamentRules))
   async update(
-    @Param('id') id: string,
+    @Param('id', tournamentId()) id: string,
     @Body() body: RequestBody,
     @UploadedFile() logo?: UploadedImage
   ) {

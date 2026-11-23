@@ -8,9 +8,14 @@ packages:
   - client-user
   - tests/contract
 allowBuilds:
+  "@prisma/engines": true
   "@scarf/scarf": false
+  "@swc/core": false
   argon2: true
   esbuild: true
+  prisma: true
+  sharp: false
+  unrs-resolver: false
 overrides:
   # Parches de seguridad para dependencias transitivas (ver package.json de cada paquete)
   minimatch: ^11.0.1

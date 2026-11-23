@@ -1,5 +1,9 @@
 import type { AppConfig } from './config/env.ts';
-import { prisma } from './infrastructure/database/prisma.ts';
+import { createRedisCache } from './infrastructure/cache/redis-cache.ts';
+import {
+  checkDatabaseHealth,
+  prisma,
+} from './infrastructure/database/prisma.ts';
 import { createKmhEmailSender } from './infrastructure/email/kmh-email.sender.ts';
 import { createSmtpEmailSender } from './infrastructure/email/smtp-email.sender.ts';
 import { argon2PasswordHasher } from './infrastructure/security/argon2-password.hasher.ts';
@@ -27,6 +31,7 @@ import { PrismaRoleRepository } from './modules/roles/infrastructure/prisma-role
 import {
   makeGetUserProfile,
   makeGetUserProfileByUsername,
+  makeListUsers,
 } from './modules/users/application/use-cases/get-user-profile.ts';
 import { makeUpdateProfilePicture } from './modules/users/application/use-cases/update-profile-picture.ts';
 import { createUserPresenter } from './modules/users/application/user-response.ts';
@@ -43,6 +48,7 @@ export const createContainer = (config: AppConfig) => {
   const tokens = createJwtTokenService(config.jwt);
   const images = createCloudinaryImageStorage(config.cloudinary);
   const present = createUserPresenter(images);
+  const cache = createRedisCache(config.redisUrl);
 
   const deps: AuthDeps = {
     users,
@@ -56,6 +62,7 @@ export const createContainer = (config: AppConfig) => {
         : createKmhEmailSender(config.kmh, config.frontendUrl),
     images,
     present,
+    cache,
     uploadPath: config.upload.path,
     cloudinary: {
       baseUrl: config.cloudinary.baseUrl,
@@ -77,7 +84,14 @@ export const createContainer = (config: AppConfig) => {
     users: {
       getProfile: makeGetUserProfile(deps),
       getProfileByUsername: makeGetUserProfileByUsername(deps),
+      listUsers: makeListUsers(deps),
       updateProfilePicture: makeUpdateProfilePicture(deps),
+      /** Admin inicial si la tabla users está vacía (igual que DataSeeder en .NET) */
+      seedAdmin: async () => {
+        if (!config.seedAdminPassword?.trim()) return false;
+        const hash = await argon2PasswordHasher.hash(config.seedAdminPassword);
+        return users.ensureInitialAdmin(hash);
+      },
     },
     roles: {
       changeUserRole: makeChangeUserRole(deps),
@@ -88,6 +102,8 @@ export const createContainer = (config: AppConfig) => {
     },
     /** Para el hook de autenticación */
     session: { tokens, users },
+    /** Salud de la conexión a PostgreSQL */
+    checkHealth: checkDatabaseHealth,
   };
 };
 

@@ -4,9 +4,12 @@ import { useAuthStore } from '../../features/auth/store/authStore.js';
 import { isAuthError, performTokenRefresh, tryRefreshSession } from './sessionRefresh.js';
 
 // ================= AXIOS INSTANCES =================
+// withCredentials: true envía y recibe las cookies httpOnly (kinal_access y kinal_refresh)
+// para no persistir tokens JWT ni refresh tokens en localStorage (prevención de XSS).
 const axiosAuth = axios.create({
   baseURL: import.meta.env.VITE_AUTH_URL,
   timeout: 8000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -15,6 +18,7 @@ const axiosAuth = axios.create({
 const axiosAdmin = axios.create({
   baseURL: import.meta.env.VITE_ADMIN_URL,
   timeout: 60000,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -70,7 +74,9 @@ const handleRefreshToken = async function (error) {
 
   try {
     const accessToken = await performTokenRefresh(axiosAuth);
-    original.headers.Authorization = `Bearer ${accessToken}`;
+    if (accessToken) {
+      original.headers.Authorization = `Bearer ${accessToken}`;
+    }
     return retryClient(original);
   } catch (refreshError) {
     return Promise.reject(refreshError);

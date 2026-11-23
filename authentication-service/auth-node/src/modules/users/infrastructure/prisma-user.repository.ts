@@ -64,6 +64,60 @@ export class PrismaUserRepository implements UserRepository {
     this.#db = db;
   }
 
+  findAll() {
+    return guard(SEARCH_ERROR, async () => {
+      const records = await this.#db.user.findMany({
+        include: userWithRelations,
+      });
+      return records.map(toDomainUser);
+    });
+  }
+
+  /**
+   * Crea el usuario administrador inicial solo si aún no existe ningún usuario
+   * en la base de datos (comportamiento idéntico a DataSeeder de auth-service).
+   */
+  async ensureInitialAdmin(passwordHash: string) {
+    return guard('Error al crear administrador inicial', async () => {
+      const count = await this.#db.user.count();
+      if (count > 0) return false;
+
+      const adminRole = await this.#db.role.findUnique({
+        where: { name: 'ADMIN_ROLE' },
+      });
+      if (!adminRole) return false;
+
+      const now = new Date();
+      const userId = generateId();
+
+      await this.#db.user.create({
+        data: {
+          id: userId,
+          name: 'Admin',
+          surname: 'User',
+          username: 'admin',
+          email: 'admin@ksports.local',
+          password: passwordHash,
+          status: true,
+          createdAt: now,
+          userProfile: {
+            create: { id: generateId(), phone: '', profilePicture: '' },
+          },
+          userEmail: {
+            create: { id: generateId(), emailVerified: true },
+          },
+          userPasswordReset: {
+            create: { id: generateId() },
+          },
+          userRoles: {
+            create: { id: generateId(), roleId: adminRole.id, createdAt: now },
+          },
+        },
+      });
+      return true;
+    });
+  }
+
   findById(id: string) {
     return guard(SEARCH_ERROR, () => this.#findOne({ id }));
   }

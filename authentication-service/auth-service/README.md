@@ -1,177 +1,162 @@
-# Auth Service - Servicio de Autenticacion (.NET)
+# Auth Service — Servicio de Autenticacion (.NET 10)
 
-API RESTful de autenticacion construida con ASP.NET Core 8 y PostgreSQL (Clean Architecture).
+Microservicio de autenticacion y gestion de usuarios construido con **ASP.NET Core 10**, **Entity Framework Core 10**, **PostgreSQL 18** y **Redis 7** siguiendo **Clean Architecture**.
 
-## Rol en la arquitectura
+---
 
-Servicio de autenticacion del **stack admin**:
+## 1. Rol en la Arquitectura y en el Ciclo Educativo
 
-- Consumido por **client-admin** (login, registro, usuarios)
-- Validado por **server-admin** (JWT via `AUTH_SERVICE_URL`)
-- Paralelo a **auth-node** (Node), que atiende el stack movil/usuario
+- **En Desarrollo y Clase (`docker-compose.yml`):** Atiende el stack administrativo (`client-admin`, `client-admin-next` y `server-admin`) y sirve como referencia didactica de **Clean Architecture en .NET 10**.
+- **Paridad con `auth-node`:** Comparte la misma base de datos PostgreSQL 18, la misma caché en Redis (`kinal:user:profile:<id>`), los mismos parametros Argon2id y el mismo contrato HTTP/JWT que `auth-node`.
+- **Nota sobre Produccion (`docker-compose.prod.yml`):** Dado que el servidor de produccion no cuenta con runtime de Microsoft (.NET), en produccion `auth-node` asume el 100% del trafico sin requerir cambios en los clientes ni en la base de datos.
 
-Ambos servicios comparten PostgreSQL.
+---
 
-## Descripcion
+## 2. Stack Tecnologico
 
-Registro, login, refresh tokens, gestion de perfiles, verificacion de email, recuperacion de contrasenas y administracion de roles/usuarios.
+- **Framework y Runtime:** .NET 10 (`net10.0`), ASP.NET Core 10 Web API
+- **Persistencia y Caché:** Entity Framework Core 10 (`Npgsql`), PostgreSQL 18, Redis 7 (`RedisCacheService` con fallback a memoria)
+- **Seguridad:** JWT Bearer (`HS256`), Cookies `httpOnly` (`kinal_access`, `kinal_refresh`), Argon2id (`Konscious.Security.Cryptography`), Rate Limiting nativo, NetEscapades Security Headers
+- **Integraciones y Logging:** Kinal Mail Hub (REST) / MailKit (SMTP), Cloudinary, Serilog
+- **Pruebas:** xUnit v3 (`Microsoft.Testing.Platform`) y NSubstitute
 
-## Tech Stack
+---
 
-- **ASP.NET Core** 8.0, **Entity Framework Core**, **PostgreSQL**
-- **JWT Bearer**, **PBKDF2** (Identity), **Cloudinary**, **SMTP**
-- **FluentValidation**, Rate Limiting, CORS
-
-## Arquitectura
+## 3. Estructura del Proyecto (Clean Architecture)
 
 ```
-src/
-├── AuthService.Api/           # Controllers, Program.cs, Middlewares
-├── AuthService.Application/   # Services, DTOs, Validators
-├── AuthService.Domain/        # Entities, Enums
-└── AuthService.Persistence/   # DbContext, Migrations, Repositories
+authentication-service/auth-service/
+├── AuthService.sln
+├── global.json                             # SDK .NET 10.0.x (rollForward: latestFeature)
+├── src/
+│   ├── AuthService.Domain/                 # Entidades (User, Role, RefreshToken...), constantes e interfaces de repositorio
+│   ├── AuthService.Application/            # Casos de uso (AuthService, UserManagementService, RefreshTokenService), DTOs y validadores
+│   ├── AuthService.Infrastructure/         # Adaptadores externos: JWT, Argon2id, RedisCacheService, KMH/SMTP y Cloudinary
+│   ├── AuthService.Persistence/            # ApplicationDbContext, Migraciones EF Core, Repositorios y DataSeeder
+│   └── AuthService.Api/                    # Controllers (Auth, Users, Health), Middlewares, Filters y Program.cs
+└── tests/
+    ├── AuthService.Application.Tests/      # Pruebas unitarias de casos de uso y validadores
+    └── AuthService.Infrastructure.Tests/   # Pruebas unitarias de JWT, Argon2id, RedisCacheService y KMH
 ```
 
-Controllers activos:
+---
 
-- `AuthController` — autenticacion y perfil
-- `UsersController` — roles de usuario
-- `HealthController` — health check
-- `UserController` — stub vacio (no usar)
+## 4. Instalacion y Puesta en Marcha
 
-## Instalacion
+### Opcion A: Desde la raiz del monorepo
+
+```bash
+cp authentication-service/auth-service/src/AuthService.Api/appsettings.Development.example.json \
+   authentication-service/auth-service/src/AuthService.Api/appsettings.Development.json
+pnpm --filter auth-service dev
+```
+
+### Opcion B: Directamente con `.NET CLI`
 
 ```bash
 cd authentication-service/auth-service
 dotnet restore
-pnpm --filter auth-service dev
+dotnet run --project src/AuthService.Api
 ```
 
-## Configuracion
+> Al iniciar, `Program.cs` ejecuta automaticamente las migraciones pendientes de EF Core y siembra los roles (`USER_ROLE`, `ADMIN_ROLE`) y el administrador inicial (`admin@ksports.local`).
 
-Editar `src/AuthService.Api/appsettings.Development.json` o variables de entorno en Docker:
+---
+
+## 5. Configuracion (`appsettings.Development.json` / Variables de Entorno)
+
+Edita `src/AuthService.Api/appsettings.Development.json` (no versionado):
 
 ```json
 {
     "ConnectionStrings": {
-        "DefaultConnection": "Host=localhost;Port=5435;Database=kinal_sports;Username=IN6AV;Password=In6av2026!"
+        "DefaultConnection": "Host=localhost;Port=5435;Database=kinal_sports;Username=KinalSports;Password=KinalSports2027!"
     },
     "JwtSettings": {
         "SecretKey": "MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!",
         "Issuer": "AuthService",
-        "Audience": "AuthService"
+        "Audience": "AuthService",
+        "ExpiryInMinutes": 15
+    },
+    "InternalServiceToken": "KinalSportsInternalSecretToken2026!",
+    "Seed": {
+        "AdminPassword": "Admin1234!"
+    },
+    "Redis": {
+        "ConnectionString": "redis://localhost:6379"
+    },
+    "AppSettings": {
+        "FrontendUrl": "http://localhost:5173"
     }
 }
 ```
 
-**Puerto:** `5156` (launchSettings + Docker Compose)  
-**URL base API:** `http://localhost:5156/api/v1`
+---
 
-## Scripts
-
-```bash
-pnpm --filter auth-service dev      # dotnet watch
-pnpm --filter auth-service build
-pnpm --filter auth-service start
-pnpm --filter auth-service format
-pnpm --filter auth-service clean
-```
-
-## Migraciones
+## 6. Scripts y Comandos Disponibles
 
 ```bash
-dotnet ef migrations add MigrationName \
-  --project src/AuthService.Persistence \
-  --startup-project src/AuthService.Api
+pnpm --filter auth-service dev      # Ejecuta con recarga en caliente (dotnet watch) en puerto 5156
+pnpm --filter auth-service build    # Compila la solucion completa
+pnpm --filter auth-service start    # Ejecuta AuthService.Api
+pnpm --filter auth-service test     # Ejecuta las 53 pruebas unitarias (xUnit v3)
+pnpm --filter auth-service format   # Formatea el codigo C# con dotnet format
+pnpm --filter auth-service clean    # Limpia artefactos de compilacion
 
-dotnet ef database update \
-  --project src/AuthService.Persistence \
-  --startup-project src/AuthService.Api
+# Comandos de migraciones EF Core (desde authentication-service/auth-service)
+dotnet ef migrations add <Nombre> --project src/AuthService.Persistence --startup-project src/AuthService.Api
+dotnet ef database update --project src/AuthService.Persistence --startup-project src/AuthService.Api
 ```
 
-## Endpoints
+---
 
-### Autenticacion (`/api/v1/auth`)
+## 7. Decisiones de Seguridad y Rendimiento
 
-| Metodo | Endpoint                    | Descripcion           | Auth  |
-| ------ | --------------------------- | --------------------- | ----- |
-| POST   | `/auth/refresh`             | Renovar token         | No    |
-| POST   | `/auth/logout`              | Cerrar sesion         | JWT   |
-| GET    | `/auth/profile`             | Perfil autenticado    | JWT   |
-| POST   | `/auth/profile/by-username` | Perfil por username   | No    |
-| POST   | `/auth/profile/by-id`       | Perfil por userId     | No    |
-| POST   | `/auth/register`            | Registrar usuario     | No    |
-| POST   | `/auth/login`               | Iniciar sesion        | No    |
-| POST   | `/auth/verify-email`        | Verificar email       | No    |
-| POST   | `/auth/resend-verification` | Reenviar verificacion | No    |
-| POST   | `/auth/forgot-password`     | Solicitar reset       | No    |
-| POST   | `/auth/reset-password`      | Resetear contrasena   | No    |
-| POST   | `/auth/profile/picture`     | Actualizar foto       | JWT   |
-| GET    | `/auth/users`               | Listar usuarios       | Admin |
+1. **Cookies `httpOnly` + Bearer JWT:**
+    - `AuthController` emite `kinal_access` y `kinal_refresh` (`HttpOnly`, `SameSite=Lax`) en `/auth/login` y `/auth/refresh`, y las elimina en `/auth/logout`.
+    - `AuthenticationExtensions` (`JwtBearerEvents.OnMessageReceived`) lee automaticamente la cookie `kinal_access` cuando la peticion no trae header `Authorization`.
+2. **Caché Distribuida `Cache-Aside` (`RedisCacheService`):**
+    - `GetUserByIdAsync` consulta primero `kinal:user:profile:{userId}` en Redis (TTL 60 s) e invalida la llave al actualizar foto de perfil, verificar correo o cambiar el rol del usuario.
+3. **Metodo HTTP `QUERY`:**
+    - `GetProfileById` y `GetProfileByUsername` usan `[AcceptVerbs("QUERY", "POST")]` protegidos por `[InternalServiceToken]`.
 
-### Usuarios (`/api/v1/users`) — UsersController
+---
 
-| Metodo | Endpoint                    | Descripcion      | Auth  |
-| ------ | --------------------------- | ---------------- | ----- |
-| PUT    | `/users/{userId}/role`      | Actualizar rol   | Admin |
-| GET    | `/users/{userId}/roles`     | Roles de usuario | Admin |
-| GET    | `/users/by-role/{roleName}` | Usuarios por rol | Admin |
+## 8. Referencia de Endpoints
 
-### Health
+**URL Base:** `http://localhost:5156/api/v1` | **Swagger (Dev):** `http://localhost:5156/swagger`
 
-| Metodo | Endpoint         | Descripcion         |
-| ------ | ---------------- | ------------------- |
-| GET    | `/health`        | Estado del servicio |
-| GET    | `/api/v1/health` | Health alternativo  |
+### Autenticacion y Perfil (`/api/v1/auth`)
 
-## Ejemplo Login
+| Metodo           | Endpoint                       | Descripcion                                | Autenticacion                 |
+| :--------------- | :----------------------------- | :----------------------------------------- | :---------------------------- |
+| `POST`           | `/auth/register`               | Registrar usuario (`multipart/form-data`)  | Publico                       |
+| `POST`           | `/auth/verify-email`           | Verificar correo electronico               | Publico                       |
+| `POST`           | `/auth/resend-verification`    | Reenviar correo de verificacion            | Publico                       |
+| `POST`           | `/auth/login`                  | Iniciar sesion (JSON + cookies `httpOnly`) | Publico                       |
+| `POST`           | `/auth/refresh`                | Rotar refresh token                        | Body o cookie `kinal_refresh` |
+| `POST`           | `/auth/logout`                 | Revocar refresh token y limpiar cookies    | Body o cookie `kinal_refresh` |
+| `POST`           | `/auth/forgot-password`        | Solicitar enlace de recuperacion           | Publico                       |
+| `POST`           | `/auth/reset-password`         | Restablecer contrasena                     | Publico                       |
+| `GET`            | `/auth/profile`                | Obtener perfil propio                      | JWT (Bearer o `kinal_access`) |
+| `POST`           | `/auth/profile/picture`        | Actualizar foto (`profilePicture`)         | JWT (Bearer o `kinal_access`) |
+| `POST`           | `/auth/profile/picture/avatar` | Alias para actualizar foto (`avatar`)      | JWT (Bearer o `kinal_access`) |
+| `GET`            | `/auth/users`                  | Listar todos los usuarios                  | JWT (`ADMIN_ROLE`)            |
+| `QUERY` / `POST` | `/auth/profile/by-id`          | Obtener perfil por `userId` (body)         | Interno (`x-internal-token`)  |
+| `QUERY` / `POST` | `/auth/profile/by-username`    | Obtener perfil por `username` (body)       | Interno (`x-internal-token`)  |
 
-```bash
-curl -X POST http://localhost:5156/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"emailOrUsername":"john@example.com","password":"SecurePass123!"}'
-```
+### Roles y Salud (`/api/v1/users` y `/health`)
 
-Respuesta tipica:
+| Metodo | Endpoint                     | Descripcion                  | Autenticacion                       |
+| :----- | :--------------------------- | :--------------------------- | :---------------------------------- |
+| `PUT`  | `/users/{userId}/role`       | Cambiar rol de usuario       | JWT (`ADMIN_ROLE`)                  |
+| `GET`  | `/users/{userId}/roles`      | Consultar roles del usuario  | JWT (Propio usuario o `ADMIN_ROLE`) |
+| `GET`  | `/users/by-role/{roleName}`  | Listar usuarios por rol      | JWT (`ADMIN_ROLE`)                  |
+| `GET`  | `/health` o `/api/v1/health` | Estado de salud del servicio | Publico                             |
 
-```json
-{
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "...",
-    "expiresAt": "2026-06-16T12:00:00Z",
-    "user": {
-        "id": "uuid",
-        "username": "johndoe",
-        "email": "john@example.com",
-        "roles": ["USER"]
-    }
-}
-```
+---
 
-## Dependencias
+## 9. Guias Didacticas Complementarias
 
-| Consumidor   | Uso                                    |
-| ------------ | -------------------------------------- |
-| client-admin | Autenticacion y gestion de usuarios    |
-| server-admin | Validacion JWT (`utils/authClient.js`) |
-
-## Testing
-
-Proyecto de tests no incluido actualmente en la solucion. Seccion pendiente de implementacion.
-
-## Guias de recreacion
-
-Para reconstruir AuthService desde cero (fines educativos):
-
-- [GUIA_RAPIDA.md](./GUIA_RAPIDA.md)
-- [FLUJO_RECREACION_PASO_A_PASO.md](./FLUJO_RECREACION_PASO_A_PASO.md)
-
-Para operar el monorepo existente, usa este README y el [README raiz](../../README.md).
-
-## Autor
-
-**Braulio Echeverria**
-
-## Licencia
-
-MIT
+- [GUIA_RAPIDA.md](./GUIA_RAPIDA.md) — Resumen de comandos y arquitectura para clase.
+- [FLUJO_RECREACION_PASO_A_PASO.md](./FLUJO_RECREACION_PASO_A_PASO.md) — Guia detallada para construir la solucion paso a paso en clase.

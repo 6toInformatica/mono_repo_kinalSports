@@ -1,6 +1,7 @@
 'use strict';
 
 import axios from 'axios';
+import { redisCache } from './redis.cache.js';
 
 /**
  * Cliente de los servicios de autenticación (auth-node, o auth-service como alternativa).
@@ -13,6 +14,7 @@ const authBaseUrl =
 
 const authClient = axios.create({
   baseURL: authBaseUrl,
+  timeout: 5_000,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -22,10 +24,14 @@ authClient.interceptors.request.use((config) => {
   return config;
 });
 
-/** Usuario de auth por id; null si no existe o si el servicio falla */
+/** Usuario de auth por id (usa el método HTTP seguro QUERY con body JSON) */
 export const getUserById = async (userId) => {
   try {
-    const { data } = await authClient.post('/auth/profile/by-id', { userId });
+    const { data } = await authClient.request({
+      method: 'QUERY',
+      url: '/auth/profile/by-id',
+      data: { userId },
+    });
     return data?.data ?? null;
   } catch (error) {
     if (error.response?.status !== 404) {
@@ -38,11 +44,13 @@ export const getUserById = async (userId) => {
   }
 };
 
-/** Usuario de auth por username; null si no existe o si el servicio falla */
+/** Usuario de auth por username (usa el método HTTP seguro QUERY con body JSON) */
 export const getUserByUsername = async (username) => {
   try {
-    const { data } = await authClient.post('/auth/profile/by-username', {
-      username: username.trim(),
+    const { data } = await authClient.request({
+      method: 'QUERY',
+      url: '/auth/profile/by-username',
+      data: { username: username.trim() },
     });
     return data?.data ?? null;
   } catch (error) {
@@ -72,6 +80,7 @@ export const uploadProfilePicture = async (file, authorizationHeader) => {
     method: 'POST',
     headers: { Authorization: authorizationHeader },
     body: formData,
+    signal: AbortSignal.timeout(10_000),
   });
 
   const data = await response.json().catch(() => ({}));
@@ -85,25 +94,42 @@ export const uploadProfilePicture = async (file, authorizationHeader) => {
     throw error;
   }
 
-  return data?.data ?? data;
+  const updated = data?.data ?? data;
+  if (updated?.id) {
+    profileCache.delete(String(updated.id));
+    await redisCache.del(`kinal:user:profile:${updated.id}`);
+  }
+  return updated;
 };
 
-// Caché corta de perfiles públicos para enriquecer equipos: evita repetir una consulta
-// por miembro en cada vista (agotaba el rate limit de auth y los nombres salían como
-// "Miembro"). Solo se guardan los usuarios encontrados.
+// Caché corta de perfiles públicos (Redis + memoria local) para enriquecer equipos:
+// evita repetir una consulta por miembro en cada vista.
 const PROFILE_CACHE_TTL_MS = 60_000;
+const PROFILE_CACHE_TTL_SECONDS = 60;
 const PROFILE_CACHE_MAX = 1000;
 const profileCache = new Map();
 
-const getCachedUserById = (userId) => {
+const getCachedUserById = async (userId) => {
   const key = String(userId);
+  const redisKey = `kinal:user:profile:${key}`;
+  if (process.env.REDIS_URL) {
+    const cachedInRedis = await redisCache.get(redisKey);
+    if (cachedInRedis) return cachedInRedis;
+  }
+
   const hit = profileCache.get(key);
   if (hit && hit.expiresAt > Date.now()) return hit.promise;
 
   if (profileCache.size >= PROFILE_CACHE_MAX) profileCache.clear();
 
-  const promise = getUserById(key).then((user) => {
-    if (!user) profileCache.delete(key);
+  const promise = getUserById(key).then(async (user) => {
+    if (!user) {
+      profileCache.delete(key);
+      return null;
+    }
+    if (process.env.REDIS_URL) {
+      await redisCache.set(redisKey, user, PROFILE_CACHE_TTL_SECONDS);
+    }
     return user;
   });
   profileCache.set(key, {

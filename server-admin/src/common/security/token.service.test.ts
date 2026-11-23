@@ -29,6 +29,24 @@ const sign = (payload: object, options: jwt.SignOptions = {}) =>
     ...options,
   });
 
+describe('TokenService.extractToken', () => {
+  it('extrae el token de Authorization, x-token o la cookie httpOnly kinal_access', () => {
+    const tokens = service();
+    const req = (headers: Record<string, string>) =>
+      ({ header: (name: string) => headers[name.toLowerCase()] }) as never;
+
+    expect(tokens.extractToken(req({ authorization: 'Bearer jwt-1' }))).toBe(
+      'jwt-1'
+    );
+    expect(
+      tokens.extractToken(
+        req({ cookie: 'otro=1; kinal_access=jwt-cookie; x=2' })
+      )
+    ).toBe('jwt-cookie');
+    expect(tokens.extractToken(req({}))).toBeUndefined();
+  });
+});
+
 describe('TokenService.verifyUser', () => {
   it('devuelve el usuario y su rol desde el JWT de auth', () => {
     const user = service().verifyUser(

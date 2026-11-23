@@ -1,6 +1,7 @@
 import type { NewUser, User } from '../domain/user.ts';
 
 export interface UserRepository {
+  findAll(): Promise<User[]>;
   findById(id: string): Promise<User | null>;
   /** Email exacto o username sin distinguir mayúsculas */
   findByEmailOrUsername(emailOrUsername: string): Promise<User | null>;

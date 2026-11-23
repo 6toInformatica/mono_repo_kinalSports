@@ -52,11 +52,16 @@ export const buildApp = async (config: AppConfig, container: Container) => {
       });
       await api.register(rolesRoutes(config, container), { prefix: '/users' });
 
-      api.get('/health', async () => ({
-        status: 'Healthy',
-        timestamp: new Date().toISOString(),
-        service: 'KinalSports Authentication Service',
-      }));
+      api.get('/health', async (_request, reply) => {
+        const healthy = container.checkHealth
+          ? await container.checkHealth()
+          : true;
+        return reply.code(healthy ? 200 : 503).send({
+          status: healthy ? 'Healthy' : 'Unhealthy',
+          timestamp: new Date().toISOString(),
+          service: 'KinalSports Authentication Service',
+        });
+      });
     },
     { prefix: config.basePath }
   );

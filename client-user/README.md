@@ -1,144 +1,136 @@
-# Client User - App Movil (Expo)
+# Client User — Aplicacion Movil (React Native + Expo)
 
-Aplicacion movil para usuarios finales de KinalSports. Permite explorar campos, reservar canchas, gestionar equipos, inscribirse en torneos y administrar el perfil personal.
+Aplicacion movil multiplataforma (Android / iOS) para los usuarios finales de KinalSports construida con **React Native 0.88**, **Expo SDK 58**, **React Navigation 7** y **Zustand 5**.
 
-## Descripcion
+---
 
-App React Native construida con Expo que consume:
+## 1. Rol en la Arquitectura
 
-- **auth-node** para registro, login, refresh de sesion y tokens JWT
-- **server-user** para datos de negocio (campos, reservas, equipos, torneos, perfil)
+- Permite a los deportistas y capitanes de equipo **registrarse, iniciar sesion, explorar canchas disponibles, reservar horarios, crear y unirse a equipos, administrar miembros, inscribirse en torneos y actualizar su foto de perfil**.
+- Consume directamente `auth-node` (puerto `3007`) para autenticacion y `server-user` (puerto `3008`) para todas las operaciones de negocio.
 
-## Tech Stack
+---
 
-- **Expo** ~55
-- **React Native** 0.83
-- **React** 19.2
-- **React Navigation** (bottom tabs + native stack)
-- **Zustand** (estado global + persistencia con SecureStore)
-- **Axios** (clientes HTTP)
-- **React Hook Form** (formularios)
-- **expo-image-picker**, **expo-secure-store**
+## 2. Stack Tecnologico
 
-## Instalacion
+- **Framework Movil:** Expo `~58.0`, React Native `0.88.1`, React `19.3`
+- **Navegacion y Estado:** `@react-navigation/native` 7 (Native Stack + Bottom Tabs), Zustand 5
+- **Almacenamiento Seguro:** `expo-secure-store` (Keychain en iOS / Keystore cifrado en Android)
+- **Formularios y Multimedia:** React Hook Form 7, `expo-image-picker`, `@react-native-community/datetimepicker`
+- **Pruebas:** Jest 30 + `jest-expo` + `@testing-library/react-native`
 
-```bash
-# Desde la raiz del monorepo
-pnpm install
+---
 
-# O solo este paquete
-pnpm --filter client-user install
-```
-
-## Variables de Entorno
-
-Copia el archivo de ejemplo y ajusta las URLs segun tu entorno:
-
-```bash
-cp .env.example .env
-```
-
-| Variable               | Requerida | Descripcion                             |
-| ---------------------- | --------- | --------------------------------------- |
-| `EXPO_PUBLIC_AUTH_URL` | Si        | URL base de auth-node (incluye `/auth`) |
-| `EXPO_PUBLIC_USER_URL` | Si        | URL base de server-user                 |
-
-Valores por defecto para desarrollo local:
-
-```env
-EXPO_PUBLIC_AUTH_URL=http://localhost:3007/api/v1/auth
-EXPO_PUBLIC_USER_URL=http://localhost:3008/kinalSportsUser/v1
-```
-
-### Notas de conectividad
-
-| Entorno                       | Auth URL tipica                     | User URL tipica                            |
-| ----------------------------- | ----------------------------------- | ------------------------------------------ |
-| Local (Expo en misma maquina) | `http://localhost:3007/api/v1/auth` | `http://localhost:3008/kinalSportsUser/v1` |
-| Emulador Android              | `http://10.0.2.2:3007/api/v1/auth`  | `http://10.0.2.2:3008/kinalSportsUser/v1`  |
-| Dispositivo fisico            | IP de tu PC en la red local         | IP de tu PC en la red local                |
-| Docker Compose                | segun mapeo de puertos del host     | segun mapeo de puertos del host            |
-
-El archivo `.env` no debe versionarse.
-
-## Scripts
-
-```bash
-pnpm --filter client-user start    # Expo dev server (Metro)
-pnpm --filter client-user android  # Abrir en emulador/dispositivo Android
-pnpm --filter client-user ios      # Abrir en simulador iOS (macOS)
-pnpm --filter client-user web      # Version web via Expo
-pnpm --filter client-user lint     # ESLint
-```
-
-## Estructura
+## 3. Estructura del Proyecto
 
 ```
 client-user/
-├── App.jsx
-├── app.json
+├── App.jsx                         # Punto de entrada y restauracion de sesion
+├── app.json                        # Configuracion de Expo
 ├── src/
+│   ├── navigation/
+│   │   ├── AppNavigator.jsx        # Conmutador entre AuthStack y MainTabs segun sesion
+│   │   ├── AuthStack.jsx           # Pantallas de Login y Registro
+│   │   └── MainTabs.jsx            # Navegacion inferior (Canchas, Equipos, Torneos, Reservas, Perfil)
 │   ├── features/
-│   │   ├── auth/           # Login, registro
-│   │   ├── fields/         # Listado, detalle, crear reserva
-│   │   ├── teams/          # Equipos, mis equipos, crear, detalle
-│   │   ├── tournaments/    # Torneos, mis torneos, detalle, inscripcion
-│   │   ├── reservations/   # Historial de reservas
-│   │   └── profile/        # Perfil, avatar, logout
-│   ├── navigation/         # AppNavigator, AuthStack, MainTabs
+│   │   ├── auth/                   # LoginScreen y RegisterScreen
+│   │   ├── fields/                 # Listado de canchas, detalle y creacion de reservaciones
+│   │   ├── teams/                  # Exploracion, mis equipos, creacion, detalle y gestion de miembros
+│   │   ├── tournaments/            # Listado de torneos, detalle e inscripcion de equipo
+│   │   ├── reservations/           # Mis reservaciones activas, historial y cancelacion
+│   │   └── profile/                # Vista de perfil, cambio de avatar y cierre de sesion
 │   └── shared/
-│       ├── api/            # authClient, userClient, tokenRefresh
-│       ├── components/
-│       ├── constants/      # endpoints, theme
-│       └── store/          # authStore (Zustand)
-└── assets/
+│       ├── api/                    # Clientes Axios (authClient, userClient) y tokenRefresh
+│       ├── components/             # Botones, tarjetas, inputs y modales reutilizables
+│       ├── constants/              # Endpoints y paleta de colores
+│       ├── store/                  # authStore (Zustand conectado a expo-secure-store)
+│       └── utils/                  # Formateo de fechas, monedas e imagenes
+├── .env.example
+└── package.json
 ```
 
-## Pantallas y navegacion
+---
 
-### Autenticacion (AuthStack)
+## 4. Instalacion y Puesta en Marcha
 
-| Pantalla       | Descripcion         |
-| -------------- | ------------------- |
-| LoginScreen    | Inicio de sesion    |
-| RegisterScreen | Registro de usuario |
+### Opcion A: Desde la raiz del monorepo
 
-### Tabs principales (MainTabs)
+```bash
+pnpm install
+cp client-user/.env.example client-user/.env
+pnpm --filter client-user start
+```
 
-| Tab          | Pantallas                                            |
-| ------------ | ---------------------------------------------------- |
-| Fields       | FieldsList, FieldDetail, CreateReservation           |
-| Teams        | TeamsList, TeamDetail, MyTeams, CreateTeam           |
-| Tournaments  | TournamentsList, TournamentDetail, MyTournaments     |
-| Reservations | ReservationsList                                     |
-| Profile      | ProfileScreen (editar perfil, avatar, cerrar sesion) |
+### Opcion B: Como paquete individual
 
-La sesion JWT se refresca al volver a enfocar la app.
+```bash
+cd client-user
+pnpm install
+cp .env.example .env
+pnpm start
+```
 
-## Flujo de autenticacion
+---
 
-1. Login/registro contra `EXPO_PUBLIC_AUTH_URL` (`/login`, `/register`, `/refresh`)
-2. Token JWT almacenado via Zustand + SecureStore
-3. Peticiones a server-user con header `Authorization: Bearer <token>`
-4. Perfil de usuario: `GET/PUT /users/profile` y avatar en server-user (proxy interno a auth-node)
+## 5. Variables de Entorno (`.env`)
 
-## Dependencias con otros servicios
+Copia `.env.example` a `.env` y ajusta la IP segun donde ejecutes la app:
 
-| Servicio    | Uso                                        |
-| ----------- | ------------------------------------------ |
-| auth-node   | Login, registro, refresh, logout           |
-| server-user | Campos, reservas, equipos, torneos, perfil |
+```env
+EXPO_PUBLIC_AUTH_URL=http://10.0.2.2:3007/api/v1/auth
+EXPO_PUBLIC_USER_URL=http://10.0.2.2:3008/kinalSportsUser/v1
+```
 
-Ambos deben estar corriendo para funcionalidad completa. Ver [README raiz](../README.md) para puertos Docker.
+| Entorno de Prueba                         | `EXPO_PUBLIC_AUTH_URL`                      | `EXPO_PUBLIC_USER_URL`                             |
+| :---------------------------------------- | :------------------------------------------ | :------------------------------------------------- |
+| **Emulador Android** (`10.0.2.2` = host)  | `http://10.0.2.2:3007/api/v1/auth`          | `http://10.0.2.2:3008/kinalSportsUser/v1`          |
+| **Simulador iOS / Misma Maquina**         | `http://localhost:3007/api/v1/auth`         | `http://localhost:3008/kinalSportsUser/v1`         |
+| **Dispositivo Fisico (Expo Go en Wi-Fi)** | `http://<IP_LAN_DE_TU_PC>:3007/api/v1/auth` | `http://<IP_LAN_DE_TU_PC>:3008/kinalSportsUser/v1` |
 
-## Docker
+---
 
-El servicio `client-user` esta definido en `docker-compose.yml` con puertos `8081`, `19000`, `19001`, `19002` para Metro y Expo DevTools.
+## 6. Scripts Disponibles
 
-## Autor
+```bash
+pnpm --filter client-user start         # Inicia Metro Bundler
+pnpm --filter client-user android       # Abre en emulador/dispositivo Android
+pnpm --filter client-user ios           # Abre en simulador iOS
+pnpm --filter client-user web           # Inicia version web de Expo
+pnpm --filter client-user test          # Ejecuta las 21 pruebas unitarias con Jest
+pnpm --filter client-user lint          # Ejecuta ESLint
+```
 
-**Braulio Echeverria**
+---
 
-## Licencia
+## 7. Seguridad de Sesion: `expo-secure-store` (Movil) vs Cookies `httpOnly` (Web)
 
-MIT
+> **Nota pedagogica para clase:**
+>
+> - En los paneles **Web** (`client-admin` y `client-admin-next`), los tokens se manejan mediante **cookies `httpOnly`** porque `window.localStorage` es vulnerable a ataques XSS en el navegador.
+> - En una aplicacion **Movil Nativa** (`client-user`), no existe DOM web ni el mismo modelo de cookies de navegador: el estandar de seguridad movil consiste en recibir el `accessToken` y `refreshToken` y resguardarlos en el almacenamiento nativo cifrado del sistema operativo (**Keychain en iOS** y **EncryptedSharedPreferences / Keystore en Android**) mediante **`expo-secure-store`**.
+
+1. Al iniciar sesion (`POST /api/v1/auth/login`), `authStore` guarda los tokens en `expo-secure-store`.
+2. Cada peticion a `server-user` incluye `Authorization: Bearer <accessToken>`.
+3. Si el `accessToken` vence (`401`), `tokenRefresh.js` renueva la sesion con `POST /api/v1/auth/refresh` usando una unica promesa compartida para todas las peticiones simultaneas.
+
+---
+
+## 8. Pantallas Principales
+
+| Modulo            | Pantallas                                              | Funcionalidades Clave                                                                  |
+| :---------------- | :----------------------------------------------------- | :------------------------------------------------------------------------------------- |
+| **Autenticacion** | `LoginScreen`, `RegisterScreen`                        | Inicio de sesion y registro con validacion de formularios.                             |
+| **Canchas**       | `FieldsList`, `FieldDetail`, `CreateReservation`       | Exploracion de canchas, consulta de disponibilidad por fecha y reserva de 1 a 3 horas. |
+| **Equipos**       | `TeamsList`, `MyTeams`, `CreateTeam`, `TeamDetail`     | Creacion de equipo con logo, unirse/salir y gestion de miembros por el capitan.        |
+| **Torneos**       | `TournamentsList`, `MyTournaments`, `TournamentDetail` | Consulta de torneos activos e inscripcion de equipos de la misma categoria.            |
+| **Reservas**      | `ReservationsList`                                     | Consulta de reservas activas, historial y cancelacion antes de la hora de inicio.      |
+| **Perfil**        | `ProfileScreen`                                        | Visualizacion de datos, subida de foto de perfil/avatar y cierre de sesion.            |
+
+---
+
+## 9. Integracion con Otros Servicios
+
+| Servicio      | Relacion                                                                         |
+| :------------ | :------------------------------------------------------------------------------- |
+| `auth-node`   | Registro, login, renovacion de tokens (`refresh`) y cierre de sesion (`logout`). |
+| `server-user` | Catalogo de canchas, reservaciones, equipos, torneos y actualizacion de avatar.  |

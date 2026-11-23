@@ -1,2 +1,4 @@
 allowBuilds:
   '@scarf/scarf': false
+overrides:
+  minimatch: ^11.0.1

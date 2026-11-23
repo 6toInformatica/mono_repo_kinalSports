@@ -45,8 +45,7 @@ Revisa el diff de `__snapshots__` antes de hacer commit.
 
 ## Comportamientos actuales anotados
 
-La línea base registra el comportamiento tal como está, incluidos estos casos que se revisarán en la etapa de cada servicio:
+La línea base registra el comportamiento de los servicios:
 
-- `GET /kinalSportsUser/v1/fields/:id` con un id inválido responde 500.
-- Los dos servicios de auth difieren en algunos status y mensajes: registro duplicado (409 en Node, 400 en .NET), token inválido de verificación (401 en Node, 400 en .NET) y textos de error en inglés en .NET.
+- Los dos servicios de auth comparten `GET /auth/users` y `POST /auth/profile/picture/avatar`, pero difieren en algunos status y mensajes de error: registro duplicado (409 en Node, 400 en .NET), token inválido de verificación (401 en Node, 400 en .NET) y textos de error en inglés en .NET.
 - Crear un torneo responde 200 en lugar de 201.

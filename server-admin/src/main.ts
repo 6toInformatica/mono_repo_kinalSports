@@ -31,7 +31,7 @@ async function bootstrap() {
       config.get('ADMIN_ALLOWED_ORIGINS', { infer: true })
     ),
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'QUERY', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
   app.use(helmet(helmetConfiguration));

@@ -18,9 +18,10 @@ process.on('unhandledRejection', (reason) => {
 
 const start = async () => {
   await connectDatabase();
-  // Datos esenciales (roles)
+  // Datos esenciales (roles y admin inicial si la base está vacía)
   const container = createContainer(config);
   await container.roles.seed();
+  await container.users.seedAdmin();
 
   const app = await buildApp(config, container);
   app.addHook('onClose', async () => closeDatabase());

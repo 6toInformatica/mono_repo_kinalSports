@@ -21,8 +21,11 @@ public class AuthService(
     ICloudinaryService cloudinaryService,
     IEmailService emailService,
     // IConfiguration configuration, // Removed unused parameter
-    ILogger<AuthService> logger) : IAuthService
+    ILogger<AuthService> logger,
+    ICacheService? cacheService = null) : IAuthService
 {
+    private const string ProfileCachePrefix = "kinal:user:profile:";
+    private static readonly TimeSpan ProfileCacheTtl = TimeSpan.FromSeconds(60);
     private readonly ICloudinaryService _cloudinaryService = cloudinaryService;
     public async Task<RegisterResponseDto> RegisterAsync(RegisterDto registerDto)
     {
@@ -260,6 +263,10 @@ public class AuthService(
         user.UserEmail.EmailVerificationTokenExpiry = null;
 
         await userRepository.UpdateAsync(user);
+        if (cacheService is not null)
+        {
+            await cacheService.RemoveAsync($"{ProfileCachePrefix}{user.Id}");
+        }
 
         // Enviar email de bienvenida
         try
@@ -427,13 +434,29 @@ public class AuthService(
 
     public async Task<UserResponseDto?> GetUserByIdAsync(string userId)
     {
+        var cacheKey = $"{ProfileCachePrefix}{userId}";
+        if (cacheService is not null)
+        {
+            var cached = await cacheService.GetAsync<UserResponseDto>(cacheKey);
+            if (cached is not null)
+            {
+                return cached;
+            }
+        }
+
         var user = await userRepository.GetByIdAsync(userId);
         if (user == null)
         {
             return null;
         }
 
-        return MapToUserResponseDto(user);
+        var dto = MapToUserResponseDto(user);
+        if (cacheService is not null)
+        {
+            await cacheService.SetAsync(cacheKey, dto, ProfileCacheTtl);
+        }
+
+        return dto;
     }
 
     public async Task<UserResponseDto?> GetUserByUsernameAsync(string username)
@@ -503,6 +526,10 @@ public class AuthService(
         user.UserProfile.ProfilePicture = profilePicturePath;
         user.UpdatedAt = DateTime.UtcNow;
         await userRepository.UpdateAsync(user);
+        if (cacheService is not null)
+        {
+            await cacheService.RemoveAsync($"{ProfileCachePrefix}{userId}");
+        }
 
         logger.LogInformation("Profile picture updated for user {UserId}", userId);
         return MapToUserResponseDto(user);

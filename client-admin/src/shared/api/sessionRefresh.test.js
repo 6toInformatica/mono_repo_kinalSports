@@ -61,6 +61,23 @@ describe('performTokenRefresh', () => {
     });
   });
 
+  it('renueva usando la cookie httpOnly cuando no hay refreshToken en memoria', async () => {
+    login({ token: null, refreshToken: null, isAuthenticated: true });
+    const axiosAuth = {
+      post: vi.fn().mockResolvedValue({
+        data: { accessToken: 'access-cookie', refreshToken: 'refresh-cookie', expiresIn: 900 },
+      }),
+    };
+
+    await expect(performTokenRefresh(axiosAuth)).resolves.toBe('access-cookie');
+    expect(axiosAuth.post).toHaveBeenCalledWith('/auth/refresh', {});
+    expect(useAuthStore.getState()).toMatchObject({
+      token: null,
+      refreshToken: null,
+      isAuthenticated: true,
+    });
+  });
+
   it('peticiones simultáneas comparten una sola renovación', async () => {
     let finish;
     const axiosAuth = {

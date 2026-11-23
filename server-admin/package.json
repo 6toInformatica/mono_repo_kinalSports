@@ -58,12 +58,7 @@
     "unplugin-swc": "^2.0.0",
     "vitest": "^5.1.0"
   },
-  "pnpm": {
-    "overrides": {
-      "minimatch": "^11.0.1"
-    }
-  },
   "engines": {
-    "node": ">=24"
+    "node": ">=22.13.0"
   }
 }
