@@ -1,209 +1,234 @@
-# Server Admin — API de Administracion (NestJS)
+# Server Admin — API de Administración (NestJS)
 
-Microservicio administrativo para la plataforma KinalSports construido con **NestJS 12**, **TypeScript**, **MongoDB 7 (Mongoose 9)** y **Redis 7**.
+## 1. Propósito del Componente
 
----
+`server-admin` es el microservicio administrativo de **KinalSports**, desarrollado con **NestJS 12**, **TypeScript**, **MongoDB 7 (Mongoose 9)** y **Redis 7**.
 
-## 1. Rol en la Arquitectura
-
-- Gestiona el ciclo de vida administrativo de **canchas deportivas**, **reservaciones**, **equipos** y **torneos**.
-- Es consumido por los dos paneles administrativos web (`client-admin` y `client-admin-next`) mediante JWT (por header o cookie `httpOnly` `kinal_access`) y expone lecturas internas a `server-user` mediante `x-internal-token`.
-- Enriquece las reservaciones consultando los perfiles de usuario en el servicio de autenticacion (`QUERY /api/v1/auth/profile/by-id`) a traves de la caché distribuida en Redis.
+Su propósito es centralizar las operaciones de gestión del complejo deportivo (administración del catálogo de canchas, confirmación y cancelación de reservaciones, administración de equipos y control de torneos) bajo una **Arquitectura Modular** con validación declarativa, guardias de autorización por rol y sincronización de caché distribuida con la API de usuarios.
 
 ---
 
-## 2. Stack Tecnologico
+## 2. Responsabilidad dentro de KinalSports
 
-- **Runtime y Framework:** Node.js 22.13+ (Node 26 en Docker), TypeScript 6, NestJS 12 (`@nestjs/platform-express`)
-- **Base de Datos y Caché:** MongoDB 7, Mongoose 9 (`@nestjs/mongoose`), Redis 7 (`RedisCacheService` con fallback a memoria)
-- **Seguridad:** `JwtAuthGuard` (`HS256`), `RolesGuard` (`ADMIN_ROLE`), `AuthOrInternalGuard`, Helmet 8, `express-rate-limit`
-- **Archivos y Validacion:** Multer + Cloudinary, Zod 4 (validacion de entorno), `ObjectIdPipe`
-- **Pruebas:** Vitest 5 + `@swc/core`
+- Es la fuente de escritura administrativa sobre la base de datos documental `kinalSports` en **MongoDB 7** (`fields`, `reservations`, `teams`, `tournaments`), la cual comparte con `server-user`.
+- Atiende las peticiones de los dos paneles web administrativos: `client-admin` (React + Vite) y `client-admin-next` (Next.js BFF).
+- Expone endpoints de lectura compatibles con autenticación interna (`x-internal-token`) a través de `AuthOrInternalGuard`.
+- Mantiene la coherencia de la caché en **Redis 7**: cada vez que un administrador crea, actualiza, activa o desactiva una cancha, `server-admin` invalida el prefijo `kinal:fields:` para que tanto el panel administrativo como la aplicación móvil (`server-user`) consulten datos actualizados.
+- Enriquece la información de reservaciones y equipos consultando los perfiles de usuario en el servicio de autenticación (`QUERY /api/v1/auth/profile/by-id`) respaldados bajo la clave `kinal:user:profile:<userId>`.
 
 ---
 
-## 3. Estructura del Proyecto
+## 3. Stack Tecnológico Verificado
 
-```
+| Categoría                 | Paquete / Versión (`package.json`)                                                                 | Uso en el Servicio                                                                                                     |
+| :------------------------ | :------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| **Runtime y Lenguaje**    | Node.js `>= 22.13.0` (`node:26-slim` en Docker), TypeScript `^6.0.2`                               | Ejecución sobre módulos ES y tipado estático con decoradores de NestJS.                                                |
+| **Framework Backend**     | `@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express` `^12.4.2`, `@nestjs/config` `^12.1.1` | Inyección de dependencias, módulos de dominio, controladores, _guards_, _pipes_, _interceptors_ y _exception filters_. |
+| **Persistencia y Caché**  | `@nestjs/mongoose` `^12.0.2`, `mongoose` `^9.12.1`, `RedisCacheService` (`src/common/cache/`)      | Esquemas y modelos de MongoDB 7 y caché `Cache-Aside` sobre Redis 7 con fallback a memoria.                            |
+| **Seguridad HTTP**        | `jsonwebtoken` `^9.0.3`, `helmet` `^8.1.0`, `express-rate-limit` `^8.3.2`                          | Verificación de JWT (`HS256`), cabeceras HTTP de seguridad y límite de tasa de peticiones.                             |
+| **Validación y Archivos** | `zod` `^4.3.6`, `multer` `^2.5.0`, `cloudinary` `^2.9.0`                                           | Validación de variables de entorno al arranque, recepción de archivos en memoria y subida a Cloudinary.                |
+| **Pruebas Unitarias**     | `vitest` `^5.1.0`, `@swc/core` `^1.15.26`, `unplugin-swc` `^1.5.9`                                 | Compilación rápida de decoradores TypeScript y ejecución de pruebas unitarias.                                         |
+
+---
+
+## 4. Arquitectura Interna (Modular en NestJS)
+
+El servicio se organiza en módulos cohesivos registrados en `AppModule` (`src/app.module.ts`):
+
+1. **Módulos transversales (`src/common/` y `src/config/`):**
+   - `SecurityModule` (`src/common/security/`): Provee `TokenService`, `JwtAuthGuard`, `RolesGuard`, `InternalTokenGuard` y `AuthOrInternalGuard`.
+   - `CacheModule` (`src/common/cache/`): Exporta globalmente `RedisCacheService` (`get`, `set`, `del`, `delByPrefix`).
+   - `ObjectIdPipe` (`src/common/pipes/object-id.pipe.ts`): Valida que los parámetros `:id` sean `ObjectId` válidos de MongoDB antes de invocar al servicio, respondiendo `400 Bad Request` en caso contrario.
+   - `ValidateRequestInterceptor` (`src/common/validation/`): Ejecuta las reglas de validación del cuerpo de la petición antes del controlador.
+   - `AllExceptionsFilter` (`src/common/filters/all-exceptions.filter.ts`): Estandariza todas las respuestas de error en un formato JSON consistente (`{ success: false, message, ... }`).
+2. **Módulo de Integraciones (`src/integrations/`):**
+   - `AuthClientService`: Consulta perfiles de usuario en `AUTH_SERVICE_URL` utilizando el método HTTP `QUERY` (`QUERY /auth/profile/by-id`) con cabecera `x-internal-token`, timeout de `5000 ms` y caché en Redis (`kinal:user:profile:<userId>`, TTL 60 s).
+   - `CloudinaryService`: Administra la subida de imágenes de canchas, logos de equipos y banners de torneos, eliminando automáticamente el archivo en Cloudinary si la operación subsecuente en MongoDB falla.
+3. **Módulos de Dominio (`src/fields/`, `src/reservations/`, `src/teams/`, `src/tournaments/`, `src/health/`):**
+   - Cada módulo encapsula su controlador (`*.controller.ts`), su servicio de negocio (`*.service.ts`) y su esquema de Mongoose (`*.schema.ts`).
+
+---
+
+## 5. Estructura Principal del Directorio
+
+```text
 server-admin/
 ├── src/
-│   ├── main.ts                     # Bootstrap: CORS, Helmet, Rate Limit, prefijo global y apagado ordenado
-│   ├── app.module.ts               # Modulo raiz: Config, Mongoose, CacheModule, Security e Integrations
+│   ├── main.ts                         # Arranque de NestJS, CORS, Helmet, Rate Limit y prefijo /kinalSportsAdmin/v1
+│   ├── app.module.ts                   # Módulo raíz de la aplicación
 │   ├── config/
-│   │   ├── env.validation.ts       # Esquema Zod de variables de entorno
-│   │   └── http.config.ts          # Configuracion de Helmet, Rate Limit y fallback 404
+│   │   ├── env.validation.ts           # Validación de variables de entorno con Zod
+│   │   └── http.config.ts              # Configuración de seguridad HTTP y manejador 404
 │   ├── common/
-│   │   ├── cache/                  # RedisCacheService (Cache-Aside + invalidacion por prefijo)
-│   │   ├── filters/                # Filtro global de excepciones (formato JSON uniforme)
-│   │   ├── pipes/                  # ObjectIdPipe para validar IDs de MongoDB (400 Bad Request)
-│   │   ├── security/               # TokenService (Bearer, x-token y cookie kinal_access) y Guards
-│   │   ├── upload/                 # Interceptor de subida de imagenes en memoria
-│   │   └── validation/             # Reglas declarativas de validacion de body
+│   │   ├── cache/                      # CacheModule, RedisCacheService y pruebas unitarias
+│   │   ├── filters/                    # AllExceptionsFilter
+│   │   ├── pipes/                      # ObjectIdPipe
+│   │   ├── security/                   # TokenService, Guards de autenticación/roles y pruebas
+│   │   ├── upload/                     # MemoryUploadInterceptor (Multer en memoria)
+│   │   └── validation/                 # Reglas e interceptor de validación de payloads
 │   ├── integrations/
-│   │   ├── auth-client.service.ts  # Cliente interno hacia auth (QUERY profile/by-id + caché Redis)
-│   │   └── cloudinary.service.ts   # Subida y eliminacion segura de imagenes en Cloudinary
-│   ├── health/                     # GET /health (verifica readyState de MongoDB)
-│   ├── fields/                     # CRUD de canchas, soporte QUERY y caché Cache-Aside
-│   ├── reservations/               # Listado, detalle, confirmacion y cancelacion de reservas
-│   ├── teams/                      # CRUD de equipos, cambio de manager y miembros nombrados
-│   └── tournaments/                # CRUD y activacion/desactivacion de torneos
+│   │   ├── auth-client.service.ts      # Cliente HTTP interno hacia auth-service / auth-node (QUERY + Redis)
+│   │   └── cloudinary.service.ts       # Adaptador de subida y limpieza en Cloudinary
+│   ├── health/                         # HealthController (verifica readyState de MongoDB)
+│   ├── fields/                         # Módulo de canchas deportivas (incluye soporte HTTP QUERY)
+│   ├── reservations/                   # Módulo de gestión administrativa de reservaciones
+│   ├── teams/                          # Módulo de equipos, capitanes y miembros nombrados
+│   └── tournaments/                    # Módulo de torneos deportivos
 ├── .env.example
+├── tsconfig.json
 └── package.json
 ```
 
 ---
 
-## 4. Instalacion y Puesta en Marcha
+## 6. Requisitos
 
-### Opcion A: Desde la raiz del monorepo
+- **Node.js:** `>= 22.13.0`
+- **pnpm:** `>= 10`
+- **MongoDB:** `7+`
+- **Servicio de autenticación activo:** `auth-service` (`:5156`) o `auth-node` (`:3007`) para resolver perfiles de usuario.
+- **Redis:** `7+` (opcional en desarrollo local gracias al fallback en memoria).
+
+---
+
+## 7. Configuración (`.env`)
+
+Copia `.env.example` a `.env`:
 
 ```bash
-pnpm install
 cp server-admin/.env.example server-admin/.env
+```
+
+Variables verificadas en `src/config/env.validation.ts`:
+
+| Variable                                                                          | Requerida | Valor de Referencia (Local)                           | Descripción                                                                                                   |
+| :-------------------------------------------------------------------------------- | :-------- | :---------------------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
+| `NODE_ENV`                                                                        | No        | `development`                                         | Entorno (`development`, `test`, `production`).                                                                |
+| `PORT`                                                                            | No        | `3009`                                                | Puerto HTTP del servicio.                                                                                     |
+| `URI_MONGODB`                                                                     | Sí        | `mongodb://localhost:27020/kinalSports`               | Cadena de conexión a MongoDB 7 (base compartida con `server-user`).                                           |
+| `JWT_SECRET`                                                                      | Sí        | _(mínimo 32 caracteres)_                              | Clave simétrica `HS256` compartida con `auth-service` y `auth-node`.                                          |
+| `JWT_ISSUER` / `JWT_AUDIENCE`                                                     | No        | `AuthService` / `AuthService`                         | Emisor y audiencia esperados en los tokens JWT.                                                               |
+| `AUTH_SERVICE_URL`                                                                | Sí        | `http://localhost:5156/api/v1`                        | URL base del servicio de autenticación. En `docker-compose.prod.yml` apunta a `http://auth-node:3007/api/v1`. |
+| `INTERNAL_SERVICE_TOKEN`                                                          | Sí        | _(secreto compartido)_                                | Token para autenticar peticiones internas (`x-internal-token`).                                               |
+| `REDIS_URL`                                                                       | No        | `redis://localhost:6379`                              | URL de conexión a Redis 7.                                                                                    |
+| `ADMIN_ALLOWED_ORIGINS`                                                           | No        | `http://localhost:5173`                               | Lista de orígenes web permitidos en CORS (separados por coma). Sin valor permite `3000`, `3001` y `5173`.     |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET`          | Sí        | _(credenciales Cloudinary)_                           | Credenciales de Cloudinary.                                                                                   |
+| `CLOUDINARY_FOLDER` / `CLOUDINARY_TEAMS_FOLDER` / `CLOUDINARY_TOURNAMENTS_FOLDER` | No        | `kinal_sports/fields`, `.../teams`, `.../tournaments` | Carpetas destino en Cloudinary por tipo de entidad.                                                           |
+
+---
+
+## 8. Ejecución Local
+
+### Desde la raíz del monorepo
+
+```bash
 pnpm --filter server-admin dev
 ```
 
-### Opcion B: Como microservicio independiente (aislado)
+### Desde el directorio del servicio
 
 ```bash
 cd server-admin
 pnpm install
-cp .env.example .env
 pnpm dev
 ```
 
----
+### Scripts disponibles en `package.json`
 
-## 5. Variables de Entorno (`.env`)
-
-Copia `.env.example` a `.env`:
-
-```env
-NODE_ENV=development
-PORT=3009
-
-# MongoDB (compartida con server-user)
-URI_MONGODB=mongodb://localhost:27020/kinalSports
-
-# JWT (debe coincidir con auth-service y auth-node)
-JWT_SECRET=MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!
-JWT_ISSUER=AuthService
-JWT_AUDIENCE=AuthService
-
-# Comunicacion interna y Caché Redis
-AUTH_SERVICE_URL=http://localhost:5156/api/v1
-INTERNAL_SERVICE_TOKEN=KinalSportsInternalSecretToken2026!
-REDIS_URL=redis://localhost:6379
-
-# CORS del panel administrativo
-ADMIN_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=b3xvlule
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-CLOUDINARY_FOLDER=kinal_sports/fields
-CLOUDINARY_TEAMS_FOLDER=kinal_sports/teams
-CLOUDINARY_TOURNAMENTS_FOLDER=kinal_sports/tournaments
-```
-
-> En produccion (`docker-compose.prod.yml`), `AUTH_SERVICE_URL` apunta a `http://auth-node:3007/api/v1`.
+- `pnpm dev`: Inicia en modo desarrollo con recarga automática (`nodemon`).
+- `pnpm build`: Compila TypeScript mediante `tsc -p tsconfig.build.json` en `dist/`.
+- `pnpm start`: Inicia la aplicación compilada (`node dist/main.js`).
+- `pnpm typecheck`: Verifica tipos con `tsc --noEmit`.
+- `pnpm lint` / `pnpm lint:fix`: Ejecuta ESLint.
+- `pnpm format`: Formatea el código con Prettier.
+- `pnpm test` / `pnpm test:watch` / `pnpm test:coverage`: Ejecuta las pruebas unitarias con Vitest.
 
 ---
 
-## 6. Scripts Disponibles
+## 9. Integraciones y Referencia de Endpoints
+
+**Prefijo global:** `/kinalSportsAdmin/v1` | **Puerto:** `3009`
+
+`TokenService` acepta el JWT del administrador desde cualquiera de estos tres canales: cabecera `x-token`, cabecera `Authorization: Bearer <token>` o cookie `httpOnly` `kinal_access`.
+
+### 9.1 Canchas (`/fields`)
+
+| Método  | Ruta                     | Descripción                                                                                                        | Autenticación            |
+| :------ | :----------------------- | :----------------------------------------------------------------------------------------------------------------- | :----------------------- |
+| `GET`   | `/fields`                | Lista canchas paginadas (`?page=1&limit=10&isActive=true&fieldType=...`). Usa caché Redis `kinal:fields:*`.        | JWT o `x-internal-token` |
+| `QUERY` | `/fields`                | Filtra canchas enviando `{ page, limit, isActive, fieldType, capacity, maxPricePerHour, search }` en el body JSON. | JWT o `x-internal-token` |
+| `GET`   | `/fields/:id`            | Obtiene el detalle de una cancha por su `ObjectId`.                                                                | JWT o `x-internal-token` |
+| `POST`  | `/fields`                | Crea una nueva cancha (`multipart/form-data`, campo `image`) e invalida `kinal:fields:*` en Redis.                 | JWT (`ADMIN_ROLE`)       |
+| `PUT`   | `/fields/:id`            | Actualiza los datos o fotografía de una cancha e invalida `kinal:fields:*` en Redis.                               | JWT (`ADMIN_ROLE`)       |
+| `PUT`   | `/fields/:id/activate`   | Activa una cancha e invalida `kinal:fields:*` en Redis.                                                            | JWT (`ADMIN_ROLE`)       |
+| `PUT`   | `/fields/:id/deactivate` | Desactiva una cancha e invalida `kinal:fields:*` en Redis.                                                         | JWT (`ADMIN_ROLE`)       |
+
+### 9.2 Reservaciones (`/reservations`)
+
+| Método | Ruta                        | Descripción                                                                                                                             | Autenticación |
+| :----- | :-------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- | :------------ |
+| `GET`  | `/reservations`             | Lista reservaciones filtrables (`status`, `fieldId`, `userId`, `startDate`, `endDate`) enriquecidas con datos del usuario desde `auth`. | JWT           |
+| `GET`  | `/reservations/:id`         | Obtiene el detalle de una reservación enriquecida con perfil de usuario y cancha.                                                       | JWT           |
+| `PUT`  | `/reservations/:id/confirm` | Confirma una reservación pendiente (verifica que la hora de inicio aún no haya pasado).                                                 | JWT           |
+| `PUT`  | `/reservations/:id/cancel`  | Cancela una reservación registrando opcionalmente `cancellationReason`.                                                                 | JWT           |
+
+### 9.3 Equipos (`/teams`)
+
+| Método   | Ruta                                 | Descripción                                                          | Autenticación                |
+| :------- | :----------------------------------- | :------------------------------------------------------------------- | :--------------------------- |
+| `GET`    | `/teams`                             | Lista equipos paginados con filtro `isActive` y búsqueda por nombre. | JWT o `x-internal-token`     |
+| `GET`    | `/teams/:id`                         | Obtiene el detalle de un equipo.                                     | JWT o `x-internal-token`     |
+| `POST`   | `/teams`                             | Crea un equipo (`multipart/form-data`, campo `logo`).                | JWT (`ADMIN_ROLE`)           |
+| `PUT`    | `/teams/:id`                         | Actualiza datos o logo de un equipo.                                 | JWT (`ADMIN_ROLE` o capitán) |
+| `PUT`    | `/teams/:id/activate`                | Activa un equipo.                                                    | JWT (`ADMIN_ROLE`)           |
+| `PUT`    | `/teams/:id/deactivate`              | Desactiva un equipo.                                                 | JWT (`ADMIN_ROLE`)           |
+| `PUT`    | `/teams/:id/manager`                 | Reasigna el capitán (`managerId`) del equipo.                        | JWT (`ADMIN_ROLE`)           |
+| `POST`   | `/teams/:id/named-members`           | Agrega un integrante nombrado al equipo.                             | JWT (`ADMIN_ROLE`)           |
+| `DELETE` | `/teams/:id/named-members/:memberId` | Elimina un integrante nombrado del equipo.                           | JWT (`ADMIN_ROLE`)           |
+
+### 9.4 Torneos (`/tournaments`) y Salud (`/health`)
+
+| Método   | Ruta                          | Descripción                                                                          | Autenticación            |
+| :------- | :---------------------------- | :----------------------------------------------------------------------------------- | :----------------------- |
+| `GET`    | `/tournaments`                | Lista torneos con filtros por estado, categoría y búsqueda.                          | JWT o `x-internal-token` |
+| `GET`    | `/tournaments/:id`            | Obtiene el detalle de un torneo con sus equipos inscritos.                           | JWT o `x-internal-token` |
+| `POST`   | `/tournaments`                | Crea un torneo (`multipart/form-data`, campo opcional `image`).                      | JWT (`ADMIN_ROLE`)       |
+| `PUT`    | `/tournaments/:id`            | Actualiza datos, estado o imagen de un torneo.                                       | JWT (`ADMIN_ROLE`)       |
+| `PUT`    | `/tournaments/:id/activate`   | Activa un torneo.                                                                    | JWT (`ADMIN_ROLE`)       |
+| `PUT`    | `/tournaments/:id/deactivate` | Desactiva un torneo.                                                                 | JWT (`ADMIN_ROLE`)       |
+| `DELETE` | `/tournaments/:id`            | Elimina un torneo.                                                                   | JWT (`ADMIN_ROLE`)       |
+| `GET`    | `/health`                     | Verifica el estado del servicio y la conexión activa a MongoDB (`readyState === 1`). | Público                  |
+
+---
+
+## 10. Pruebas
+
+La suite de pruebas unitarias (`src/**/*.test.ts`) utiliza **Vitest** junto con `@swc/core`:
 
 ```bash
-pnpm --filter server-admin dev         # Desarrollo con recarga en puerto 3009
-pnpm --filter server-admin build       # Compila TypeScript a dist/
-pnpm --filter server-admin start       # Ejecuta dist/main.js
-pnpm --filter server-admin test        # Ejecuta las 51 pruebas unitarias con Vitest
-pnpm --filter server-admin typecheck   # Verifica tipos con tsc --noEmit
-pnpm --filter server-admin lint        # Ejecuta ESLint
-pnpm --filter server-admin format      # Formatea con Prettier
+pnpm --filter server-admin test
 ```
 
----
+Cubre:
 
-## 7. Decisiones de Seguridad y Rendimiento
-
-1. **Extraccion de JWT Multi-Canal (`TokenService`):**
-   - Acepta el token desde el header `x-token`, `Authorization: Bearer <token>` o la cookie `httpOnly` `kinal_access` enviada por `client-admin` (`withCredentials: true`).
-2. **Caché `Cache-Aside` e Invalidacion Automatica (`RedisCacheService`):**
-   - `FieldService.list` y `FieldService.findById` sirven las canchas desde Redis (`kinal:fields:*`, TTL 120 s).
-   - Al crear (`POST /fields`), actualizar (`PUT /fields/:id`) o activar/desactivar (`PUT /fields/:id/activate|deactivate`) una cancha, se invalidan automaticamente todas las llaves `kinal:fields:*` en Redis para que tanto el dashboard como la app movil vean los cambios al instante.
-3. **Subida Segura a Cloudinary:**
-   - Los Guards y el interceptor `ValidateRequest` se ejecutan **antes** de subir la imagen a Cloudinary; si el guardado en MongoDB falla, la imagen recien subida se elimina automaticamente.
+- `TokenService` (extracción desde `x-token`, `Authorization: Bearer` y cookie `kinal_access`), `RolesGuard` y `AuthOrInternalGuard`.
+- `RedisCacheService` (lectura, escritura con TTL, borrado por prefijo e invalidación).
+- Servicios y controladores de `fields` (incluyendo filtros `QUERY` e invalidación de caché), `reservations`, `teams`, `tournaments` y `CloudinaryService`.
 
 ---
 
-## 8. Referencia de Endpoints
+## 11. Build y Despliegue en Docker
 
-**URL Base:** `http://localhost:3009/kinalSportsAdmin/v1`
+El archivo `dockerfiles/Dockerfile.server-admin` construye la imagen sobre `node:26-slim`:
 
-### Canchas (`/fields`)
-
-| Metodo  | Ruta                     | Descripcion                                                      | Autenticacion            |
-| :------ | :----------------------- | :--------------------------------------------------------------- | :----------------------- |
-| `GET`   | `/fields`                | Listar canchas con paginacion (`?page=1&limit=10&isActive=true`) | JWT o `x-internal-token` |
-| `QUERY` | `/fields`                | Consulta filtrada de canchas enviando criterios en el body JSON  | JWT o `x-internal-token` |
-| `GET`   | `/fields/:id`            | Obtener cancha por ID                                            | JWT o `x-internal-token` |
-| `POST`  | `/fields`                | Crear cancha (`multipart/form-data`, campo `image`)              | JWT (`ADMIN_ROLE`)       |
-| `PUT`   | `/fields/:id`            | Actualizar cancha (`multipart/form-data`, campo `image`)         | JWT (`ADMIN_ROLE`)       |
-| `PUT`   | `/fields/:id/activate`   | Activar cancha                                                   | JWT (`ADMIN_ROLE`)       |
-| `PUT`   | `/fields/:id/deactivate` | Desactivar cancha                                                | JWT (`ADMIN_ROLE`)       |
-
-### Reservaciones (`/reservations`)
-
-| Metodo | Ruta                        | Descripcion                                                  | Autenticacion |
-| :----- | :-------------------------- | :----------------------------------------------------------- | :------------ |
-| `GET`  | `/reservations`             | Listar reservaciones (enriquecidas con cancha y usuario)     | JWT           |
-| `GET`  | `/reservations/:id`         | Obtener reservacion por ID                                   | JWT           |
-| `PUT`  | `/reservations/:id/confirm` | Confirmar reservacion pendiente (antes de su hora de inicio) | JWT           |
-| `PUT`  | `/reservations/:id/cancel`  | Cancelar reservacion                                         | JWT           |
-
-### Equipos (`/teams`)
-
-| Metodo   | Ruta                                 | Descripcion                                        | Autenticacion                |
-| :------- | :----------------------------------- | :------------------------------------------------- | :--------------------------- |
-| `GET`    | `/teams`                             | Listar equipos                                     | JWT o `x-internal-token`     |
-| `GET`    | `/teams/:id`                         | Obtener equipo por ID                              | JWT o `x-internal-token`     |
-| `POST`   | `/teams`                             | Crear equipo (`multipart/form-data`, campo `logo`) | JWT (`ADMIN_ROLE`)           |
-| `PUT`    | `/teams/:id`                         | Actualizar equipo                                  | JWT (`ADMIN_ROLE` o capitan) |
-| `PUT`    | `/teams/:id/activate`                | Activar equipo                                     | JWT (`ADMIN_ROLE`)           |
-| `PUT`    | `/teams/:id/deactivate`              | Desactivar equipo                                  | JWT (`ADMIN_ROLE`)           |
-| `PUT`    | `/teams/:id/manager`                 | Cambiar capitan/manager del equipo                 | JWT (`ADMIN_ROLE`)           |
-| `POST`   | `/teams/:id/named-members`           | Agregar miembro nombrado                           | JWT (`ADMIN_ROLE`)           |
-| `DELETE` | `/teams/:id/named-members/:memberId` | Eliminar miembro nombrado                          | JWT (`ADMIN_ROLE`)           |
-
-### Torneos (`/tournaments`) y Salud (`/health`)
-
-| Metodo   | Ruta                          | Descripcion                                       | Autenticacion            |
-| :------- | :---------------------------- | :------------------------------------------------ | :----------------------- |
-| `GET`    | `/tournaments`                | Listar torneos                                    | JWT o `x-internal-token` |
-| `GET`    | `/tournaments/:id`            | Obtener torneo por ID                             | JWT o `x-internal-token` |
-| `POST`   | `/tournaments`                | Crear torneo                                      | JWT (`ADMIN_ROLE`)       |
-| `PUT`    | `/tournaments/:id`            | Actualizar torneo                                 | JWT (`ADMIN_ROLE`)       |
-| `PUT`    | `/tournaments/:id/activate`   | Activar torneo                                    | JWT (`ADMIN_ROLE`)       |
-| `PUT`    | `/tournaments/:id/deactivate` | Desactivar torneo                                 | JWT (`ADMIN_ROLE`)       |
-| `DELETE` | `/tournaments/:id`            | Eliminar torneo                                   | JWT (`ADMIN_ROLE`)       |
-| `GET`    | `/health`                     | Estado de salud del servicio y conexion a MongoDB | Publico                  |
-
-### Ejemplo con `curl` (Metodo HTTP `QUERY`)
-
-```bash
-curl -X QUERY http://localhost:3009/kinalSportsAdmin/v1/fields \
-  -H "x-internal-token: KinalSportsInternalSecretToken2026!" \
-  -H "Content-Type: application/json" \
-  -d '{"fieldType":"SINTETICA","capacity":"FUTBOL_7","maxPricePerHour":250,"search":"Cancha"}'
-```
+- **Etapa `dev`:** Monta el código fuente y ejecuta `nodemon --legacy-watch` en el puerto `3009`.
+- **Etapa `runtime`:** Compila el proyecto con `pnpm build`, instala únicamente dependencias de producción (`--prod`) y ejecuta `node dist/main.js` bajo el usuario sin privilegios `node`.
 
 ---
 
-## 9. Integracion con Otros Servicios
+## 12. Documentación Relacionada
 
-| Servicio                             | Relacion                                                                        |
-| :----------------------------------- | :------------------------------------------------------------------------------ |
-| `auth-service` / `auth-node`         | Emision de JWT y consulta interna de perfiles (`QUERY /auth/profile/by-id`).    |
-| `server-user`                        | Comparte MongoDB y la caché `kinal:fields:*` y `kinal:user:profile:*` en Redis. |
-| `client-admin` / `client-admin-next` | Consumidores principales del panel administrativo.                              |
+- [README Principal del Monorepo](../README.md)
+- [Server User — API de usuarios que comparte MongoDB y Redis](../server-user/README.md)
+- [Client Admin (React + Vite)](../client-admin/README.md)
+- [Client Admin Next (Next.js BFF)](../client-admin-next/README.md)

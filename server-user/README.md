@@ -1,224 +1,222 @@
-# Server User — API Publica de Usuarios (Express 5)
+# Server User — API de Operaciones de Usuario (Express 5)
 
-Microservicio de negocio para los usuarios finales de KinalSports construido con **Express 5**, **Node.js (ESM)**, **MongoDB 7 (Mongoose 9)** y **Redis 7** en arquitectura por capas (`controller` → `service` → `repository`).
+## 1. Propósito del Componente
 
----
+`server-user` es el microservicio de negocio orientado a los jugadores y capitanes de equipo de **KinalSports**, construido con **Node.js (ESM)**, **Express 5**, **MongoDB 7 (Mongoose 9)** y **Redis 7** siguiendo una **Arquitectura por Capas**.
 
-## 1. Rol en la Arquitectura
-
-- Atiende todas las operaciones de usuario de la aplicacion movil (`client-user`): exploracion de canchas, reservaciones, creacion y gestion de equipos, inscripcion en torneos y edicion de perfil.
-- Comparte la base de datos MongoDB 7 y el espacio de caché en Redis (`kinal:fields:*` y `kinal:user:profile:*`) con `server-admin`.
-- Se comunica internamente con `auth-node` (perfiles y foto de perfil) y `server-admin` (lecturas internas) usando `x-internal-token`.
+Su objetivo es exponer los flujos operativos del deportista (exploración y filtrado de canchas, consulta de disponibilidad horaria, creación y cancelación de reservaciones propias, creación y administración de equipos, inscripción en torneos y gestión del perfil) aplicando todas las reglas de negocio del complejo deportivo.
 
 ---
 
-## 2. Stack Tecnologico
+## 2. Responsabilidad dentro de KinalSports
 
-- **Runtime y Framework:** Node.js 22.13+ (Node 26 en Docker, ESM), Express 5.x
-- **Base de Datos y Caché:** MongoDB 7, Mongoose 9, Redis 7 (`redis.cache.js` con fallback en memoria)
-- **Seguridad y Validacion:** JWT (`HS256`), Helmet 8, CORS, `express-rate-limit`, `express-validator`
-- **Archivos y Clientes HTTP:** Multer + Cloudinary, Axios (con timeouts configurados), `fetch` nativo
-- **Pruebas:** Vitest 5
+- Es el backend de negocio consumido por la aplicación móvil `client-user` (React Native + Expo).
+- Comparte la base de datos documental `kinalSports` en **MongoDB 7** y el espacio de claves de caché en **Redis 7** (`kinal:fields:*` y `kinal:user:profile:*`) con `server-admin`.
+- Consulta y actualiza información de identidad en `auth-node` (`AUTH_NODE_URL`, puerto `3007`) utilizando llamadas internas autenticadas con `x-internal-token` (`QUERY /api/v1/auth/profile/by-id` y `QUERY /api/v1/auth/profile/by-username`) y reenviando la subida de avatares del usuario.
 
 ---
 
-## 3. Estructura del Proyecto
+## 3. Stack Tecnológico Verificado
 
-```
+| Categoría                    | Paquete / Versión (`package.json`)                                                                                       | Uso en el Servicio                                                                                             |
+| :--------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
+| **Runtime y Módulos**        | Node.js `>= 22.13.0` (`node:26-slim` en Docker), ECMAScript Modules (`"type": "module"`)                                 | Ejecución nativa en JavaScript moderno sin paso de transpilación.                                              |
+| **Framework HTTP**           | `express` `^5.2.1`                                                                                                       | Enrutamiento modular, soporte nativo de promesas en middlewares y método `router.query`.                       |
+| **Base de Datos y Caché**    | `mongoose` `^9.12.1`, `src/infrastructure/redis.cache.js`                                                                | Modelos sobre MongoDB 7 y caché `Cache-Aside` sobre Redis 7 con fallback en memoria.                           |
+| **Seguridad y Validación**   | `jsonwebtoken` `^9.0.3`, `helmet` `^8.1.0`, `cors` `^2.8.6`, `express-rate-limit` `^8.3.2`, `express-validator` `^7.3.1` | Validación de JWT (Bearer o cookie `httpOnly`), cabeceras HTTP, control de tasa y validación de entradas.      |
+| **Archivos y Clientes HTTP** | `multer` `^2.5.0`, `cloudinary` `^2.9.0`, `axios` `^1.21.1`, `form-data` `^4.0.5`                                        | Subida de logos de equipos a Cloudinary y cliente HTTP hacia `auth-node` / `server-admin` con timeouts de 8 s. |
+| **Pruebas Unitarias**        | `vitest` `^5.1.0`                                                                                                        | Pruebas unitarias de servicios de dominio, middlewares y caché Redis.                                          |
+
+---
+
+## 4. Arquitectura Interna (Arquitectura por Capas)
+
+Cada dominio funcional dentro de `src/` (`fields`, `reservations`, `teams`, `tournaments`, `users`) se estructura en cuatro capas con responsabilidades bien delimitadas:
+
+1. **Rutas (`*.routes.js`):** Declaran los endpoints Express, aplican los middlewares de autenticación (`validateJWT`), límite de tasa y carga de archivos, y delegan en el controlador.
+2. **Controladores (`*.controller.js`):** Extraen parámetros de `req.params`, `req.query`, `req.body` y `req.user`, invocan al servicio de aplicación y devuelven la respuesta HTTP (`res.status(...).json(...)`).
+3. **Servicios (`*.service.js`):** Contienen todas las reglas de negocio (validación de horarios, traslape de reservas, límites de integrantes por categoría de fútbol, permisos de capitán e interacción con la caché Redis y clientes internos).
+4. **Repositorios y Modelos (`*.repository.js` y `*.model.js`):** Encapsulan las consultas de Mongoose hacia las colecciones `fields`, `reservations`, `teams` y `tournaments` de MongoDB.
+
+> **Nota sobre la comunicación con `server-admin`:** Aunque existe el adaptador `src/infrastructure/admin.client.js` (`ADMIN_SERVICE_URL`), las operaciones de lectura de canchas en `src/fields/field.service.js` y la validación de canchas activas al reservar en `src/reservations/reservation.service.js` se realizan directamente sobre la colección `fields` de la base **MongoDB compartida** y las claves `kinal:fields:*` de **Redis**, evitando saltos HTTP innecesarios en cada consulta.
+
+---
+
+## 5. Estructura Principal del Directorio
+
+```text
 server-user/
-├── index.js                        # Punto de entrada del servidor
+├── index.js                            # Punto de entrada del servidor
 ├── configs/
-│   ├── app.js                      # Validacion de env al arranque, middlewares, rutas y apagado ordenado
-│   ├── db.js                       # Conexion a MongoDB e inspeccion de estado (isDatabaseConnected)
-│   ├── cors-configuration.js       # CORS con soporte para credenciales y metodo HTTP QUERY
-│   └── helmet-configuration.js     # Cabeceras HTTP de seguridad
+│   ├── app.js                          # Validación de entorno (validateEnv), middlewares, montaje de rutas y apagado ordenado
+│   ├── db.js                           # Conexión a MongoDB e inspección de estado (isDatabaseConnected)
+│   ├── cors-configuration.js           # Configuración de CORS (incluye método QUERY y credentials: true)
+│   └── helmet-configuration.js         # Configuración de cabeceras de seguridad Helmet
 ├── middlewares/
-│   ├── auth.middleware.js          # Validacion JWT (Authorization: Bearer o cookie httpOnly kinal_access)
-│   ├── file-uploader.js            # Recepcion en memoria de logos y fotos de perfil
-│   ├── handle-errors.js            # Manejador global de errores de Express
-│   ├── rate-limit-user.js          # Rate limiting especifico por ruta
-│   └── request-limit.js            # Rate limiting general por IP
+│   ├── auth.middleware.js              # Validación de JWT (Authorization: Bearer o cookie kinal_access)
+│   ├── file-uploader.js                # Recepción en memoria (Multer) para logos e imágenes de perfil
+│   ├── handle-errors.js                # Manejador centralizado de errores (AppError y CastError -> 400 INVALID_ID)
+│   ├── rate-limit-user.js              # Limitador de tasa específico por operación
+│   └── request-limit.js                # Limitador de tasa general por IP
 ├── src/
 │   ├── infrastructure/
-│   │   ├── admin.client.js         # Cliente HTTP interno hacia server-admin
-│   │   ├── auth.client.js          # Cliente HTTP interno hacia auth-node (QUERY profile/by-* + Redis)
-│   │   ├── cloudinary.storage.js   # Subida de logos de equipos a Cloudinary
-│   │   └── redis.cache.js          # Cliente Redis Cache-Aside (RESP2) con fallback en memoria
+│   │   ├── admin.client.js             # Cliente HTTP interno hacia server-admin (timeout 8000 ms)
+│   │   ├── auth.client.js              # Cliente HTTP interno hacia auth-node (QUERY profile/by-* + Redis)
+│   │   ├── cloudinary.storage.js       # Subida de logos de equipos a Cloudinary
+│   │   └── redis.cache.js              # Cliente Redis Cache-Aside (RESP2) con fallback en memoria
 │   ├── shared/
-│   │   ├── errors.js               # Errores tipados (AppError) y conversion de CastError a 400 INVALID_ID
-│   │   └── user-format.js          # Normalizacion de datos publicos de usuario
-│   ├── fields/                     # Exploracion y busqueda filtrada (GET y QUERY /fields)
-│   ├── reservations/               # Disponibilidad, creacion, cancelacion e historial de reservas
-│   ├── teams/                      # Creacion, union, salida y administracion de miembros de equipos
-│   ├── tournaments/                # Listado, detalle e inscripcion de equipos en torneos
-│   └── users/                      # Consulta de perfil y actualizacion de avatar
+│   │   ├── errors.js                   # Clase AppError y utilidades de validación de ObjectId
+│   │   └── user-format.js              # Normalización de perfiles públicos de usuario
+│   ├── fields/                         # Exploración y búsqueda filtrada de canchas (GET y QUERY /fields)
+│   ├── reservations/                   # Disponibilidad, creación, cancelación e historial de reservas
+│   ├── teams/                          # Creación, unión, abandono y gestión de miembros de equipos
+│   ├── tournaments/                    # Consulta e inscripción de equipos en torneos
+│   └── users/                          # Consulta de perfil propio y cambio de fotografía/avatar
 ├── .env.example
+├── eslint.config.js
 └── package.json
 ```
 
 ---
 
-## 4. Instalacion y Puesta en Marcha
+## 6. Requisitos
 
-### Opcion A: Desde la raiz del monorepo
+- **Node.js:** `>= 22.13.0`
+- **pnpm:** `>= 10`
+- **MongoDB:** `7+`
+- **Servicio `auth-node` activo (`:3007`):** Requerido para consultar perfiles de integrantes y actualizar fotografías de perfil.
+- **Redis:** `7+` (opcional en desarrollo local gracias al fallback en memoria).
+
+---
+
+## 7. Configuración (`.env`)
+
+Copia `.env.example` a `.env`:
 
 ```bash
-pnpm install
 cp server-user/.env.example server-user/.env
+```
+
+Al arrancar, `validateEnv()` en `configs/app.js` verifica obligatoriamente que `URI_MONGODB` esté definida y que `JWT_SECRET` tenga al menos 32 caracteres:
+
+| Variable                                                                 | Requerida | Valor de Referencia (Local)                                         | Descripción                                                                     |
+| :----------------------------------------------------------------------- | :-------- | :------------------------------------------------------------------ | :------------------------------------------------------------------------------ |
+| `NODE_ENV`                                                               | No        | `development`                                                       | Entorno de ejecución (`development`, `test`, `production`).                     |
+| `PORT`                                                                   | No        | `3008`                                                              | Puerto HTTP del servicio.                                                       |
+| `URI_MONGODB`                                                            | Sí        | `mongodb://localhost:27020/kinalSports`                             | Cadena de conexión a MongoDB 7 (compartida con `server-admin`).                 |
+| `JWT_SECRET`                                                             | Sí        | _(mínimo 32 caracteres)_                                            | Clave simétrica `HS256` compartida con `auth-node` y `auth-service`.            |
+| `JWT_ISSUER` / `JWT_AUDIENCE`                                            | No        | `AuthService` / `AuthService`                                       | Emisor y audiencia validados en el token JWT.                                   |
+| `AUTH_NODE_URL`                                                          | Sí        | `http://localhost:3007/api/v1`                                      | URL base de `auth-node` para consultas internas y subida de avatar.             |
+| `ADMIN_SERVICE_URL`                                                      | No        | `http://localhost:3009/kinalSportsAdmin/v1`                         | URL base de `server-admin`.                                                     |
+| `INTERNAL_SERVICE_TOKEN`                                                 | Sí        | _(secreto compartido)_                                              | Token enviado en la cabecera `x-internal-token`.                                |
+| `REDIS_URL`                                                              | No        | `redis://localhost:6379`                                            | URL de conexión a Redis 7.                                                      |
+| `BUSINESS_TIMEZONE`                                                      | No        | `America/Guatemala`                                                 | Zona horaria utilizada para validar el horario de atención (`06:00` a `22:00`). |
+| `ALLOWED_ORIGINS`                                                        | No        | `http://localhost:3000,http://localhost:3001,http://localhost:5173` | Orígenes habilitados en CORS.                                                   |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | Sí        | _(credenciales Cloudinary)_                                         | Configuración para subir logotipos de equipos.                                  |
+| `CLOUDINARY_TEAMS_FOLDER`                                                | No        | `kinal_sports/teams`                                                | Carpeta de Cloudinary para logotipos de equipos.                                |
+
+---
+
+## 8. Ejecución Local
+
+### Desde la raíz del monorepo
+
+```bash
 pnpm --filter server-user dev
 ```
 
-### Opcion B: Como microservicio independiente (aislado)
+### Desde el directorio del servicio
 
 ```bash
 cd server-user
 pnpm install
-cp .env.example .env
 pnpm dev
 ```
 
----
+### Scripts disponibles en `package.json`
 
-## 5. Variables de Entorno (`.env`)
-
-Copia `.env.example` a `.env`:
-
-```env
-NODE_ENV=development
-PORT=3008
-
-# MongoDB (compartida con server-admin)
-URI_MONGODB=mongodb://localhost:27020/kinalSports
-
-# JWT (debe coincidir con auth-node y auth-service)
-JWT_SECRET=MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!
-JWT_ISSUER=AuthService
-JWT_AUDIENCE=AuthService
-
-# Servicios internos y Caché Redis
-ADMIN_SERVICE_URL=http://localhost:3009/kinalSportsAdmin/v1
-AUTH_NODE_URL=http://localhost:3007/api/v1
-INTERNAL_SERVICE_TOKEN=KinalSportsInternalSecretToken2026!
-REDIS_URL=redis://localhost:6379
-
-# Reglas de horario y CORS
-BUSINESS_TIMEZONE=America/Guatemala
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:5173
-
-# Cloudinary (logos de equipos)
-CLOUDINARY_CLOUD_NAME=b3xvlule
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
-CLOUDINARY_TEAMS_FOLDER=kinal_sports/teams
-```
-
-> Al iniciar, `validateEnv()` en `configs/app.js` verifica que `URI_MONGODB` y `JWT_SECRET` (minimo 32 caracteres) esten presentes.
+- `pnpm dev`: Ejecuta `nodemon index.js` con recarga automática en el puerto `3008`.
+- `pnpm start`: Ejecuta `node index.js` para entornos de producción.
+- `pnpm test` / `pnpm test:watch` / `pnpm test:coverage`: Ejecuta las pruebas unitarias con Vitest.
+- `pnpm lint` / `pnpm lint:fix`: Analiza el código con ESLint 9.
+- `pnpm format`: Formatea el código con Prettier.
 
 ---
 
-## 6. Scripts Disponibles
+## 9. Integraciones, Reglas de Negocio y Referencia de Endpoints
+
+**Prefijo base:** `/kinalSportsUser/v1` | **Puerto:** `3008`
+
+### 9.1 Reglas de Negocio Verificadas en los Servicios
+
+- **Reservaciones (`src/reservations/reservation.service.js`):**
+  - La fecha de inicio debe ser futura, en horas exactas, con una duración de **1 a 3 horas** dentro del horario de atención (`06:00` a `22:00` en `BUSINESS_TIMEZONE`).
+  - La cancha debe existir, estar activa (`isActive: true`) y no tener otra reservación `PENDING` o `CONFIRMED` traslapada en ese rango horario.
+  - Un usuario solo puede cancelar sus propias reservaciones en estado `PENDING` o `CONFIRMED` cuya hora de inicio aún no haya transcurrido.
+- **Equipos (`src/teams/team.service.js`):**
+  - Solo se permite unirse o agregar integrantes a equipos activos (`isActive: true`).
+  - Límite de integrantes (miembros registrados + miembros nombrados): **12 jugadores** para `FUTBOL_7` y **18 jugadores** para `FUTBOL_11`.
+  - Solo el capitán (`managerId`) puede editar el equipo, agregar/eliminar miembros por `username` o gestionar miembros nombrados.
+- **Torneos (`src/tournaments/tournament.service.js`):**
+  - Solo el capitán de un equipo activo puede inscribirlo en un torneo activo cuyo estado sea `PENDIENTE`, cuya fecha de inicio sea futura, que tenga cupo disponible (`teams.length < maxTeams`) y cuya categoría coincida con la del equipo.
+
+### 9.2 Tabla de Endpoints
+
+| Módulo       | Método                     | Ruta                            | Descripción                                                                                                        | Autenticación |
+| :----------- | :------------------------- | :------------------------------ | :----------------------------------------------------------------------------------------------------------------- | :------------ |
+| **Canchas**  | `GET`                      | `/fields`                       | Lista canchas disponibles con paginación y filtros por query string (caché Redis `kinal:fields:*`).                | Público       |
+| **Canchas**  | `QUERY`                    | `/fields`                       | Filtra canchas enviando `{ page, limit, isActive, fieldType, capacity, maxPricePerHour, search }` en el body JSON. | Público       |
+| **Canchas**  | `GET`                      | `/fields/:id`                   | Obtiene el detalle de una cancha por su ID.                                                                        | Público       |
+| **Usuarios** | `GET`                      | `/users/profile`                | Obtiene el perfil del usuario autenticado desde `auth-node` / Redis.                                               | JWT           |
+| **Usuarios** | `PUT`                      | `/users/profile/picture`        | Actualiza la foto de perfil (`profilePicture` multipart) e invalida caché en Redis.                                | JWT           |
+| **Usuarios** | `POST`                     | `/users/profile/picture/avatar` | Alias para actualizar la foto de perfil (`avatar` multipart).                                                      | JWT           |
+| **Reservas** | `GET`                      | `/reservations/availability`    | Devuelve los bloques horarios ocupados de una cancha en una fecha (`?fieldId=...&date=YYYY-MM-DD`).                | JWT           |
+| **Reservas** | `GET`                      | `/reservations/my-reservations` | Lista las reservaciones del usuario autenticado.                                                                   | JWT           |
+| **Reservas** | `GET`                      | `/reservations/me/history`      | Historial paginado de reservaciones del usuario.                                                                   | JWT           |
+| **Reservas** | `GET`                      | `/reservations/:id`             | Obtiene el detalle de una reservación propia.                                                                      | JWT           |
+| **Reservas** | `POST`                     | `/reservations`                 | Crea una nueva reservación.                                                                                        | JWT           |
+| **Reservas** | `PUT`                      | `/reservations/:id/cancel`      | Cancela una reservación propia antes de su inicio.                                                                 | JWT           |
+| **Equipos**  | `GET`                      | `/teams`                        | Lista equipos activos.                                                                                             | JWT           |
+| **Equipos**  | `GET`                      | `/teams/me/mis-equipos`         | Lista los equipos donde el usuario es capitán o miembro.                                                           | JWT           |
+| **Equipos**  | `GET`                      | `/teams/:id`                    | Detalle del equipo con perfiles de miembros enriquecidos vía Redis / `auth-node`.                                  | JWT           |
+| **Equipos**  | `POST`                     | `/teams`                        | Crea un equipo (`multipart/form-data`, campo opcional `logo`).                                                     | JWT           |
+| **Equipos**  | `PUT`                      | `/teams/:id`                    | Actualiza nombre, categoría o logo del equipo (solo capitán).                                                      | JWT           |
+| **Equipos**  | `POST`                     | `/teams/:id/join`               | Permite al usuario autenticado unirse a un equipo activo con cupo.                                                 | JWT           |
+| **Equipos**  | `POST`                     | `/teams/:id/leave`              | Permite a un miembro abandonar un equipo (el capitán no puede abandonar su propio equipo).                         | JWT           |
+| **Equipos**  | `/teams/:id/members`       | `POST` / `DELETE /:userId`      | Agrega miembro por `{ username }` o elimina miembro registrado (solo capitán).                                     | JWT           |
+| **Equipos**  | `/teams/:id/named-members` | `POST` / `DELETE /:memberId`    | Agrega o elimina un integrante invitado por nombre (solo capitán).                                                 | JWT           |
+| **Torneos**  | `GET`                      | `/tournaments`                  | Lista torneos disponibles.                                                                                         | JWT           |
+| **Torneos**  | `GET`                      | `/tournaments/me/mis-torneos`   | Lista los torneos en los que participan equipos del usuario.                                                       | JWT           |
+| **Torneos**  | `GET`                      | `/tournaments/:id`              | Obtiene el detalle de un torneo.                                                                                   | JWT           |
+| **Torneos**  | `POST`                     | `/tournaments/:id/register`     | Inscribe un equipo (`{ teamId }`) en el torneo (solo capitán).                                                     | JWT           |
+| **Salud**    | `GET`                      | `/health`                       | Estado del servicio y verificación de conexión a MongoDB (`503` si está desconectado).                             | Público       |
+
+---
+
+## 10. Pruebas
+
+Las pruebas unitarias (`src/**/*.test.js`) se ejecutan con **Vitest**:
 
 ```bash
-pnpm --filter server-user dev        # Servidor de desarrollo con nodemon (puerto 3008)
-pnpm --filter server-user start      # Ejecucion de produccion (node index.js)
-pnpm --filter server-user test       # Ejecuta las 53 pruebas unitarias con Vitest
-pnpm --filter server-user lint       # Ejecuta ESLint
-pnpm --filter server-user lint:fix   # Corrige automaticamente problemas de ESLint
-pnpm --filter server-user format     # Formatea el codigo con Prettier
+pnpm --filter server-user test
 ```
 
----
-
-## 7. Decisiones de Seguridad y Rendimiento
-
-1. **Autenticacion Dual (`middlewares/auth.middleware.js`):**
-   - Acepta el JWT tanto desde el header `Authorization: Bearer <token>` (usado por `client-user` movil) como desde la cookie `httpOnly` `kinal_access` (para clientes web).
-2. **Caché `Cache-Aside` Compartida en Redis (`src/infrastructure/redis.cache.js`):**
-   - `listFields` y `getField` leen/escriben `kinal:fields:*` (TTL 120 s), que `server-admin` invalida automaticamente cuando un administrador modifica una cancha.
-   - `getUsersByIds` cachea perfiles en `kinal:user:profile:<userId>` (TTL 60 s) e invalida la llave al actualizar la foto de perfil.
-3. **Metodo HTTP `QUERY`:**
-   - Expone `QUERY /kinalSportsUser/v1/fields` para filtrar canchas por superficie, capacidad, precio maximo y nombre en el body JSON, y consume `QUERY /api/v1/auth/profile/by-id` y `/by-username` hacia `auth-node`.
+Verifican las reglas de negocio de `fields` (incluyendo consultas `QUERY` y caché), `reservations` (horarios, traslapes y cancelaciones), `teams` (cupos por categoría y permisos de capitán), `tournaments` (validaciones de inscripción), `users`, `auth.middleware` (extracción de JWT por header o cookie `httpOnly`) y `redis.cache`.
 
 ---
 
-## 8. Referencia de Endpoints
+## 11. Build y Despliegue en Docker
 
-**URL Base:** `http://localhost:3008/kinalSportsUser/v1`
+Al estar escrito directamente en JavaScript ESM, `server-user` no requiere etapa de transpilación. El archivo `dockerfiles/Dockerfile.server-user` define dos etapas sobre `node:26-slim`:
 
-### Canchas (`/fields` — Publico)
-
-| Metodo  | Endpoint      | Descripcion                                                 | Autenticacion |
-| :------ | :------------ | :---------------------------------------------------------- | :------------ |
-| `GET`   | `/fields`     | Listar canchas disponibles con paginacion                   | Publico       |
-| `QUERY` | `/fields`     | Consultar canchas con filtros estructurados en el body JSON | Publico       |
-| `GET`   | `/fields/:id` | Obtener detalle de una cancha por ID                        | Publico       |
-
-### Perfil de Usuario (`/users` — JWT)
-
-| Metodo | Endpoint                        | Descripcion                                            | Autenticacion |
-| :----- | :------------------------------ | :----------------------------------------------------- | :------------ |
-| `GET`  | `/users/profile`                | Obtener perfil del usuario autenticado                 | JWT           |
-| `PUT`  | `/users/profile/picture`        | Actualizar foto de perfil (`profilePicture` multipart) | JWT           |
-| `POST` | `/users/profile/picture/avatar` | Alias para actualizar foto (`avatar` multipart)        | JWT           |
-
-### Reservaciones (`/reservations` — JWT)
-
-| Metodo | Endpoint                        | Descripcion                                            | Autenticacion |
-| :----- | :------------------------------ | :----------------------------------------------------- | :------------ |
-| `GET`  | `/reservations/availability`    | Consultar horarios ocupados de una cancha en una fecha | JWT           |
-| `GET`  | `/reservations/my-reservations` | Listar reservaciones del usuario autenticado           | JWT           |
-| `GET`  | `/reservations/me/history`      | Historial paginado de reservaciones del usuario        | JWT           |
-| `GET`  | `/reservations/:id`             | Detalle de una reservacion propia                      | JWT           |
-| `POST` | `/reservations`                 | Crear una nueva reservacion (1 a 3 h, 06:00-22:00)     | JWT           |
-| `PUT`  | `/reservations/:id/cancel`      | Cancelar una reservacion propia antes de su inicio     | JWT           |
-
-### Equipos (`/teams` — JWT)
-
-| Metodo   | Endpoint                             | Descripcion                                              | Autenticacion |
-| :------- | :----------------------------------- | :------------------------------------------------------- | :------------ |
-| `GET`    | `/teams`                             | Listar equipos activos                                   | JWT           |
-| `GET`    | `/teams/me/mis-equipos`              | Listar equipos donde participa el usuario                | JWT           |
-| `GET`    | `/teams/:id`                         | Obtener detalle del equipo con perfiles enriquecidos     | JWT           |
-| `POST`   | `/teams`                             | Crear equipo (`multipart/form-data`, campo `logo`)       | JWT           |
-| `PUT`    | `/teams/:id`                         | Actualizar equipo (solo capitan)                         | JWT           |
-| `POST`   | `/teams/:id/join`                    | Unirse a un equipo activo con cupo disponible            | JWT           |
-| `POST`   | `/teams/:id/leave`                   | Abandonar un equipo                                      | JWT           |
-| `POST`   | `/teams/:id/members`                 | Agregar miembro registrado por `username` (solo capitan) | JWT           |
-| `DELETE` | `/teams/:id/members/:userId`         | Eliminar miembro registrado (solo capitan)               | JWT           |
-| `POST`   | `/teams/:id/named-members`           | Agregar miembro invitado por nombre (solo capitan)       | JWT           |
-| `DELETE` | `/teams/:id/named-members/:memberId` | Eliminar miembro invitado (solo capitan)                 | JWT           |
-
-### Torneos (`/tournaments` — JWT) y Salud (`/health`)
-
-| Metodo | Endpoint                      | Descripcion                                                | Autenticacion |
-| :----- | :---------------------------- | :--------------------------------------------------------- | :------------ |
-| `GET`  | `/tournaments`                | Listar torneos                                             | JWT           |
-| `GET`  | `/tournaments/me/mis-torneos` | Listar torneos donde participan equipos del usuario        | JWT           |
-| `GET`  | `/tournaments/:id`            | Obtener detalle de un torneo                               | JWT           |
-| `POST` | `/tournaments/:id/register`   | Inscribir equipo en torneo (solo capitan, misma categoria) | JWT           |
-| `GET`  | `/health`                     | Estado del servicio y verificacion de conexion a MongoDB   | Publico       |
-
-### Ejemplos con `curl`
-
-```bash
-# Consulta filtrada de canchas con el metodo HTTP QUERY
-curl -X QUERY http://localhost:3008/kinalSportsUser/v1/fields \
-  -H "Content-Type: application/json" \
-  -d '{"fieldType":"SINTETICA","capacity":"FUTBOL_7","maxPricePerHour":250}'
-
-# Crear una reservacion
-curl -X POST http://localhost:3008/kinalSportsUser/v1/reservations \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{"fieldId":"60d0fe4f5311236168a109ca","startTime":"2026-06-16T16:00:00.000Z","endTime":"2026-06-16T18:00:00.000Z"}'
-```
+- **Etapa `dev`:** Instala todas las dependencias y ejecuta `nodemon --legacy-watch index.js` en el puerto `3008`.
+- **Etapa `runtime`:** Instala exclusivamente las dependencias de producción (`pnpm install --frozen-lockfile --prod`) y ejecuta `node index.js` bajo el usuario sin privilegios `node`.
 
 ---
 
-## 9. Integracion con Otros Servicios
+## 12. Documentación Relacionada
 
-| Servicio                     | Relacion                                                                                     |
-| :--------------------------- | :------------------------------------------------------------------------------------------- |
-| `auth-node` / `auth-service` | Validacion JWT y enriquecimiento de perfiles (`QUERY /auth/profile/by-id` y `/by-username`). |
-| `server-admin`               | Comparte MongoDB y la caché `kinal:fields:*` y `kinal:user:profile:*` en Redis.              |
-| `client-user`                | Aplicacion movil consumidora principal.                                                      |
+- [README Principal del Monorepo](../README.md)
+- [Client User — Aplicación móvil consumidora](../client-user/README.md)
+- [Auth Node — Servicio de autenticación consumido](../authentication-service/auth-node/README.md)
+- [Server Admin — Servicio administrativo con MongoDB y Redis compartidos](../server-admin/README.md)

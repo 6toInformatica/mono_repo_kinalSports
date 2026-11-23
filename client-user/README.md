@@ -1,136 +1,171 @@
-# Client User — Aplicacion Movil (React Native + Expo)
+# Client User — Aplicación Móvil (React Native + Expo)
 
-Aplicacion movil multiplataforma (Android / iOS) para los usuarios finales de KinalSports construida con **React Native 0.88**, **Expo SDK 58**, **React Navigation 7** y **Zustand 5**.
+## 1. Propósito del Componente
 
----
+`client-user` es la aplicación móvil multiplataforma (Android / iOS) para los usuarios finales de **KinalSports**, desarrollada con **React Native 0.88**, **Expo SDK 58**, **React Navigation 7** y **Zustand 5**.
 
-## 1. Rol en la Arquitectura
-
-- Permite a los deportistas y capitanes de equipo **registrarse, iniciar sesion, explorar canchas disponibles, reservar horarios, crear y unirse a equipos, administrar miembros, inscribirse en torneos y actualizar su foto de perfil**.
-- Consume directamente `auth-node` (puerto `3007`) para autenticacion y `server-user` (puerto `3008`) para todas las operaciones de negocio.
+Dentro de la arquitectura del proyecto, representa el canal de autoservicio para deportistas y capitanes de equipo, e ilustra las diferencias de seguridad y red entre un cliente móvil nativo (que resguarda credenciales en `expo-secure-store` y se autentica por cabecera `Authorization: Bearer`) y las aplicaciones web basadas en cookies `httpOnly`.
 
 ---
 
-## 2. Stack Tecnologico
+## 2. Responsabilidad dentro de KinalSports
 
-- **Framework Movil:** Expo `~58.0`, React Native `0.88.1`, React `19.3`
-- **Navegacion y Estado:** `@react-navigation/native` 7 (Native Stack + Bottom Tabs), Zustand 5
-- **Almacenamiento Seguro:** `expo-secure-store` (Keychain en iOS / Keystore cifrado en Android)
-- **Formularios y Multimedia:** React Hook Form 7, `expo-image-picker`, `@react-native-community/datetimepicker`
-- **Pruebas:** Jest 30 + `jest-expo` + `@testing-library/react-native`
+- Permite a los jugadores registrarse, iniciar sesión, explorar el catálogo de canchas, consultar horarios disponibles por fecha, crear y cancelar reservaciones, crear equipos con logotipo, unirse o abandonar equipos, administrar integrantes, inscribir equipos en torneos y actualizar su fotografía de perfil.
+- Consume directamente dos microservicios del monorepo:
+  - **`auth-node` (`:3007`, `/api/v1/auth`):** Registro, inicio de sesión, renovación de tokens (`refresh`), cierre de sesión (`logout`) y recuperación de contraseña.
+  - **`server-user` (`:3008`, `/kinalSportsUser/v1`):** Canchas, reservaciones, equipos, torneos y perfil de usuario.
 
 ---
 
-## 3. Estructura del Proyecto
+## 3. Stack Tecnológico Verificado
 
-```
+| Categoría                          | Paquete / Versión (`package.json`)                                                                                         | Uso en la Aplicación                                                                 |
+| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
+| **Framework Móvil**                | `expo` `~58.0.23`, `react-native` `0.88.1`, `react` `19.3.0`                                                               | Base multiplataforma y acceso a APIs nativas del dispositivo.                        |
+| **Navegación**                     | `@react-navigation/native` `^7.5.1`, `@react-navigation/native-stack` `^7.21.0`, `@react-navigation/bottom-tabs` `^7.21.0` | Flujos de navegación autenticada (`MainTabs`) y pública (`AuthStack`).               |
+| **Estado y Almacenamiento Seguro** | `zustand` `^5.0.16`, `expo-secure-store` `~58.0.2`                                                                         | Estado global de sesión respaldado en _Keychain_ (iOS) / _Keystore_ (Android).       |
+| **Formularios y Multimedia**       | `react-hook-form` `^7.91.0`, `expo-image-picker` `^58.0.10`, `@react-native-community/datetimepicker` `9.2.1`              | Selección de fotografías de perfil/logos de equipo y selección de fechas de reserva. |
+| **Cliente HTTP**                   | `axios` `^1.21.0`                                                                                                          | Instancias `authClient` y `userClient` con interceptores Bearer y rotación de token. |
+| **Pruebas Unitarias**              | `jest` `^30.5.2`, `jest-expo` `~58.0.15`, `@testing-library/react-native` `^14.1.0`                                        | Pruebas unitarias de `authStore`, `tokenRefresh` y pantallas móviles.                |
+
+---
+
+## 4. Arquitectura Interna
+
+El código fuente bajo `src/` se organiza en tres bloques principales:
+
+1. **Navegación (`src/navigation/`):**
+   - `AppNavigator.jsx`: Restaura la sesión desde `expo-secure-store` al iniciar la aplicación y conmuta automáticamente entre `AuthStack` (cuando no hay sesión) y `MainTabs` (cuando el usuario está autenticado).
+   - `MainTabs.jsx`: Barra de navegación inferior con cinco pestañas principales (Canchas, Equipos, Torneos, Mis Reservas y Perfil) y sus respectivos _stacks_ de detalle.
+2. **Módulos por Funcionalidad (`src/features/`):**
+   - `auth/`: `LoginScreen` y `RegisterScreen`.
+   - `fields/`: `FieldsList`, `FieldDetail` y `CreateReservation`.
+   - `teams/`: `TeamsList`, `MyTeams`, `CreateTeam` y `TeamDetail` (gestión de miembros registrados por `username` y miembros invitados).
+   - `tournaments/`: `TournamentsList`, `MyTournaments` y `TournamentDetail` (inscripción de equipos donde el usuario es capitán).
+   - `reservations/`: `ReservationsList` (reservas activas, historial y cancelación).
+   - `profile/`: `ProfileScreen` (datos del usuario, actualización de avatar y cierre de sesión).
+3. **Capa Compartida (`src/shared/`):**
+   - `store/authStore.js`: Persiste y recupera `accessToken`, `refreshToken` y datos del usuario utilizando `expo-secure-store`.
+   - `api/tokenRefresh.js`: Intercepta respuestas `401` de `server-user`, ejecuta una única petición compartida a `POST /api/v1/auth/refresh` enviando el `refreshToken` en el cuerpo JSON, actualiza `expo-secure-store` y reintenta las peticiones pendientes.
+
+---
+
+## 5. Estructura Principal del Directorio
+
+```text
 client-user/
-├── App.jsx                         # Punto de entrada y restauracion de sesion
-├── app.json                        # Configuracion de Expo
+├── App.jsx                             # Punto de entrada de la aplicación Expo
+├── index.js                            # Registro del componente raíz
+├── app.json                            # Metadatos y configuración de Expo
 ├── src/
 │   ├── navigation/
-│   │   ├── AppNavigator.jsx        # Conmutador entre AuthStack y MainTabs segun sesion
-│   │   ├── AuthStack.jsx           # Pantallas de Login y Registro
-│   │   └── MainTabs.jsx            # Navegacion inferior (Canchas, Equipos, Torneos, Reservas, Perfil)
+│   │   ├── AppNavigator.jsx
+│   │   ├── AuthStack.jsx
+│   │   └── MainTabs.jsx
 │   ├── features/
-│   │   ├── auth/                   # LoginScreen y RegisterScreen
-│   │   ├── fields/                 # Listado de canchas, detalle y creacion de reservaciones
-│   │   ├── teams/                  # Exploracion, mis equipos, creacion, detalle y gestion de miembros
-│   │   ├── tournaments/            # Listado de torneos, detalle e inscripcion de equipo
-│   │   ├── reservations/           # Mis reservaciones activas, historial y cancelacion
-│   │   └── profile/                # Vista de perfil, cambio de avatar y cierre de sesion
+│   │   ├── auth/
+│   │   ├── fields/
+│   │   ├── teams/
+│   │   ├── tournaments/
+│   │   ├── reservations/
+│   │   └── profile/
 │   └── shared/
-│       ├── api/                    # Clientes Axios (authClient, userClient) y tokenRefresh
-│       ├── components/             # Botones, tarjetas, inputs y modales reutilizables
-│       ├── constants/              # Endpoints y paleta de colores
-│       ├── store/                  # authStore (Zustand conectado a expo-secure-store)
-│       └── utils/                  # Formateo de fechas, monedas e imagenes
+│       ├── api/                        # authClient, userClient y tokenRefresh
+│       ├── components/
+│       ├── constants/
+│       ├── store/                      # authStore.js (Zustand + expo-secure-store)
+│       └── utils/
 ├── .env.example
+├── jest.config.js
 └── package.json
 ```
 
 ---
 
-## 4. Instalacion y Puesta en Marcha
+## 6. Requisitos
 
-### Opcion A: Desde la raiz del monorepo
+- **Node.js:** `>= 22.13.0`
+- **pnpm:** `>= 10`
+- **Entorno de ejecución móvil:** Emulador Android (Android Studio), Simulador iOS (Xcode en macOS) o dispositivo físico con la aplicación **Expo Go** en la misma red local.
+- **Backends activos:** `auth-node` (`:3007`) y `server-user` (`:3008`).
+
+---
+
+## 7. Configuración (`.env`)
+
+Copia `.env.example` a `.env`:
 
 ```bash
-pnpm install
 cp client-user/.env.example client-user/.env
+```
+
+La dirección IP debe configurarse según el dispositivo desde el cual se ejecute la aplicación:
+
+| Escenario de Ejecución                                     | `EXPO_PUBLIC_AUTH_URL`                      | `EXPO_PUBLIC_USER_URL`                             | Explicación Técnica                                                                                          |
+| :--------------------------------------------------------- | :------------------------------------------ | :------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- |
+| **Emulador Android** (valor por defecto en `.env.example`) | `http://10.0.2.2:3007/api/v1/auth`          | `http://10.0.2.2:3008/kinalSportsUser/v1`          | En el emulador de Android, `10.0.2.2` es el alias de red que apunta al `localhost` de la máquina anfitriona. |
+| **Simulador iOS / Expo Web**                               | `http://localhost:3007/api/v1/auth`         | `http://localhost:3008/kinalSportsUser/v1`         | Comparte la interfaz de loopback del host.                                                                   |
+| **Dispositivo Físico (Expo Go por Wi-Fi)**                 | `http://<IP_LAN_DEL_HOST>:3007/api/v1/auth` | `http://<IP_LAN_DEL_HOST>:3008/kinalSportsUser/v1` | Usar la dirección IPv4 local de la computadora (por ejemplo, `192.168.1.50`).                                |
+
+---
+
+## 8. Ejecución Local
+
+### Desde la raíz del monorepo
+
+```bash
 pnpm --filter client-user start
 ```
 
-### Opcion B: Como paquete individual
+### Desde el directorio del paquete
 
 ```bash
 cd client-user
 pnpm install
-cp .env.example .env
 pnpm start
 ```
 
----
+### Scripts disponibles en `package.json`
 
-## 5. Variables de Entorno (`.env`)
-
-Copia `.env.example` a `.env` y ajusta la IP segun donde ejecutes la app:
-
-```env
-EXPO_PUBLIC_AUTH_URL=http://10.0.2.2:3007/api/v1/auth
-EXPO_PUBLIC_USER_URL=http://10.0.2.2:3008/kinalSportsUser/v1
-```
-
-| Entorno de Prueba                         | `EXPO_PUBLIC_AUTH_URL`                      | `EXPO_PUBLIC_USER_URL`                             |
-| :---------------------------------------- | :------------------------------------------ | :------------------------------------------------- |
-| **Emulador Android** (`10.0.2.2` = host)  | `http://10.0.2.2:3007/api/v1/auth`          | `http://10.0.2.2:3008/kinalSportsUser/v1`          |
-| **Simulador iOS / Misma Maquina**         | `http://localhost:3007/api/v1/auth`         | `http://localhost:3008/kinalSportsUser/v1`         |
-| **Dispositivo Fisico (Expo Go en Wi-Fi)** | `http://<IP_LAN_DE_TU_PC>:3007/api/v1/auth` | `http://<IP_LAN_DE_TU_PC>:3008/kinalSportsUser/v1` |
+- `pnpm start`: Inicia el servidor de desarrollo de Metro Bundler.
+- `pnpm android`: Inicia Metro y abre la aplicación en el emulador o dispositivo Android conectado.
+- `pnpm ios`: Inicia Metro y abre la aplicación en el simulador de iOS.
+- `pnpm web`: Inicia la vista web de Expo.
+- `pnpm lint`: Ejecuta ESLint.
+- `pnpm test` / `pnpm test:watch` / `pnpm test:coverage`: Ejecuta las pruebas unitarias con Jest.
 
 ---
 
-## 6. Scripts Disponibles
+## 9. Integraciones
+
+| Servicio      | Prefijo Base          | Operaciones Consumidas                                                                                         |
+| :------------ | :-------------------- | :------------------------------------------------------------------------------------------------------------- |
+| `auth-node`   | `/api/v1/auth`        | `POST /login`, `POST /register`, `POST /refresh`, `POST /logout`, `POST /forgot-password`.                     |
+| `server-user` | `/kinalSportsUser/v1` | `/fields`, `/reservations/*`, `/teams/*`, `/tournaments/*`, `/users/profile`, `/users/profile/picture/avatar`. |
+
+---
+
+## 10. Pruebas
+
+La suite de pruebas unitarias se ejecuta con **Jest 30**, `jest-expo` y `@testing-library/react-native`:
 
 ```bash
-pnpm --filter client-user start         # Inicia Metro Bundler
-pnpm --filter client-user android       # Abre en emulador/dispositivo Android
-pnpm --filter client-user ios           # Abre en simulador iOS
-pnpm --filter client-user web           # Inicia version web de Expo
-pnpm --filter client-user test          # Ejecuta las 21 pruebas unitarias con Jest
-pnpm --filter client-user lint          # Ejecuta ESLint
+pnpm --filter client-user test
 ```
 
----
-
-## 7. Seguridad de Sesion: `expo-secure-store` (Movil) vs Cookies `httpOnly` (Web)
-
-> **Nota pedagogica para clase:**
->
-> - En los paneles **Web** (`client-admin` y `client-admin-next`), los tokens se manejan mediante **cookies `httpOnly`** porque `window.localStorage` es vulnerable a ataques XSS en el navegador.
-> - En una aplicacion **Movil Nativa** (`client-user`), no existe DOM web ni el mismo modelo de cookies de navegador: el estandar de seguridad movil consiste en recibir el `accessToken` y `refreshToken` y resguardarlos en el almacenamiento nativo cifrado del sistema operativo (**Keychain en iOS** y **EncryptedSharedPreferences / Keystore en Android**) mediante **`expo-secure-store`**.
-
-1. Al iniciar sesion (`POST /api/v1/auth/login`), `authStore` guarda los tokens en `expo-secure-store`.
-2. Cada peticion a `server-user` incluye `Authorization: Bearer <accessToken>`.
-3. Si el `accessToken` vence (`401`), `tokenRefresh.js` renueva la sesion con `POST /api/v1/auth/refresh` usando una unica promesa compartida para todas las peticiones simultaneas.
+Cubre el almacenamiento seguro de credenciales en `authStore`, la rotación de tokens en `tokenRefresh` y el renderizado y validación de las pantallas principales.
 
 ---
 
-## 8. Pantallas Principales
+## 11. Build y Uso en Docker
 
-| Modulo            | Pantallas                                              | Funcionalidades Clave                                                                  |
-| :---------------- | :----------------------------------------------------- | :------------------------------------------------------------------------------------- |
-| **Autenticacion** | `LoginScreen`, `RegisterScreen`                        | Inicio de sesion y registro con validacion de formularios.                             |
-| **Canchas**       | `FieldsList`, `FieldDetail`, `CreateReservation`       | Exploracion de canchas, consulta de disponibilidad por fecha y reserva de 1 a 3 horas. |
-| **Equipos**       | `TeamsList`, `MyTeams`, `CreateTeam`, `TeamDetail`     | Creacion de equipo con logo, unirse/salir y gestion de miembros por el capitan.        |
-| **Torneos**       | `TournamentsList`, `MyTournaments`, `TournamentDetail` | Consulta de torneos activos e inscripcion de equipos de la misma categoria.            |
-| **Reservas**      | `ReservationsList`                                     | Consulta de reservas activas, historial y cancelacion antes de la hora de inicio.      |
-| **Perfil**        | `ProfileScreen`                                        | Visualizacion de datos, subida de foto de perfil/avatar y cierre de sesion.            |
+- El archivo `dockerfiles/Dockerfile.client-user` levanta un contenedor de desarrollo sobre `node:26-slim` que expone los puertos `8081` y `19000-19002` ejecutando `expo start --host lan --port 8081` (incluido en `docker-compose.yml`).
+- En `docker-compose.prod.yml` no se incluye `client-user`, ya que en producción una aplicación móvil React Native se distribuye como binario nativo (`.apk` / `.aab` en Android o `.ipa` en iOS) generado mediante **EAS Build** o compilación nativa, no como un servidor web contenedorizado.
 
 ---
 
-## 9. Integracion con Otros Servicios
+## 12. Documentación Relacionada
 
-| Servicio      | Relacion                                                                         |
-| :------------ | :------------------------------------------------------------------------------- |
-| `auth-node`   | Registro, login, renovacion de tokens (`refresh`) y cierre de sesion (`logout`). |
-| `server-user` | Catalogo de canchas, reservaciones, equipos, torneos y actualizacion de avatar.  |
+- [README Principal del Monorepo](../README.md)
+- [Server User — API de negocio consumida](../server-user/README.md)
+- [Auth Node — Servicio de autenticación consumido](../authentication-service/auth-node/README.md)

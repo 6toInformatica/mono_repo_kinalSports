@@ -15,9 +15,9 @@
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     
     <!-- Configuración del paquete -->
-    <Company>AuthDotnet</Company>
-    <Product>AuthDotnet System</Product>
-    <Copyright>Copyright © AuthDotnet 2024</Copyright>
+    <Company>KinalSports</Company>
+    <Product>KinalSports AuthService</Product>
+    <Copyright>Copyright © 2026 Braulio Echeverría - Fundación Kinal</Copyright>
     <Version>1.0.0</Version>
     
     <!-- Configuración de debug -->

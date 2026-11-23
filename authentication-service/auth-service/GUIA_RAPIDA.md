@@ -1,581 +1,285 @@
-# GUÍA RÁPIDA - RECREAR AuthService
+# Guía Rápida — Recreación Paso a Paso de AuthService (.NET 10)
 
-> **Tipo de documento:** tutorial educativo para recrear AuthService desde cero (curso IN6AV).
+> **Propósito del documento:** Guía técnica y formativa resumida para reconstruir `auth-service` desde cero bajo **Clean Architecture** en **.NET 10 (`net10.0`, C# 14)**.
 >
-> **Para operar el monorepo existente** usa [README.md](./README.md), [README raiz](../../README.md) y `docker-compose.yml`.
+> **Para operar el servicio existente dentro del monorepo:** Consulta [README.md](./README.md), el [README principal del monorepo](../../README.md) y `docker-compose.yml`.
 >
-> **Runtime actual:** puerto `5156`, prefijo `/api/v1`, controllers activos `AuthController` y `UsersController`.
-
-> Versión resumida del flujo de recreación (sin código completo)
+> **Parámetros verificados del servicio:** Puerto HTTP `5156`, prefijo `/api/v1`, PostgreSQL 18 en puerto `5435` (`Database=kinal_sports`), Redis 7 en puerto `6379`.
 
 ---
 
-## DIAGRAMA DE FLUJO
+## Diagrama de Flujo de Construcción (De Adentro hacia Afuera)
 
-```
-1.  CREAR ESTRUCTURA BASE (Proyecto y librerías)
+```text
+1. CREAR ESTRUCTURA BASE (.NET 10, global.json, Directory.Build.props y 5 proyectos)
         ↓
-2.  DEFINIR ENTIDADES (Domain)
+2. DEFINIR CAPA DOMAIN (Entidades, Constantes e Interfaces de Repositorio)
         ↓
-3.  CONFIGURAR BASE DE DATOS (Persistence)
+3. DEFINIR CAPA APPLICATION (Casos de Uso, DTOs, Validadores y Puertos)
         ↓
-4.  CREAR DTOs Y INTERFACES (Application)
+4. IMPLEMENTAR CAPA INFRASTRUCTURE (Argon2id, JWT, RedisCacheService, KMH/SMTP, Cloudinary)
         ↓
-5.  IMPLEMENTAR SERVICIOS (Application)
+5. IMPLEMENTAR CAPA PERSISTENCE (ApplicationDbContext, snake_case, Migraciones, Repositorios, DataSeeder)
         ↓
-6.  CONFIGURAR DEPENDENCIAS (Api)
+6. CONFIGURAR CAPA API (Extensions, Cookies httpOnly, Guards/Filters, Controllers y Program.cs)
         ↓
-7.  CREAR CONTROLLERS (Api)
-        ↓
-8.  AGREGAR MIDDLEWARES (Api)
+7. CREAR PROYECTOS DE PRUEBAS UNITARIAS (xUnit v3 + NSubstitute)
 ```
 
 ---
 
-## PASO 1: CREAR LA ESTRUCTURA BASE DEL PROYECTO
+## Paso 1: Crear la Estructura Base del Proyecto (.NET 10)
 
-### 1.1 Crear la solución
+### 1.1 Crear la solución y archivos de configuración global
 
 ```bash
+mkdir -p authentication-service/auth-service
+cd authentication-service/auth-service
+
 dotnet new sln -n AuthService
-mkdir -p src/AuthService.{Api,Application,Domain,Persistence}
 ```
 
-### 1.2 Crear proyectos
+Crear `global.json` para fijar el SDK `.NET 10`:
 
-```bash
-cd src
-dotnet new classlib -n AuthService.Domain -f net8.0
-dotnet new classlib -n AuthService.Persistence -f net8.0
-dotnet new classlib -n AuthService.Application -f net8.0
-dotnet new webapi -n AuthService.Api -f net8.0
-cd ..
-dotnet sln add src/AuthService.{Domain,Persistence,Application,Api}/*.csproj
+```json
+{
+    "sdk": {
+        "version": "10.0.100",
+        "rollForward": "latestFeature",
+        "allowPrerelease": false
+    }
+}
 ```
 
-### 1.3 Agregar referencias entre proyectos
+Crear `Directory.Build.props` en la raíz del servicio para centralizar `net10.0` y `C# 14`:
 
-```bash
-cd src/AuthService.Application
-dotnet add reference ../AuthService.Domain/AuthService.Domain.csproj
-cd ../AuthService.Persistence
-dotnet add reference ../AuthService.Domain/AuthService.Domain.csproj
-cd ../AuthService.Api
-dotnet add reference ../AuthService.{Application,Persistence}/*.csproj
+```xml
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  </PropertyGroup>
+</Project>
 ```
 
-### 1.4 Instalar dependencias principales
-
-**AuthService.Domain:**
+### 1.2 Crear los 5 proyectos de código fuente (`src/`) y los 2 de pruebas (`tests/`)
 
 ```bash
-dotnet add package System.ComponentModel.Annotations
+mkdir -p src tests
+
+# Capas de Clean Architecture
+dotnet new classlib -n AuthService.Domain -o src/AuthService.Domain -f net10.0
+dotnet new classlib -n AuthService.Application -o src/AuthService.Application -f net10.0
+dotnet new classlib -n AuthService.Infrastructure -o src/AuthService.Infrastructure -f net10.0
+dotnet new classlib -n AuthService.Persistence -o src/AuthService.Persistence -f net10.0
+dotnet new webapi -n AuthService.Api -o src/AuthService.Api -f net10.0
+
+# Proyectos de pruebas unitarias
+dotnet new classlib -n AuthService.Application.Tests -o tests/AuthService.Application.Tests -f net10.0
+dotnet new classlib -n AuthService.Infrastructure.Tests -o tests/AuthService.Infrastructure.Tests -f net10.0
+
+# Registrar todos los proyectos en la solución
+dotnet sln add src/*/*.csproj tests/*/*.csproj
 ```
 
-**AuthService.Persistence:**
+### 1.3 Configurar las referencias entre capas
 
 ```bash
-dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL
-dotnet add package Microsoft.EntityFrameworkCore.Design
-dotnet add package EFCore.NamingConventions
-dotnet add package Microsoft.EntityFrameworkCore.Tools
+# Application -> Domain
+dotnet add src/AuthService.Application reference src/AuthService.Domain
+
+# Infrastructure -> Application (y transitivamente Domain)
+dotnet add src/AuthService.Infrastructure reference src/AuthService.Application
+
+# Persistence -> Domain y Application
+dotnet add src/AuthService.Persistence reference src/AuthService.Domain src/AuthService.Application
+
+# Api -> Application, Infrastructure y Persistence
+dotnet add src/AuthService.Api reference \
+  src/AuthService.Application \
+  src/AuthService.Infrastructure \
+  src/AuthService.Persistence
 ```
 
-**AuthService.Application:**
+### 1.4 Instalar paquetes NuGet verificados por capa
+
+**En `src/AuthService.Application`:**
 
 ```bash
-dotnet add package Konscious.Security.Cryptography.Argon2
-dotnet add package MailKit
-dotnet add package CloudinaryDotNet
-dotnet add package FluentValidation.AspNetCore
+dotnet add src/AuthService.Application package FluentValidation --version 12.2.0
+dotnet add src/AuthService.Application package FluentValidation.DependencyInjectionExtensions --version 12.2.0
+dotnet add src/AuthService.Application package Microsoft.Extensions.Logging.Abstractions --version 10.0.14
 ```
 
-**AuthService.Api:**
+**En `src/AuthService.Infrastructure`:**
 
 ```bash
-dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer
-dotnet add package Serilog.AspNetCore
-dotnet add package Serilog.Sinks.File
-dotnet add package NetEscapades.AspNetCore.SecurityHeaders
+dotnet add src/AuthService.Infrastructure package Konscious.Security.Cryptography.Argon2 --version 1.3.1
+dotnet add src/AuthService.Infrastructure package System.IdentityModel.Tokens.Jwt --version 8.23.0
+dotnet add src/AuthService.Infrastructure package Microsoft.IdentityModel.Tokens --version 8.23.0
+dotnet add src/AuthService.Infrastructure package MailKit --version 4.18.2
+dotnet add src/AuthService.Infrastructure package CloudinaryDotNet --version 1.29.3
+dotnet add src/AuthService.Infrastructure package Microsoft.Extensions.Http --version 10.0.14
+dotnet add src/AuthService.Infrastructure package Microsoft.Extensions.Options.ConfigurationExtensions --version 10.0.14
+```
+
+**En `src/AuthService.Persistence`:**
+
+```bash
+dotnet add src/AuthService.Persistence package Microsoft.EntityFrameworkCore --version 10.0.14
+dotnet add src/AuthService.Persistence package Microsoft.EntityFrameworkCore.Design --version 10.0.14
+dotnet add src/AuthService.Persistence package Microsoft.EntityFrameworkCore.Tools --version 10.0.14
+dotnet add src/AuthService.Persistence package Npgsql.EntityFrameworkCore.PostgreSQL --version 10.0.3
+dotnet add src/AuthService.Persistence package EFCore.NamingConventions --version 10.0.1
+```
+
+**En `src/AuthService.Api`:**
+
+```bash
+dotnet add src/AuthService.Api package Microsoft.AspNetCore.Authentication.JwtBearer --version 10.0.14
+dotnet add src/AuthService.Api package Microsoft.AspNetCore.OpenApi --version 10.0.14
+dotnet add src/AuthService.Api package Swashbuckle.AspNetCore --version 10.3.1
+dotnet add src/AuthService.Api package Serilog.AspNetCore --version 10.0.0
+dotnet add src/AuthService.Api package NetEscapades.AspNetCore.SecurityHeaders --version 10.0.0 || \
+  dotnet add src/AuthService.Api package NetEscapades.AspNetCore.SecurityHeaders --version 1.3.1
 ```
 
 ---
 
-## PASO 2: DEFINIR ENTIDADES EN DOMAIN
-
-### 2.1 Estructura de carpetas
+## Paso 2: Definir la Capa `AuthService.Domain`
 
 ```bash
 mkdir -p src/AuthService.Domain/{Entities,Enums,Constants,Interfaces}
 ```
 
-### 2.2 Crear archivos
-
-**Enums:**
-
-- `Enums/UserRole.cs` - enum: Admin, User
-
-**Constants:**
-
-- `Constants/RoleConstants.cs` - ADMIN_ROLE, USER_ROLE, AllowedRoles
-
-**Entities:**
-
-- `Entities/User.cs`
-    - Propiedades: Id, Name, Surname, Username, Email, Password, Status, CreatedAt, UpdatedAt
-    - Navegación: UserProfile, UserEmail, UserPasswordReset, UserRoles
-
-- `Entities/UserProfile.cs`
-    - Propiedades: Id, UserId, ProfilePicture, Phone, CreatedAt, UpdatedAt
-    - Navegación: User
-
-- `Entities/Role.cs`
-    - Propiedades: Id, Name, Description, CreatedAt, UpdatedAt
-    - Navegación: UserRoles
-
-- `Entities/UserRole.cs`
-    - Propiedades: Id, UserId, RoleId, AssignedAt
-    - Navegación: User, Role
-
-- `Entities/UserEmail.cs`
-    - Propiedades: Id, UserId, EmailVerified, EmailVerificationToken, EmailVerificationTokenExpiry, CreatedAt, UpdatedAt
-    - Navegación: User
-
-- `Entities/UserPasswordReset.cs`
-    - Propiedades: Id, UserId, PasswordResetToken, PasswordResetTokenExpiry, CreatedAt, UpdatedAt
-    - Navegación: User
-
-**Interfaces:**
-
-- `Interfaces/IUserRepository.cs`
-    - Métodos: GetByIdAsync, GetByEmailAsync, GetByUsernameAsync, CreateAsync, UpdateAsync, DeleteAsync, GetByEmailVerificationTokenAsync, GetByPasswordResetTokenAsync, UpdateUserRoleAsync, ExistsByEmailAsync, ExistsByUsernameAsync
-
-- `Interfaces/IRoleRepository.cs`
-    - Métodos: GetByNameAsync, CountUsersInRoleAsync, GetUsersByRoleAsync, GetUserRoleNamesAsync
+- **Constantes y Enums:**
+    - `Constants/RoleConstants.cs`: Define `ADMIN_ROLE`, `USER_ROLE` y `AllowedRoles`.
+    - `Enums/UserRole.cs`: Enumeración de roles del dominio.
+- **Entidades (`Entities/`):**
+    - `User.cs`: `Id` (`varchar(16)`), `Name`, `Surname`, `Username`, `Email`, `Password`, `Status`, `CreatedAt`, `UpdatedAt` y propiedades de navegación.
+    - `UserProfile.cs`: `Id`, `UserId`, `ProfilePicture`, `Phone`.
+    - `Role.cs` y `UserRole.cs`: Relación muchos-a-muchos entre usuarios y roles.
+    - `UserEmail.cs`: Estado de verificación (`EmailVerified`), token y expiración.
+    - `UserPasswordReset.cs`: Token y expiración de recuperación de contraseña.
+    - `RefreshToken.cs`: `Id`, `UserId`, `Token` (único), `ExpiresAt`, `RevokedAt`, `ReplacedByToken`, `CreatedAt`.
+- **Interfaces de Repositorio (`Interfaces/`):**
+    - `IUserRepository.cs`: `GetByIdAsync`, `GetByEmailAsync`, `GetByUsernameAsync`, `GetByEmailOrUsernameAsync`, `GetAllAsync`, `CreateAsync`, `UpdateAsync`, `DeleteAsync`, `UpdateUserRoleAsync`, `ExistsByEmailAsync`, `ExistsByUsernameAsync`.
+    - `IRoleRepository.cs`: `GetByNameAsync`, `CountUsersInRoleAsync`, `GetUsersByRoleAsync`, `GetUserRoleNamesAsync`.
+    - `IRefreshTokenRepository.cs`: `CreateAsync`, `GetByTokenAsync`, `RevokeAsync`, `RevokeAllForUserAsync`.
 
 ---
 
-## PASO 3: CONFIGURAR LA CAPA PERSISTENCE
-
-### 3.1 Estructura de carpetas
-
-```bash
-mkdir -p src/AuthService.Persistence/{Data,Repositories,Migrations}
-```
-
-### 3.2 Crear archivos
-
-**Data:**
-
-- `Data/ApplicationDbContext.cs`
-    - DbSets: Users, UserProfiles, Roles, UserRoles, UserEmails, UserPasswordResets
-    - Método: OnModelCreating (configurar relaciones y snake_case)
-    - Método: ToSnakeCase
-
-- `Data/DataSeeder.cs`
-    - Método: SeedAsync (crear roles ADMIN_ROLE y USER_ROLE)
-
-**Repositories:**
-
-- `Repositories/UserRepository.cs`
-    - Implementa IUserRepository (11 métodos)
-    - Usa EF.Functions.ILike para búsquedas case-insensitive
-
-- `Repositories/RoleRepository.cs`
-    - Implementa IRoleRepository (4 métodos)
-
-### 3.3 Configurar base de datos
-
-```bash
-# En appsettings.json agregar ConnectionStrings
-dotnet ef migrations add InitialCreate --project src/AuthService.Persistence --startup-project src/AuthService.Api
-dotnet ef database update --project src/AuthService.Persistence --startup-project src/AuthService.Api
-```
-
----
-
-## PASO 4: CREAR DTOs Y INTERFACES EN APPLICATION
-
-### 4.1 Estructura de carpetas
+## Paso 3: Definir la Capa `AuthService.Application`
 
 ```bash
 mkdir -p src/AuthService.Application/{DTOs,DTOs/Email,Exceptions,Interfaces,Services,Validators,Extensions}
 ```
 
-### 4.2 Crear archivos
-
-**Exceptions:**
-
-- `Exceptions/ErrorCodes.cs` - enum con códigos de error
-- `Exceptions/BusinessException.cs` - excepción personalizada
-
-**DTOs (Request):**
-
-- `DTOs/RegisterDto.cs` - Name, Surname, Username, Email, Password, ConfirmPassword, Phone, ProfilePicture
-- `DTOs/LoginDto.cs` - EmailOrUsername, Password
-- `DTOs/VerifyEmailDto.cs` - Token
-- `DTOs/ResendVerificationDto.cs` - Email
-- `DTOs/ForgotPasswordDto.cs` - Email
-- `DTOs/ResetPasswordDto.cs` - Token, NewPassword, ConfirmPassword
-- `DTOs/UpdateUserRoleDto.cs` - UserId, NewRole
-- `DTOs/GetProfileByIdDto.cs` - UserId
-
-**DTOs (Response):**
-
-- `DTOs/AuthResponseDto.cs` - Success, Message, Token, UserDetails, ExpiresAt
-- `DTOs/RegisterResponseDto.cs` - Success, User, Message, EmailVerificationRequired
-- `DTOs/UserResponseDto.cs` - Id, Name, Surname, Username, Email, ProfilePicture, Phone, Role, Status, IsEmailVerified, CreatedAt, UpdatedAt
-- `DTOs/UserDetailsDto.cs` - Id, Username, ProfilePicture, Role
-- `DTOs/Email/EmailResponseDto.cs` - Success, Message
-
-**Interfaces:**
-
-- `Interfaces/IAuthService.cs` - RegisterAsync, LoginAsync, VerifyEmailAsync, ResendVerificationEmailAsync, ForgotPasswordAsync, ResetPasswordAsync
-- `Interfaces/IUserManagementService.cs` - GetUserProfileByIdAsync, UpdateUserRoleAsync, GetUsersWithRoleAsync
-- `Interfaces/IJwtTokenService.cs` - GenerateToken
-- `Interfaces/IPasswordHashService.cs` - HashPassword, VerifyPassword
-- `Interfaces/IEmailService.cs` - SendEmailVerificationAsync, SendPasswordResetAsync, SendWelcomeEmailAsync
-- `Interfaces/ICloudinaryService.cs` - UploadImageAsync, DeleteImageAsync, GetFullImageUrl
-- `Interfaces/IUuidGenerator.cs` - GenerateUserId, GenerateRoleId
-- `Interfaces/ITokenGenerator.cs` - GenerateEmailVerificationToken, GeneratePasswordResetToken
-- `Interfaces/IFileData.cs` - FileName, ContentType, Length, OpenReadStream
-
-**Validators:**
-
-- `Validators/RegisterDtoValidator.cs` - validaciones con FluentValidation
-
-**Extensions:**
-
-- `Extensions/LoggerExtensions.cs` - métodos de logging personalizados
+- **Puertos de Infraestructura (`Interfaces/`):**
+    - `IAuthService.cs`, `IUserManagementService.cs`, `IRefreshTokenService.cs`
+    - `IJwtTokenService.cs`, `IPasswordHashService.cs`, `IEmailService.cs`, `ICloudinaryService.cs`
+    - `ICacheService.cs`: `GetAsync<T>`, `SetAsync<T>`, `RemoveAsync`, `RemoveByPrefixAsync`.
+- **DTOs principales (`DTOs/`):**
+    - Entrada: `RegisterDto`, `LoginDto`, `RefreshRequestDto`, `VerifyEmailDto`, `ResendVerificationDto`, `ForgotPasswordDto`, `ResetPasswordDto`, `UpdateUserRoleDto`, `UpdateProfilePictureDto`, `GetProfileByIdDto`, `GetProfileByUsernameDto`.
+    - Salida: `AuthResponseDto` (incluye `Token` y `RefreshToken`), `RegisterResponseDto`, `UserResponseDto`, `UserDetailsDto`, `EmailResponseDto`.
+- **Servicios de Aplicación (`Services/`):**
+    - `AuthService.cs`: Implementa registro, login, verificación de correo, restablecimiento de contraseña, consulta de perfil (`GetUserByIdAsync` usando `ICacheService` bajo la clave `kinal:user:profile:{userId}` con TTL de 60 s) e invalidación de caché al actualizar avatar o verificar correo.
+    - `RefreshTokenService.cs`: Emisión, rotación y revocación por detección de reúso de _refresh tokens_.
+    - `UserManagementService.cs`: Cambio de rol (`UpdateUserRoleAsync` con invalidación de `kinal:user:profile:{userId}`), consulta de usuarios por rol y listado administrativo.
 
 ---
 
-## PASO 5: IMPLEMENTAR SERVICIOS EN APPLICATION
-
-### 5.1 Crear archivos
-
-**Services:**
-
-- `Services/UuidGenerator.cs`
-    - GenerateUserId() → "usr_XXXXX"
-    - GenerateRoleId() → "rol_XXXXX"
-
-- `Services/TokenGenerator.cs`
-    - GenerateEmailVerificationToken() → token random de 64 bytes
-    - GeneratePasswordResetToken() → token random de 64 bytes
-
-- `Services/PasswordHashService.cs`
-    - HashPassword(string password) → hash Argon2id
-    - VerifyPassword(string password, string hash) → bool
-    - VerifyArgon2StandardFormat, VerifyLegacyFormat
-    - Parámetros: MemorySize=102400, Iterations=2, DegreeOfParallelism=8
-
-- `Services/JwtTokenService.cs`
-    - GenerateToken(User user) → string token JWT
-    - Claims: sub (userId), jti (Guid), iat (timestamp), role
-
-- `Services/EmailService.cs`
-    - SendEmailVerificationAsync(string toEmail, string username, string token)
-    - SendPasswordResetAsync(string toEmail, string username, string token)
-    - SendWelcomeEmailAsync(string toEmail, string username)
-    - Usa MailKit (SmtpClient, MimeMessage, BodyBuilder)
-
-- `Services/CloudinaryService.cs`
-    - UploadImageAsync(IFileData file) → public_id
-    - DeleteImageAsync(string publicId)
-    - GetFullImageUrl(string publicId) → URL completa o default avatar
-
-- `Services/AuthService.cs`
-    - RegisterAsync(RegisterDto dto) → RegisterResponseDto
-    - LoginAsync(LoginDto dto) → AuthResponseDto
-    - VerifyEmailAsync(VerifyEmailDto dto) → EmailResponseDto
-    - ResendVerificationEmailAsync(ResendVerificationDto dto) → EmailResponseDto
-    - ForgotPasswordAsync(ForgotPasswordDto dto) → EmailResponseDto
-    - ResetPasswordAsync(ResetPasswordDto dto) → EmailResponseDto
-
-- `Services/UserManagementService.cs`
-    - GetUserProfileByIdAsync(GetProfileByIdDto dto) → UserResponseDto
-    - UpdateUserRoleAsync(UpdateUserRoleDto dto)
-    - GetUsersWithRoleAsync(string roleName) → IReadOnlyList<UserResponseDto>
-
----
-
-## PASO 6: CONFIGURAR DEPENDENCIAS EN API
-
-### 6.1 Estructura de carpetas
+## Paso 4: Implementar la Capa `AuthService.Infrastructure`
 
 ```bash
-mkdir -p src/AuthService.Api/{Extensions,Controllers,Middlewares,Models}
+mkdir -p src/AuthService.Infrastructure/{Cache,Email,Options,Security,Storage}
 ```
 
-### 6.2 Crear Extensions
-
-**Extensions:**
-
-- `Extensions/ServiceCollectionExtensions.cs`
-    - AddApplicationServices() → registra todos los servicios de Application
-    - AddPersistenceServices(IConfiguration) → registra DbContext y repositorios con UseSnakeCaseNamingConvention()
-
-- `Extensions/AuthenticationExtensions.cs`
-    - AddJwtAuthentication(IConfiguration) → configura JWT Bearer
-    - Parámetros: ValidateIssuer, ValidateAudience, ValidateLifetime, ClockSkew = TimeSpan.Zero
-
-- `Extensions/RateLimitingExtensions.cs`
-    - AddCustomRateLimiting() → AuthPolicy (5 requests/min fixed), ApiPolicy (100 tokens/min)
-    - OnRejected: "Too Many Requests. Please try again later."
-
-- `Extensions/SecurityExtensions.cs`
-    - AddSecurityServices() → CORS, DataProtection, Antiforgery, Security Headers
-    - DefaultCorsPolicy (Allow any origin/method/header)
-    - AdminCorsPolicy (solo origins específicos)
-    - DataProtection: persiste keys en directorio "keys"
-
-**Middlewares:**
-
-- `Middlewares/GlobalExceptionMiddleware.cs`
-    - Maneja BusinessException y excepciones genéricas
-    - Retorna ErrorResponse con mensaje y código
-
-**Models:**
-
-- `Models/ErrorResponse.cs` - Message, ErrorCode, Timestamp
-- `Models/FormFileAdapter.cs` - adapta IFormFile a IFileData
-- `ModelBinders/FileDataModelBinder.cs` - model binder para IFileData
+- `Security/PasswordHashService.cs`: Hashing y verificación `Argon2id` (`MemorySize = 102400`, `Iterations = 2`, `DegreeOfParallelism = 8`) compatible con `auth-node`.
+- `Security/JwtTokenService.cs`: Firma de tokens `HS256` con claims `sub`, `jti`, `iat` y `role`.
+- `Cache/RedisCacheService.cs`: Implementa `ICacheService` hablando protocolo `RESP2` sobre TCP contra `REDIS_URL` (o `Redis:ConnectionString`), degradando automáticamente a `ConcurrentDictionary` en memoria si Redis no está configurado.
+- `Email/KinalMailHubEmailService.cs` y `Email/EmailService.cs`: Envío de correos mediante la API REST de Kinal Mail Hub (`Provider = "kmh"`) o SMTP con MailKit (`Provider = "smtp"`).
+- `Storage/CloudinaryService.cs`: Subida y eliminación de avatares en Cloudinary.
+- `DependencyInjection.cs`: Método de extensión `AddInfrastructure(IConfiguration)`.
 
 ---
 
-## PASO 7: CREAR CONTROLLERS EN API
+## Paso 5: Implementar la Capa `AuthService.Persistence`
 
-### 7.1 Crear archivos
+```bash
+mkdir -p src/AuthService.Persistence/{Data,Repositories,Migrations}
+```
 
-**Controllers:**
-
-- `Controllers/AuthController.cs`
-    - Route: [Route("api/v1/auth")]
-    - Endpoints:
-        - GET profile → GetProfile() [Authorize]
-        - GET profile/{userId} → GetProfileById(userId) [Authorize]
-        - POST register → Register(RegisterDto) [EnableRateLimiting("AuthPolicy")]
-        - POST login → Login(LoginDto) [EnableRateLimiting("AuthPolicy")]
-        - POST verify-email → VerifyEmail(VerifyEmailDto)
-        - POST resend-verification → ResendVerification(ResendVerificationDto)
-        - POST forgot-password → ForgotPassword(ForgotPasswordDto)
-        - POST reset-password → ResetPassword(ResetPasswordDto)
-
-- `Controllers/UsersController.cs`
-    - Route: [Route("api/v1/users")]
-    - Endpoints:
-        - PUT update-role → UpdateUserRole(UpdateUserRoleDto) [Authorize, RequireRole("ADMIN_ROLE")]
-        - GET roles → GetUserRoles([FromQuery] string userId) [Authorize]
-        - GET by-role/{roleName} → GetUsersByRole(roleName) [Authorize]
-
-- `Controllers/HealthController.cs`
-    - Route: [Route("api/v1/health")]
-    - Endpoints:
-        - GET / → GetHealth() → OK("Healthy")
+- `Data/ApplicationDbContext.cs`: Configura las entidades (`Users`, `UserProfiles`, `Roles`, `UserRoles`, `UserEmails`, `UserPasswordResets`, `RefreshTokens`), índices únicos, llaves foráneas y convención `snake_case`.
+- `Data/DataSeeder.cs`: Siembra de forma idempotente los roles `ADMIN_ROLE` y `USER_ROLE` y el usuario administrador inicial (`Seed:AdminPassword`).
+- `Repositories/`: `UserRepository.cs`, `RoleRepository.cs` y `RefreshTokenRepository.cs`.
+- **Comandos de migración EF Core:**
+    ```bash
+    dotnet ef migrations add InitialCreate --project src/AuthService.Persistence --startup-project src/AuthService.Api
+    dotnet ef database update --project src/AuthService.Persistence --startup-project src/AuthService.Api
+    ```
 
 ---
 
-## PASO 8: CONFIGURAR Program.cs Y appsettings.json
+## Paso 6: Configurar la Capa `AuthService.Api`
 
-### 8.1 Program.cs
-
-**Configuración:**
-
-```csharp
-// Serilog
-builder.Host.UseSerilog(...)
-
-// Servicios
-builder.Services.AddControllers(options => {
-    options.ModelBinderProviders.Insert(0, new FileDataModelBinderProvider());
-});
-
-builder.Services.AddApplicationServices();
-builder.Services.AddPersistenceServices(builder.Configuration);
-builder.Services.AddJwtAuthentication(builder.Configuration);
-builder.Services.AddCustomRateLimiting();
-builder.Services.AddSecurityServices();
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddHealthChecks();
-
-// Middleware pipeline
-app.UseMiddleware<GlobalExceptionMiddleware>();
-app.UseSecurityHeaders(...);
-app.UseSerilogRequestLogging();
-app.UseHttpsRedirection();
-app.UseCors("DefaultCorsPolicy");
-app.UseAuthentication();
-app.UseAuthorization();
-app.UseRateLimiter();
-
-// Health checks
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/api/v1/health");
-
-// Database seeding
-using (var scope = app.Services.CreateScope()) {
-    await DataSeeder.SeedAsync(context);
-}
-
-app.Run();
+```bash
+mkdir -p src/AuthService.Api/{Controllers,Extensions,Filters,Middlewares,ModelBinders,Models}
 ```
 
-### 8.2 appsettings.json
+- **`Extensions/AuthenticationExtensions.cs`:** Configura `JwtBearer` con `ClockSkew = TimeSpan.Zero` y define `JwtBearerEvents.OnMessageReceived` para extraer el JWT desde la cookie `httpOnly` `kinal_access` cuando no se envía la cabecera `Authorization`.
+- **`Filters/InternalServiceTokenAttribute.cs`:** Valida la cabecera `x-internal-token` contra `InternalServiceToken` en llamadas internas entre microservicios.
+- **`Controllers/AuthController.cs` (`/api/v1/auth`):**
+    - Emite y limpia las cookies `httpOnly` `kinal_access` y `kinal_refresh` en `login`, `refresh` y `logout`.
+    - Expone `[AcceptVerbs("QUERY", "POST")]` en `profile/by-id` y `profile/by-username` protegidos con `[InternalServiceToken]`.
+    - Expone `POST profile/picture` y el alias `POST profile/picture/avatar`.
+    - Expone `GET users` restringido a `ADMIN_ROLE`.
+- **`Controllers/UsersController.cs` (`/api/v1/users`):**
+    - `PUT {userId}/role` (`ADMIN_ROLE`), `GET {userId}/roles` (valida que sea el propio usuario o `ADMIN_ROLE` para prevenir IDOR) y `GET by-role/{roleName}` (`ADMIN_ROLE`).
 
-**Configuraciones necesarias:**
+---
+
+## Paso 7: Configuración de `appsettings.Development.json` y Ejecución
+
+Crear `src/AuthService.Api/appsettings.Development.json` alineado con los puertos del monorepo:
 
 ```json
 {
     "ConnectionStrings": {
-        "DefaultConnection": "Host=localhost;Port=5432;Database=auth_db;Username=postgres;Password=your_password"
+        "DefaultConnection": "Host=localhost;Port=5435;Database=kinal_sports;Username=KinalSports;Password=KinalSports2027!"
     },
+    "InternalServiceToken": "KinalSportsInternalSecretToken2026!",
     "JwtSettings": {
-        "SecretKey": "your-super-secret-key-min-32-chars",
+        "SecretKey": "MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!",
         "Issuer": "AuthService",
-        "Audience": "AuthServiceClients",
-        "ExpiryInMinutes": 30
+        "Audience": "AuthService",
+        "ExpiryInMinutes": 15
     },
-    "SmtpSettings": {
-        "Host": "smtp.gmail.com",
-        "Port": 587,
-        "Username": "your-email@gmail.com",
-        "Password": "your-app-password",
-        "FromEmail": "noreply@authservice.com",
-        "FromName": "AuthService"
+    "Seed": {
+        "AdminPassword": "Admin1234!"
     },
-    "CloudinarySettings": {
-        "CloudName": "your-cloud-name",
-        "ApiKey": "your-api-key",
-        "ApiSecret": "your-api-secret",
-        "DefaultProfilePicture": "default-avatar-url"
+    "Redis": {
+        "ConnectionString": "redis://localhost:6379"
     },
-    "EmailSettings": {
-        "FrontendBaseUrl": "http://localhost:3000"
+    "AppSettings": {
+        "FrontendUrl": "http://localhost:5173"
     }
 }
 ```
 
----
-
-## PASO 9: EJECUTAR Y PROBAR
-
-### 9.1 Comandos finales
+### Compilar, probar y ejecutar
 
 ```bash
-# Compilar
-dotnet build
+# Compilar toda la solución .NET 10
+dotnet build AuthService.sln
 
-# Ejecutar (puerto 5156 segun launchSettings.json)
+# Ejecutar las 53 pruebas unitarias (Application.Tests + Infrastructure.Tests)
+dotnet test AuthService.sln
+
+# Iniciar la API en http://localhost:5156 (Swagger en http://localhost:5156/swagger)
 dotnet run --project src/AuthService.Api
-
-# Probar endpoints en Swagger
-# http://localhost:5156/swagger
 ```
-
-### 9.2 Endpoints disponibles (runtime actual)
-
-Ver [README.md](./README.md) para la lista completa. Resumen:
-
-- POST /api/v1/auth/register
-- POST /api/v1/auth/login
-- POST /api/v1/auth/refresh
-- POST /api/v1/auth/logout
-- GET /api/v1/auth/profile (requiere token)
-- POST /api/v1/auth/profile/by-id
-- POST /api/v1/auth/profile/by-username
-- POST /api/v1/auth/profile/picture (requiere token)
-- POST /api/v1/auth/verify-email
-- POST /api/v1/auth/resend-verification
-- POST /api/v1/auth/forgot-password
-- POST /api/v1/auth/reset-password
-- GET /api/v1/auth/users (requiere admin)
-- PUT /api/v1/users/{userId}/role (requiere admin)
-- GET /api/v1/users/{userId}/roles
-- GET /api/v1/users/by-role/{roleName}
-- GET /health
-- GET /api/v1/health
-
----
-
-## FLUJO DE UNA SOLICITUD: EJEMPLO POST /api/v1/auth/register
-
-```
-1. Solicitud llega a AuthController.Register()
-   ↓
-2. Controller deserializa [FromForm] RegisterDto
-   ↓
-3. Controller llama authService.RegisterAsync(registerDto)
-   ↓
-4. AuthService valida que email/username no existan
-   ↓
-5. AuthService genera user.Id con uuidGenerator.GenerateUserId()
-   ↓
-6. AuthService hashea password con passwordHashService.HashPassword()
-   ↓
-7. AuthService crea User con entidades relacionadas (UserProfile, UserEmail, UserRole)
-   ↓
-8. AuthService genera token con tokenGenerator.GenerateEmailVerificationToken()
-   ↓
-9. AuthService sube imagen con cloudinaryService.UploadImageAsync()
-   ↓
-10. AuthService guarda usuario con userRepository.CreateAsync()
-    ↓
-11. AuthService envía email con emailService.SendEmailVerificationAsync()
-    ↓
-12. AuthService retorna RegisterResponseDto
-    ↓
-13. Controller retorna 201 Created con respuesta
-```
-
----
-
-## CHECKLIST DE IMPLEMENTACIÓN
-
-```
-DOMAIN:
-  ✓ Crear carpetas (Entities, Enums, Constants, Interfaces)
-  ✓ Crear Enums (UserRole)
-  ✓ Crear Constantes (RoleConstants)
-  ✓ Crear Entidades (User, Role, UserProfile, UserEmail, UserRole, UserPasswordReset)
-  ✓ Crear Interfaces de Repositorio (IUserRepository, IRoleRepository)
-
-PERSISTENCE:
-  ✓ Crear carpetas (Data, Repositories, Migrations)
-  ✓ Crear DbContext (ApplicationDbContext)
-  ✓ Crear Repositorios (UserRepository, RoleRepository)
-  ✓ Configurar conexión en appsettings.json
-  ✓ Crear migración inicial
-  ✓ Aplicar migración a BD
-
-APPLICATION:
-  ✓ Crear carpetas (DTOs, Services, Interfaces, Validators, Exceptions, Extensions)
-  ✓ Crear Excepciones (ErrorCodes, BusinessException)
-  ✓ Crear DTOs de solicitud (RegisterDto, LoginDto, VerifyEmailDto, etc)
-  ✓ Crear DTOs de respuesta (AuthResponseDto, UserResponseDto, etc)
-  ✓ Crear Interfaces de Servicios (IAuthService, IPasswordHashService, etc)
-  ✓ Implementar Servicios (AuthService, JwtTokenService, PasswordHashService, etc)
-
-API:
-  ✓ Crear carpetas (Controllers, Extensions, Middlewares, Models)
-  ✓ Crear Extensions (ServiceCollectionExtensions, AuthenticationExtensions, etc)
-  ✓ Crear Controllers (AuthController, UsersController)
-  ✓ Configurar Program.cs (Servicios, middlewares, pipeline)
-  ✓ Ejecutar y probar
-```
-
----
-
-## ORDEN CORRECTO DE CREACIÓN (RESUMIDO)
-
-1. **Estructura base** → Proyectos y referencias
-2. **Domain** → Entidades primero (User, Role, etc)
-3. **Persistence** → DbContext y Repositorios
-4. **Migraciones** → Crear BD
-5. **Application** → DTOs, Excepciones, Servicios
-6. **API** → Extensions, Controllers, Program.cs
-7. **Probar** → dotnet run y Swagger
-
-> La clave es **ir de adentro hacia afuera**: primero lo más interno (Domain), luego capa por capa hasta la presentación (API).

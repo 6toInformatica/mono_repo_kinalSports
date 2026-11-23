@@ -1,36 +1,51 @@
 # Guía de Contribución (`CONTRIBUTING.md`)
 
-¡Gracias por tu interés en contribuir a **KinalSports**! Este repositorio funciona tanto como un **ecosistema listo para producción** como una **plataforma educativa de referencia** para el ciclo de Sexto Perito en Informática de **Kinal Guatemala**.
+Esta guía establece los lineamientos técnicos, arquitectónicos y de colaboración para participar en el monorepo **KinalSports**, desarrollado en el contexto formativo y tecnológico de **Fundación Kinal** (Guatemala).
 
-Esta guía define los estándares técnicos, arquitectónicos y de flujo de trabajo que mantienen la calidad y consistencia entre todos los microservicios y clientes del monorepo.
+El documento toma como referencias los **GitHub Community Standards**, la especificación **Conventional Commits**, las prácticas de revisión de código en ingeniería de software y lineamientos de integridad académica y uso responsable de inteligencia artificial.
 
 ---
 
 ## Tabla de Contenidos
 
-1. [Requisitos del Entorno de Desarrollo](#1-requisitos-del-entorno-de-desarrollo)
-2. [Estructura de Paquetes y Scopes](#2-estructura-de-paquetes-y-scopes)
-3. [Flujo de Trabajo con Git y Ramas](#3-flujo-de-trabajo-con-git-y-ramas)
-4. [Convención de Commits (Conventional Commits)](#4-convención-de-commits-conventional-commits)
-5. [Hooks Automáticos de Calidad (Husky)](#5-hooks-automáticos-de-calidad-husky)
-6. [Reglas de Arquitectura y Seguridad al Contribuir](#6-reglas-de-arquitectura-y-seguridad-al-contribuir)
-7. [Ejecución de Pruebas (Unitarias y de Contrato)](#7-ejecución-de-pruebas-unitarias-y-de-contrato)
-8. [Proceso de Pull Request (PR)](#8-proceso-de-pull-request-pr)
+1. [Formas de Participación](#1-formas-de-participación)
+2. [Requisitos del Entorno](#2-requisitos-del-entorno)
+3. [Flujo de Trabajo de Contribución](#3-flujo-de-trabajo-de-contribución)
+4. [Convenciones de Ramas y Mensajes de Commit](#4-convenciones-de-ramas-y-mensajes-de-commit)
+5. [Validaciones Automáticas (Husky y Commitlint)](#5-validaciones-automáticas-husky-y-commitlint)
+6. [Criterios de Calidad Técnica y Arquitectónica](#6-criterios-de-calidad-técnica-y-arquitectónica)
+7. [Uso Responsable de Herramientas de Inteligencia Artificial](#7-uso-responsable-de-herramientas-de-inteligencia-artificial)
 
 ---
 
-## 1. Requisitos del Entorno de Desarrollo
+## 1. Formas de Participación
 
-Antes de abrir una rama o enviar cambios, asegúrate de contar con las versiones requeridas:
+### 1.1 Participación en el contexto educativo (Fundación Kinal)
 
-| Herramienta          | Versión Requerida | Uso                                                                                                                 |
-| -------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Node.js**          | `>= 22.13.0`      | Runtimes de `auth-node`, `server-admin`, `server-user`, `client-admin`, `client-admin-next` y `client-user`         |
-| **pnpm**             | `>= 10.x`         | Gestor de paquetes y workspaces del monorepo (`pnpm@10.29.2`)                                                       |
-| **.NET SDK**         | `10.0.x`          | Compilación, formato (`dotnet format`) y pruebas de `auth-service` (`global.json` con `rollForward: latestFeature`) |
-| **Docker & Compose** | `v2+`             | Levantar PostgreSQL 18, MongoDB 7, Redis 7 y ejecutar pruebas de contrato                                           |
+Los estudiantes y colaboradores que utilizan este repositorio como parte de su formación técnica pueden:
 
-Instalación inicial en la raíz del monorepo:
+- Analizar la arquitectura e implementación de cada microservicio y cliente como material de estudio.
+- Desarrollar prácticas, extensiones funcionales, correcciones de errores y pruebas automatizadas siguiendo el flujo de ramas y revisión por pares (_Code Review_).
+- Reportar defectos técnicos o imprecisiones documentales mediante las plantillas de Issues del repositorio.
+
+### 1.2 Contribuciones técnicas y reporte de problemas
+
+- **Reporte de errores (_Bug Reports_):** Utiliza la plantilla `.github/ISSUE_TEMPLATE/bug_report.md` indicando el componente afectado, el entorno (`Docker Dev`, `Docker Prod` o `Local`), los pasos reproducibles y la salida observada.
+- **Propuestas de mejora (_Feature Requests_):** Utiliza `.github/ISSUE_TEMPLATE/feature_request.md` detallando el impacto en contratos HTTP, modelos de datos (PostgreSQL / MongoDB) y claves de caché en Redis.
+- **Problemas de seguridad:** No publiques vulnerabilidades en Issues abiertos; consulta el procedimiento en [`SECURITY.md`](./SECURITY.md).
+
+---
+
+## 2. Requisitos del Entorno
+
+Verifica contar con las herramientas requeridas por el monorepo antes de iniciar cambios:
+
+- **Node.js:** `>= 22.13.0` (`package.json` `engines.node`)
+- **pnpm:** `>= 10` (`packageManager: pnpm@10.29.2`)
+- **.NET SDK:** `10.0.x` (requerido para compilar `auth-service` y para el hook `pre-commit` que ejecuta `dotnet format`)
+- **Docker y Docker Compose:** Requeridos para levantar la infraestructura y ejecutar las pruebas de contrato (`tests/contract`).
+
+Instalación de dependencias desde la raíz:
 
 ```bash
 pnpm install
@@ -38,152 +53,120 @@ pnpm install
 
 ---
 
-## 2. Estructura de Paquetes y Scopes
+## 3. Flujo de Trabajo de Contribución
 
-Cada carpeta del monorepo corresponde a un **scope** oficial para tus commits y filtros de `pnpm`:
+Todo cambio debe seguir estos 7 pasos:
 
-| Scope de Commit     | Ruta en el Monorepo                   | Filtro `pnpm --filter`     | Descripción                                             |
-| ------------------- | ------------------------------------- | -------------------------- | ------------------------------------------------------- |
-| `auth-node`         | `authentication-service/auth-node`    | `auth-node`                | Servicio de autenticación en Node.js + Fastify + Prisma |
-| `auth-service`      | `authentication-service/auth-service` | `auth-service`             | Servicio de autenticación en .NET 10 + EF Core          |
-| `server-admin`      | `server-admin`                        | `server-admin`             | API administrativa en NestJS + Mongoose                 |
-| `server-user`       | `server-user`                         | `server-user`              | API de jugadores/reservas en Express + Mongoose         |
-| `client-admin`      | `client-admin`                        | `@kinal/client-admin`      | Panel web administrativo en React 19 + Vite             |
-| `client-admin-next` | `client-admin-next`                   | `@kinal/client-admin-next` | Panel web administrativo BFF en Next.js 16              |
-| `client-user`       | `client-user`                         | `client-user`              | App móvil en React Native + Expo 54                     |
-| `contract-tests`    | `tests/contract`                      | `@kinal/contract-tests`    | Suite de pruebas de contrato HTTP de caja negra         |
-| `docker`            | `dockerfiles/`, `docker-compose*.yml` | —                          | Orquestación de contenedores e imágenes                 |
-| `docs`              | `README.md`, `CONTRIBUTING.md`, etc.  | —                          | Documentación técnica y guías                           |
-
----
-
-## 3. Flujo de Trabajo con Git y Ramas
-
-1. **Sincroniza tu rama principal (`master`):**
+1. **Crear una rama descriptiva** a partir de `master` actualizado:
    ```bash
    git checkout master
    git pull origin master
+   git checkout -b feat/server-user-filtro-canchas
    ```
-2. **Crea una rama descriptiva según el tipo de cambio:**
-   - `feat/<scope>-<descripcion-corta>` — Nueva funcionalidad (ej. `feat/server-user-bracket-view`)
-   - `fix/<scope>-<descripcion-corta>` — Corrección de bug (ej. `fix/auth-node-refresh-cookie`)
-   - `refactor/<scope>-<descripcion-corta>` — Mejora interna sin cambiar el contrato HTTP
-   - `test/<scope>-<descripcion-corta>` — Nuevas pruebas unitarias o de contrato
-   - `docs/<scope>-<descripcion-corta>` — Mejoras en documentación
-3. **Realiza commits atómicos y enfocados.**
+2. **Implementar los cambios** respetando la arquitectura interna del servicio correspondiente (Hexagonal en `auth-node`, Clean Architecture en `auth-service`, Modular en `server-admin`, Por Capas en `server-user`, Features en `client-admin` / `client-user` y BFF en `client-admin-next`).
+3. **Ejecutar las pruebas y verificaciones estáticas:**
+   ```bash
+   pnpm lint
+   pnpm test
+   pnpm -r --if-present build
+   ```
+   Si el cambio modifica rutas HTTP, códigos de respuesta o esquemas JSON de algún backend, ejecuta también las pruebas de contrato:
+   ```bash
+   pnpm contract:up
+   pnpm db:seed
+   pnpm test:contract
+   ```
+4. **Documentar las modificaciones:** Si agregas o modificas endpoints, variables de entorno o scripts, actualiza el `.env.example` y el `README.md` del servicio afectado.
+5. **Crear un Pull Request (PR)** hacia `master` completando la plantilla `.github/PULL_REQUEST_TEMPLATE.md`.
+6. **Participar en la revisión técnica:** Atender las observaciones de arquitectura, seguridad, pruebas o legibilidad planteadas durante el _Code Review_.
+7. **Integrar los cambios aprobados** una vez superadas las revisiones y verificaciones.
 
 ---
 
-## 4. Convención de Commits (Conventional Commits)
+## 4. Convenciones de Ramas y Mensajes de Commit
 
-El repositorio valida todos los mensajes de commit mediante **Commitlint** (`.husky/commit-msg` y `commitlint.config.cjs`).
+### 4.1 Nomenclatura de ramas
 
-### Formato obligatorio
+Utiliza prefijos que identifiquen la naturaleza del trabajo:
+
+- `feat/<scope>-<descripcion>` — Nueva funcionalidad.
+- `fix/<scope>-<descripcion>` — Corrección de un defecto.
+- `docs/<scope>-<descripcion>` — Creación o mejora de documentación.
+- `refactor/<scope>-<descripcion>` — Reestructuración interna sin alterar el comportamiento externo.
+- `test/<scope>-<descripcion>` — Adición o ajuste de pruebas unitarias o de contrato.
+- `chore/<scope>-<descripcion>` — Tareas de mantenimiento o configuración.
+
+### 4.2 Mensajes de commit (Conventional Commits)
+
+El repositorio valida automáticamente el formato de los mensajes de commit mediante **Commitlint** (`commitlint.config.cjs`, basado en `@commitlint/config-conventional`).
+
+**Estructura obligatoria:**
 
 ```text
-<tipo>(<scope opcional>): <descripción breve en minúsculas sin punto final>
+<tipo>(<scope opcional>): <descripción en minúsculas o sentence-case sin punto final>
 ```
 
-### Tipos permitidos
+- **Tipos permitidos:** `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`, `chore`, `style`, `revert`.
+- **Reglas verificadas por `commitlint.config.cjs`:**
+  - `subject-case`: únicamente `lower-case` o `sentence-case` (sin punto final).
+  - `body-max-line-length`: máximo `120` caracteres por línea en el cuerpo del mensaje.
+- **Scopes recomendados del monorepo:** `auth-node`, `auth-service`, `server-admin`, `server-user`, `client-admin`, `client-admin-next`, `client-user`, `contract-tests`, `docker`, `seed`, `docs`.
 
-- `feat`: Nueva funcionalidad para el usuario o nuevo endpoint.
-- `fix`: Corrección de un error o bug de seguridad/lógica.
-- `refactor`: Cambio de código que no corrige un bug ni agrega funcionalidad.
-- `perf`: Mejora de rendimiento (ej. optimización de consultas o caché Redis).
-- `test`: Adición o ajuste de pruebas unitarias o de contrato.
-- `docs`: Cambios exclusivos en archivos de documentación (`*.md`).
-- `build`: Cambios en Dockerfiles, dependencias, `package.json` o `.csproj`.
-- `ci`: Cambios en flujos de integración continua o scripts de verificación.
-- `chore`: Tareas de mantenimiento general.
-- `style`: Cambios de formato (espacios, comas, Prettier, `dotnet format`).
-
-### Ejemplos válidos
+**Ejemplos válidos:**
 
 ```bash
-git commit -m "feat(server-admin): agregar filtro por capacidad en query de canchas"
-git commit -m "fix(auth-node): invalidar cache redis al cambiar foto de perfil"
-git commit -m "docs(client-admin): documentar flujo de cookies httponly"
+git commit -m "feat(server-admin): agregar filtro por tipo de superficie en canchas"
+git commit -m "fix(auth-node): invalidar cache de perfil al verificar correo"
+git commit -m "docs(auth-service): actualizar guia de recreacion a net10.0"
 ```
 
-> **Tip:** Si prefieres un asistente interactivo en terminal para construir el mensaje de commit paso a paso, ejecuta:
->
-> ```bash
-> pnpm commit
-> ```
-
----
-
-## 5. Hooks Automáticos de Calidad (Husky)
-
-Al ejecutar `git commit` y `git push`, Husky ejecuta validaciones automáticas:
-
-1. **`pre-commit` (`.husky/pre-commit`):**
-   - Ejecuta `pnpm lint-staged`:
-     - Formatea con **Prettier** todos los archivos modificados (`*.js`, `*.ts`, `*.tsx`, `*.json`, `*.md`, `*.yml`).
-     - Ejecuta **ESLint** (`--fix --max-warnings=0`) sobre el código JavaScript/TypeScript.
-   - Ejecuta `dotnet format authentication-service/auth-service/AuthService.sln` para asegurar que el código C# cumpla `.editorconfig` (indentación y saltos de línea `LF`).
-2. **`commit-msg` (`.husky/commit-msg`):**
-   - Verifica que el mensaje cumpla el estándar Conventional Commits.
-3. **`pre-push` (`.husky/pre-push`):**
-   - Ejecuta `pnpm test` (todas las suites unitarias de Node.js y .NET 10) antes de enviar los cambios al servidor remoto.
-
----
-
-## 6. Reglas de Arquitectura y Seguridad al Contribuir
-
-Para preservar la integridad pedagógica y de producción del proyecto, todo cambio debe respetar estas 5 reglas:
-
-1. **Prohibido guardar JWT o Refresh Tokens en `localStorage` / `sessionStorage`:**
-   - En aplicaciones web (`client-admin` y `client-admin-next`), los tokens viajan únicamente en **cookies `httpOnly`** (`kinal_access` y `kinal_refresh`).
-   - En la aplicación móvil (`client-user`), los tokens se almacenan exclusivamente en **`expo-secure-store`**.
-2. **Paridad de contrato entre `auth-node` y `auth-service`:**
-   - En desarrollo y clase se utiliza `.NET 10` (`auth-service`), pero en producción corre únicamente `Node.js` (`auth-node`).
-   - Si agregas o modificas un endpoint público o interno en un servicio de autenticación, **debes mantener el mismo contrato de entrada/salida en el otro** (ruta, método HTTP, cabeceras y estructura JSON).
-3. **Invalidación de caché en Redis (`Cache-Aside`):**
-   - Si modificas casos de uso que alteren una cancha (`fields`), asegúrate de invalidar el prefijo `kinal:fields:` en Redis.
-   - Si modificas casos de uso que alteren el perfil, avatar, verificación o rol de un usuario, asegúrate de invalidar `kinal:user:profile:<userId>`.
-4. **Uso del método HTTP `QUERY` para consultas con body:**
-   - Cuando diseñes una consulta de lectura segura e idempotente que requiera un payload estructurado en el body (como filtros avanzados o resolución interna de perfiles), utiliza el método HTTP `QUERY` manteniendo compatibilidad con `GET` o `POST` según corresponda.
-5. **Documentación sincronizada:**
-   - Si agregas una variable de entorno, agrégala en el `.env.example` del servicio correspondiente, en su validador de entorno (`env.ts` / `env.validation.ts` / `configs/app.js`) y en la sección **5. Variables de Entorno** de su `README.md`.
-
----
-
-## 7. Ejecución de Pruebas (Unitarias y de Contrato)
-
-### Pruebas unitarias (sin Docker)
-
-Corren en memoria usando dobles de prueba (`fakes` / `mocks`) y tardan ~15 segundos en total:
+También puedes utilizar el asistente interactivo configurado en la raíz:
 
 ```bash
-# Ejecutar todas las suites (Node.js + .NET 10)
-pnpm test
-
-# Ejecutar todos los linters
-pnpm lint
-
-# Verificar compilación de todos los proyectos
-pnpm -r --if-present build
-```
-
-### Pruebas de contrato (con Docker)
-
-Si tu cambio toca rutas HTTP, códigos de estado o la forma de las respuestas JSON de algún backend, verifica la suite de contrato:
-
-```bash
-pnpm contract:up      # Levanta el stack con Mailpit y límites de rate-limit altos
-pnpm db:seed          # Carga datos semilla deterministas
-pnpm test:contract    # Compara las respuestas contra los snapshots de contrato
+pnpm commit
 ```
 
 ---
 
-## 8. Proceso de Pull Request (PR)
+## 5. Validaciones Automáticas (Husky y Commitlint)
 
-1. Asegúrate de que `pnpm lint`, `pnpm test` y `pnpm -r --if-present build` terminen sin errores ni advertencias.
-2. Sube tu rama al repositorio remoto:
-   ```bash
-   git push -u origin <nombre-de-tu-rama>
-   ```
-3. Abre un Pull Request hacia `master` completando la plantilla `.github/PULL_REQUEST_TEMPLATE.md`.
-4. Describe claramente **qué** cambió, **por qué** se hizo y **cómo probarlo** paso a paso.
+El repositorio tiene configurados tres hooks de Git en `.husky/`:
+
+1. **`.husky/pre-commit`:**
+   - Ejecuta `pnpm lint-staged`: aplica **Prettier** (`--write`) sobre archivos modificados y **ESLint** (`--fix --max-warnings=0`) sobre archivos `.js`, `.mjs`, `.cjs`, `.jsx`, `.ts`, `.tsx`.
+   - Ejecuta `dotnet format authentication-service/auth-service/AuthService.sln` para garantizar que el código C# cumpla `.editorconfig` (indentación y saltos de línea `LF`).
+2. **`.husky/commit-msg`:**
+   - Ejecuta `pnpm exec commitlint --edit "$1"` para validar el mensaje de commit.
+3. **`.husky/pre-push`:**
+   - Ejecuta `pnpm test` (todas las suites unitarias de Node.js y .NET 10) antes de permitir el envío de cambios al remoto.
+
+---
+
+## 6. Criterios de Calidad Técnica y Arquitectónica
+
+Toda contribución será revisada bajo los siguientes criterios verificables:
+
+1. **Seguridad de sesiones y credenciales:**
+   - En aplicaciones web (`client-admin` y `client-admin-next`), está prohibido almacenar tokens JWT o _refresh tokens_ en `localStorage` o `sessionStorage`; deben mantenerse en cookies `httpOnly`.
+   - En la aplicación móvil (`client-user`), los tokens deben almacenarse exclusivamente en `expo-secure-store`.
+   - Ningún commit puede incluir archivos `.env`, `.env.docker`, claves de API ni secretos reales.
+2. **Compatibilidad entre servicios de autenticación:**
+   - `auth-node` y `auth-service` comparten esquema en PostgreSQL 18 y contrato HTTP. Cualquier cambio en rutas, claims del JWT o estructura de respuesta debe mantener la interoperabilidad entre ambos servicios.
+3. **Coherencia de caché en Redis:**
+   - Las mutaciones sobre canchas (`fields`) deben invalidar el prefijo `kinal:fields:`.
+   - Las mutaciones sobre perfil, fotografía, verificación de correo o rol de usuario deben invalidar `kinal:user:profile:<userId>`.
+4. **Pruebas y mantenibilidad:**
+   - Las nuevas funcionalidades o correcciones de errores deben acompañarse de sus pruebas unitarias correspondientes sin degradar las existentes.
+
+---
+
+## 7. Uso Responsable de Herramientas de Inteligencia Artificial
+
+En el contexto formativo y de ingeniería de software de **KinalSports**, el uso de asistentes de IA para desarrollo, consulta o redacción debe regirse por los siguientes principios:
+
+1. **Comprensión obligatoria de la solución:** El autor de un commit o Pull Request debe comprender íntegramente el funcionamiento, las implicaciones arquitectónicas y el flujo de ejecución del código que entrega. No se debe enviar código generado automáticamente que el autor no pueda explicar ni depurar.
+2. **Responsabilidad del autor:** La responsabilidad técnica sobre la exactitud, calidad, seguridad y mantenibilidad del cambio recae siempre en la persona que firma el commit o abre el Pull Request, independientemente de las herramientas de apoyo utilizadas.
+3. **Verificación empírica:** Todo fragmento sugerido por una herramienta de IA debe contrastarse contra el código real del monorepo y validarse ejecutando los linters (`pnpm lint`), compilaciones (`build`) y pruebas automatizadas (`pnpm test`).
+4. **Protección de información confidencial:** Nunca ingreses en herramientas externas de IA credenciales reales, tokens internos (`INTERNAL_SERVICE_TOKEN`, `JWT_SECRET`), llaves de API (`KMH_PROJECT_API_KEY`, `CLOUDINARY_API_SECRET`), cadenas de conexión productivas ni datos personales.
+5. **Respeto a licencias y derechos de autor:** Verifica que el código incorporado no reproduzca fragmentos con licencias incompatibles ni vulnere la autoría de terceros.
+6. **Transparencia:** Cuando una contribución haya contado con asistencia significativa de herramientas generativas, decláralo de forma transparente en la descripción del Pull Request o en los metadatos del commit (`Co-authored-by`).

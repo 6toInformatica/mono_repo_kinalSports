@@ -14,6 +14,16 @@ const containers = {
   mongo: "kinal_mongodb",
   serverAdmin: "kinal_server_admin",
   authService: "kinal_auth_service",
+  authNode: "kinal_auth_node",
+};
+
+const isContainerRunning = (name) => {
+  const result = spawnSync(
+    "docker",
+    ["inspect", "-f", "{{.State.Running}}", name],
+    { encoding: "utf8" },
+  );
+  return result.status === 0 && result.stdout.trim() === "true";
 };
 
 const docker = (args, input) => {
@@ -47,7 +57,7 @@ const mongoDatabase = () => {
 
 /**
  * Borra todos los usuarios (los roles se conservan) y los documentos de MongoDB.
- * Luego reinicia auth-service, que crea el usuario "admin" cuando no hay usuarios.
+ * Luego reinicia auth-service (o auth-node si auth-service no está activo), que recrea el usuario "admin".
  */
 const reset = async () => {
   psql("TRUNCATE users, refresh_tokens CASCADE");
@@ -60,7 +70,10 @@ const reset = async () => {
     "--eval",
     'db.getCollectionNames().filter((c) => !c.startsWith("system.")).forEach((c) => db[c].deleteMany({}))',
   ]);
-  docker(["restart", containers.authService]);
+  const targetAuth = isContainerRunning(containers.authService)
+    ? containers.authService
+    : containers.authNode;
+  docker(["restart", targetAuth]);
 
   for (let attempt = 0; attempt < 60; attempt++) {
     await sleep(3000);
@@ -68,17 +81,17 @@ const reset = async () => {
       "inspect",
       "-f",
       "{{.State.Health.Status}}",
-      containers.authService,
+      targetAuth,
     ]);
     if (
       health === "healthy" &&
       psql("select count(*) from users where username = 'admin'") === "1"
     ) {
-      console.log("Bases limpias; auth-service recreó el usuario admin");
+      console.log(`Bases limpias; ${targetAuth} recreó el usuario admin`);
       return;
     }
   }
-  throw new Error("auth-service no recreó el usuario admin a tiempo");
+  throw new Error(`${targetAuth} no recreó el usuario admin a tiempo`);
 };
 
 const seedPostgres = () => {

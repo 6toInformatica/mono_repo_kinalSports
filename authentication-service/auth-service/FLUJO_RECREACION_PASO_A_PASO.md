@@ -1,80 +1,112 @@
-# FLUJO LÓGICO PASO A PASO PARA RECREAR LA API
+# FLUJO LÓGICO PASO A PASO PARA RECREAR LA API (.NET 10)
 
-> **Tipo de documento:** tutorial educativo paso a paso para reconstruir AuthService manualmente.
+> **Tipo de documento:** Tutorial educativo paso a paso para reconstruir `auth-service` manualmente bajo **Clean Architecture** en **.NET 10 (`net10.0`, C# 14)**.
 >
-> **Para operar el monorepo existente** usa [README.md](./README.md), [GUIA_RAPIDA.md](./GUIA_RAPIDA.md) y [README raiz](../../README.md).
+> **Para operar el monorepo existente:** Consulta [README.md](./README.md), [GUIA_RAPIDA.md](./GUIA_RAPIDA.md) y el [README principal del monorepo](../../README.md).
 >
-> **Runtime actual:** puerto `5156`, prefijo `/api/v1`, PostgreSQL en Docker puerto `5435`.
+> **Parámetros actuales verificados en el monorepo:** Runtime `.NET 10`, puerto HTTP `5156`, prefijo `/api/v1`, PostgreSQL 18 en puerto `5435` (`Database=kinal_sports`), Redis 7 en puerto `6379`.
 
-> Una guía explícita, archivo por archivo, comando por comando, para recrear AuthService desde cero
+> Guía explícita, archivo por archivo y comando por comando, para recrear `AuthService` desde cero.
 
 ---
 
 ## DIAGRAMA DE FLUJO GENERAL
 
-```
-1.  CREAR ESTRUCTURA BASE (Proyecto y librerías)
+```text
+1.  CREAR ESTRUCTURA BASE (.NET 10, global.json, Directory.Build.props y proyectos)
         ↓
-2.  DEFINIR ENTIDADES (Domain)
+2.  DEFINIR ENTIDADES E INTERFACES (Domain)
         ↓
-3.  CONFIGURAR BASE DE DATOS (Persistence)
+3.  CONFIGURAR PERSISTENCIA Y MIGRACIONES (Persistence)
         ↓
-4.  CREAR DTOs Y INTERFACES (Application)
+4.  CREAR DTOs, EXCEPCIONES Y PUERTOS (Application)
         ↓
-5.  IMPLEMENTAR SERVICIOS (Application)
+5.  IMPLEMENTAR CASOS DE USO Y ADAPTADORES (Application + Infrastructure)
         ↓
-6.  CONFIGURAR DEPENDENCIAS (Api)
+6.  CONFIGURAR INYECCIÓN DE DEPENDENCIAS, COOKIES Y SEGURIDAD (Api)
         ↓
-7.  CREAR CONTROLLERS (Api)
+7.  CREAR CONTROLLERS Y MÉTODO HTTP QUERY (Api)
         ↓
-8.  AGREGAR MIDDLEWARES (Api)
+8.  CONFIGURAR appsettings.json, Program.cs Y PRUEBAS
 ```
 
 ---
 
-## PASO 1: CREAR LA ESTRUCTURA BASE DEL PROYECTO
+## PASO 1: CREAR LA ESTRUCTURA BASE DEL PROYECTO (.NET 10)
 
-### 1.1 Crear la solución
+### 1.1 Crear la solución y fijar el SDK .NET 10
 
 ```bash
-# Ubicarse en la raiz del servicio auth-service
+# Ubicarse en la raíz del servicio auth-service
 cd authentication-service/auth-service
 
 # Crear la solución principal
 dotnet new sln -n AuthService
 
-# Crear las carpetas de las capas
-mkdir -p src/AuthService.Api
-mkdir -p src/AuthService.Application
+# Crear las carpetas de las capas de Clean Architecture
 mkdir -p src/AuthService.Domain
+mkdir -p src/AuthService.Application
+mkdir -p src/AuthService.Infrastructure
 mkdir -p src/AuthService.Persistence
+mkdir -p src/AuthService.Api
 ```
 
-### 1.2 Crear proyectos de clase (Class Library)
+Crear `global.json` en `authentication-service/auth-service/global.json`:
+
+```json
+{
+    "sdk": {
+        "version": "10.0.100",
+        "rollForward": "latestFeature",
+        "allowPrerelease": false
+    }
+}
+```
+
+Crear `Directory.Build.props` para aplicar `net10.0` y `LangVersion 14.0` a todos los proyectos:
+
+```xml
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+  </PropertyGroup>
+</Project>
+```
+
+### 1.2 Crear proyectos por capa (`net10.0`)
 
 ```bash
 # Navegar a src
 cd src
 
-# Domain - Capa de dominio (NO tiene referencias a otras capas)
-dotnet new classlib -n AuthService.Domain -f net8.0
+# Domain - Capa de dominio (no tiene referencias a otras capas)
+dotnet new classlib -n AuthService.Domain -f net10.0
 
-# Persistence - Capa de persistencia (depende de Domain)
-dotnet new classlib -n AuthService.Persistence -f net8.0
+# Application - Casos de uso, DTOs y puertos (depende de Domain)
+dotnet new classlib -n AuthService.Application -f net10.0
 
-# Application - Capa de aplicación (depende de Domain)
-dotnet new classlib -n AuthService.Application -f net8.0
+# Infrastructure - Adaptadores externos: Argon2id, JWT, Redis, KMH/SMTP, Cloudinary (depende de Application)
+dotnet new classlib -n AuthService.Infrastructure -f net10.0
 
-# Api - Capa de presentación (depende de Application y Persistence)
-dotnet new webapi -n AuthService.Api -f net8.0
+# Persistence - EF Core, PostgreSQL y repositorios (depende de Domain y Application)
+dotnet new classlib -n AuthService.Persistence -f net10.0
 
-# Volver a la raíz
+# Api - Presentación HTTP, Controllers, Filters y Middlewares
+dotnet new webapi -n AuthService.Api -f net10.0
+
+# Volver a la raíz del servicio
 cd ..
 
-# Agregar proyectos a la solución
+# Agregar todos los proyectos a la solución
 dotnet sln add src/AuthService.Domain/AuthService.Domain.csproj
-dotnet sln add src/AuthService.Persistence/AuthService.Persistence.csproj
 dotnet sln add src/AuthService.Application/AuthService.Application.csproj
+dotnet sln add src/AuthService.Infrastructure/AuthService.Infrastructure.csproj
+dotnet sln add src/AuthService.Persistence/AuthService.Persistence.csproj
 dotnet sln add src/AuthService.Api/AuthService.Api.csproj
 ```
 
@@ -82,60 +114,75 @@ dotnet sln add src/AuthService.Api/AuthService.Api.csproj
 
 ```bash
 # Application depende de Domain
-cd src/AuthService.Application
-dotnet add reference ../AuthService.Domain/AuthService.Domain.csproj
-cd ../..
+dotnet add src/AuthService.Application/AuthService.Application.csproj \
+  reference src/AuthService.Domain/AuthService.Domain.csproj
 
-# Persistence depende de Domain
-cd src/AuthService.Persistence
-dotnet add reference ../AuthService.Domain/AuthService.Domain.csproj
-cd ../..
+# Infrastructure depende de Application
+dotnet add src/AuthService.Infrastructure/AuthService.Infrastructure.csproj \
+  reference src/AuthService.Application/AuthService.Application.csproj
 
-# Api depende de Application y Persistence
-cd src/AuthService.Api
-dotnet add reference ../AuthService.Application/AuthService.Application.csproj
-dotnet add reference ../AuthService.Persistence/AuthService.Persistence.csproj
-cd ../..
+# Persistence depende de Domain y Application
+dotnet add src/AuthService.Persistence/AuthService.Persistence.csproj \
+  reference src/AuthService.Domain/AuthService.Domain.csproj \
+            src/AuthService.Application/AuthService.Application.csproj
+
+# Api depende de Application, Infrastructure y Persistence
+dotnet add src/AuthService.Api/AuthService.Api.csproj \
+  reference src/AuthService.Application/AuthService.Application.csproj \
+            src/AuthService.Infrastructure/AuthService.Infrastructure.csproj \
+            src/AuthService.Persistence/AuthService.Persistence.csproj
 ```
 
-### 1.4 Instalar dependencias principales en cada capa
+### 1.4 Instalar dependencias principales en cada capa (versiones verificadas en .NET 10)
 
-**En AuthService.Domain** (NO necesita dependencias externas excepto annotations)
+**En `AuthService.Domain`** (sin dependencias de infraestructura; usa las anotaciones incluidas en el BCL de `net10.0`).
 
-```bash
-cd src/AuthService.Domain
-dotnet add package System.ComponentModel.Annotations
-cd ../..
-```
-
-**En AuthService.Persistence** (necesita EF Core y PostgreSQL)
+**En `AuthService.Persistence`** (EF Core 10 y proveedor PostgreSQL `Npgsql`):
 
 ```bash
 cd src/AuthService.Persistence
-dotnet add package Microsoft.EntityFrameworkCore.Design -v 9.0.9
-dotnet add package Microsoft.EntityFrameworkCore.PostgreSQL
-dotnet add package EFCore.NamingConventions -v 9.0.0
+dotnet add package Microsoft.EntityFrameworkCore -v 10.0.14
+dotnet add package Microsoft.EntityFrameworkCore.Design -v 10.0.14
+dotnet add package Microsoft.EntityFrameworkCore.Tools -v 10.0.14
+dotnet add package Npgsql.EntityFrameworkCore.PostgreSQL -v 10.0.3
+dotnet add package EFCore.NamingConventions -v 10.0.1
 cd ../..
 ```
 
-**En AuthService.Application** (necesita validación)
+**En `AuthService.Application`** (validación con FluentValidation y abstracciones de logging):
 
 ```bash
 cd src/AuthService.Application
-dotnet add package FluentValidation
-dotnet add package Microsoft.Extensions.DependencyInjection
-dotnet add package Microsoft.Extensions.Configuration
+dotnet add package FluentValidation -v 12.2.0
+dotnet add package FluentValidation.DependencyInjectionExtensions -v 12.2.0
+dotnet add package Microsoft.Extensions.Logging.Abstractions -v 10.0.14
 cd ../..
 ```
 
-**En AuthService.Api** (necesita todo)
+**En `AuthService.Infrastructure`** (Argon2id, JWT, MailKit, Cloudinary y HttpClient):
+
+```bash
+cd src/AuthService.Infrastructure
+dotnet add package Konscious.Security.Cryptography.Argon2 -v 1.3.1
+dotnet add package System.IdentityModel.Tokens.Jwt -v 8.23.0
+dotnet add package Microsoft.IdentityModel.Tokens -v 8.23.0
+dotnet add package MailKit -v 4.18.2
+dotnet add package CloudinaryDotNet -v 1.29.3
+dotnet add package Microsoft.Extensions.Http -v 10.0.14
+dotnet add package Microsoft.Extensions.Options.ConfigurationExtensions -v 10.0.14
+cd ../..
+```
+
+**En `AuthService.Api`** (JWT Bearer, OpenAPI/Swagger, Serilog y cabeceras de seguridad):
 
 ```bash
 cd src/AuthService.Api
-dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer -v 8.0.20
-dotnet add package Swashbuckle.AspNetCore -v 9.0.4
-dotnet add package Serilog.AspNetCore -v 9.0.0
-dotnet add package NetEscapades.AspNetCore.SecurityHeaders -v 1.2.0
+dotnet add package Microsoft.AspNetCore.Authentication.JwtBearer -v 10.0.14
+dotnet add package Microsoft.AspNetCore.OpenApi -v 10.0.14
+dotnet add package Microsoft.EntityFrameworkCore.Design -v 10.0.14
+dotnet add package Swashbuckle.AspNetCore -v 10.3.1
+dotnet add package Serilog.AspNetCore -v 10.0.0
+dotnet add package NetEscapades.AspNetCore.SecurityHeaders -v 1.3.1
 cd ../..
 ```
 
@@ -805,12 +852,12 @@ public class RoleRepository(ApplicationDbContext context) : IRoleRepository
 }
 ```
 
-### 3.5 Configurar conexión a BD en `appsettings.json` (Api)
+### 3.5 Configurar conexión a BD en `appsettings.Development.json` (Api)
 
 ```json
 {
     "ConnectionStrings": {
-        "DefaultConnection": "Host=localhost;Database=auth_service;Username=postgres;Password=Root1234!;Port=5432"
+        "DefaultConnection": "Host=localhost;Port=5435;Database=kinal_sports;Username=KinalSports;Password=KinalSports2027!"
     },
     "Logging": {
         "LogLevel": {
@@ -2484,7 +2531,7 @@ public class FileDataModelBinderProvider : IModelBinderProvider
 
 ---
 
-## PASO 7: CREAR CONTROLLERS EN API
+### 6.2 Crear AuthenticationExtensions - `src/AuthService.Api/Extensions/AuthenticationExtensions.cs`
 
 ```csharp
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -2495,6 +2542,8 @@ namespace AuthService.Api.Extensions;
 
 public static class AuthenticationExtensions
 {
+    private const string AccessCookieName = "kinal_access";
+
     public static IServiceCollection AddJwtAuthentication(
         this IServiceCollection services, IConfiguration configuration)
     {
@@ -2520,10 +2569,25 @@ public static class AuthenticationExtensions
                 ValidateLifetime = true,
                 ClockSkew = TimeSpan.Zero
             };
+
+            // Si la petición no trae header Authorization, intenta leer la cookie httpOnly kinal_access
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    if (string.IsNullOrEmpty(context.Token) &&
+                        context.Request.Cookies.TryGetValue(AccessCookieName, out var cookieToken) &&
+                        !string.IsNullOrWhiteSpace(cookieToken))
+                    {
+                        context.Token = cookieToken;
+                    }
+                    return Task.CompletedTask;
+                }
+            };
         });
 
         services.AddAuthorizationBuilder()
-            .AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+            .AddPolicy("AdminOnly", policy => policy.RequireRole("ADMIN_ROLE"));
 
         return services;
     }
@@ -2957,233 +3021,207 @@ app.Run();
 
 ---
 
-## PASO 8: CONFIGURAR appsettings.json
+## PASO 8: CONFIGURAR `appsettings.Development.json` Y EJECUTAR
 
-Crear `src/AuthService.Api/appsettings.json`:
+Crear `src/AuthService.Api/appsettings.Development.json` alineado con los servicios del monorepo:
 
 ```json
 {
     "ConnectionStrings": {
-        "DefaultConnection": "Host=localhost;Database=auth_service;Username=postgres;Password=Root1234!;Port=5432"
+        "DefaultConnection": "Host=localhost;Port=5435;Database=kinal_sports;Username=KinalSports;Password=KinalSports2027!"
     },
+    "InternalServiceToken": "KinalSportsInternalSecretToken2026!",
     "JwtSettings": {
         "SecretKey": "MyVerySecretKeyForJWTTokenAuthenticationWith256Bits!",
         "Issuer": "AuthService",
         "Audience": "AuthService",
-        "ExpiryInMinutes": 30
+        "ExpiryInMinutes": 15
+    },
+    "Seed": {
+        "AdminPassword": "Admin1234!"
+    },
+    "Redis": {
+        "ConnectionString": "redis://localhost:6379"
+    },
+    "Email": {
+        "Provider": "kmh"
+    },
+    "KinalMailHub": {
+        "BaseUrl": "https://mail.lab.kinal.edu.gt",
+        "From": "kinal-sports@am-delta.in6am.mail.kinal.test",
+        "ApiKey": ""
     },
     "CloudinarySettings": {
-        "CloudName": "your_cloud_name",
-        "ApiKey": "your_api_key",
-        "ApiSecret": "your_api_secret",
+        "CloudName": "b3xvlule",
+        "ApiKey": "",
+        "ApiSecret": "",
+        "BaseUrl": "https://res.cloudinary.com/b3xvlule/image/upload/",
+        "DefaultAvatarPath": "auth_service/profiles/avatarDefault-1749508519496_oam3k3",
         "Folder": "auth_service/profiles"
     },
-    "SmtpSettings": {
-        "Enabled": true,
-        "Host": "smtp.gmail.com",
-        "Port": "587",
-        "UseImplicitSsl": false,
-        "Username": "your_email@gmail.com",
-        "Password": "your_app_password",
-        "FromEmail": "your_email@gmail.com",
-        "FromName": "AuthDotnet",
-        "Timeout": "30000",
-        "UseFallback": false
-    },
     "AppSettings": {
-        "FrontendUrl": "http://localhost:3000"
+        "FrontendUrl": "http://localhost:5173"
     },
     "Security": {
-        "AllowedOrigins": ["http://localhost:3000", "https://localhost:3001"],
-        "AdminAllowedOrigins": ["https://admin.localhost"]
+        "AllowedOrigins": [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:5173"
+        ],
+        "AdminAllowedOrigins": [
+            "http://localhost:3000",
+            "http://localhost:5173"
+        ]
     }
 }
 ```
 
----
-
-## PASO 9: INSTALAR CLOUDINARY
+### Comandos para compilar, probar y ejecutar la solución (.NET 10)
 
 ```bash
-cd src/AuthService.Application
-dotnet add package CloudinaryDotNet
-cd ../..
-```
+# Desde authentication-service/auth-service
 
----
-
-## PASO 10: EJECUTAR Y PROBAR
-
-app.UseHttpsRedirection();
-app.UseCors("DefaultCorsPolicy");
-app.UseRateLimiter();
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-// Health checks
-app.MapHealthChecks("/health");
-app.MapGet("/health", () =>
-{
-var response = new
-{
-status = "Healthy",
-timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
-};
-return Results.Ok(response);
-});
-
-app.Run();
-
-````
-
----
-
-## PASO 8: CONFIGURAR appsettings.json
-
-```bash
-# Desde la raíz del proyecto
-
-# Restaurar dependencias
+# 1. Restaurar dependencias NuGet
 dotnet restore
 
-# Compilar
-dotnet build
+# 2. Compilar toda la solución (.NET 10)
+dotnet build AuthService.sln
 
-# Ejecutar migraciones (si no se hicieron en paso 3.6)
-cd src/AuthService.Api
+# 3. Ejecutar pruebas unitarias (xUnit v3)
+dotnet test AuthService.sln
+
+# 4. Aplicar migraciones manualmente (opcional: Program.cs las aplica al arrancar)
 dotnet ef database update \
-  --project ../AuthService.Persistence/AuthService.Persistence.csproj \
-  --startup-project .
-cd ../..
+  --project src/AuthService.Persistence/AuthService.Persistence.csproj \
+  --startup-project src/AuthService.Api/AuthService.Api.csproj
 
-# Iniciar la API
-cd src/AuthService.Api
-dotnet run
+# 5. Iniciar la API en el puerto 5156
+dotnet run --project src/AuthService.Api
 
-# La API estará en: https://localhost:5001
-# Swagger en: https://localhost:5001/swagger
-````
+# API disponible en: http://localhost:5156/api/v1
+# Swagger UI (Development): http://localhost:5156/swagger
+```
 
 ---
 
-## RESUMEN DE RELACIONES ENTRE CAPAS
+## RESUMEN DE RELACIONES ENTRE CAPAS (CLEAN ARCHITECTURE EN .NET 10)
 
-```
-┌─────────────────────────────────────────────────┐
-│           CAPA PRESENTATION (API)               │
-│ - Controllers (AuthController, UsersController) │
-│ - Middlewares (GlobalExceptionMiddleware)       │
-│ - Extensions (DI, JWT, CORS, Rate Limiting)     │
-│ - Program.cs (Configuración central)            │
-└─────────────┬───────────────────────────────────┘
-              │ DEPENDE DE
-              ↓
-┌─────────────────────────────────────────────────┐
-│       CAPA APPLICATION (Lógica de negocio)      │
-│ - Services (AuthService, EmailService, etc)     │
-│ - DTOs (Transferencia de datos)                 │
-│ - Interfaces (Contratos)                        │
-│ - Validators (Validación)                       │
-│ - Exceptions (Errores personalizados)           │
-└─────────────┬───────────────────────────────────┘
-              │ DEPENDE DE
-              ↓
-┌─────────────────────────────────────────────────┐
-│           CAPA DOMAIN (Entidades)               │
-│ - Entities (User, Role, UserProfile, etc)       │
-│ - Enums (Estados, roles)                        │
-│ - Constants (Valores fijos)                     │
-│ - Interfaces (Contratos de repos)               │
-└─────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────┐
-│     CAPA PERSISTENCE (Acceso a datos)           │
-│ - DbContext (ApplicationDbContext)              │
-│ - Repositories (UserRepository, RoleRepository) │
-│ - Migrations (Control de versiones BD)          │
-│ DEPENDE DE: Domain                              │
-└─────────────────────────────────────────────────┘
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│                 CAPA PRESENTATION (AuthService.Api)              │
+│ - Controllers (AuthController, UsersController, HealthController)│
+│ - Filters (InternalServiceTokenAttribute)                        │
+│ - Middlewares (GlobalExceptionMiddleware)                        │
+│ - Extensions (JWT + Cookie kinal_access, CORS, Rate Limiting)    │
+│ - Program.cs (Arranque, migraciones y seed inicial)              │
+└───────────────┬──────────────────────────────────┬───────────────┘
+                │ DEPENDE DE                       │ REGISTRA DI DE
+                ↓                                  ↓
+┌───────────────────────────────────┐  ┌──────────────────────────────────────┐
+│ CAPA APPLICATION                  │  │ CAPA INFRASTRUCTURE                  │
+│ (AuthService.Application)         │←─┤ (AuthService.Infrastructure)         │
+│ - Services (Auth, UserManagement, │  │ - Security (Argon2id, JwtToken)      │
+│   RefreshTokenService)            │  │ - Cache (RedisCacheService RESP2)    │
+│ - DTOs y Validators               │  │ - Email (KinalMailHub REST, MailKit) │
+│ - Interfaces (Puertos: ICache,    │  │ - Storage (CloudinaryService)        │
+│   IEmail, IJwt, IPasswordHash)    │  └──────────────────────────────────────┘
+└───────────────┬───────────────────┘
+                │ DEPENDE DE
+                ↓
+┌──────────────────────────────────────────────────────────────────┐
+│                   CAPA DOMAIN (AuthService.Domain)               │
+│ - Entities (User, Role, UserProfile, UserEmail,                  │
+│   UserPasswordReset, UserRole, RefreshToken)                     │
+│ - Constants (RoleConstants: ADMIN_ROLE, USER_ROLE)               │
+│ - Interfaces (IUserRepository, IRoleRepository,                  │
+│   IRefreshTokenRepository)                                       │
+└───────────────────────────────────▲──────────────────────────────┘
+                                    │ DEPENDE DE
+┌───────────────────────────────────┴──────────────────────────────┐
+│              CAPA PERSISTENCE (AuthService.Persistence)          │
+│ - ApplicationDbContext (PostgreSQL 18 + convención snake_case)   │
+│ - Repositories (UserRepository, RoleRepository,                  │
+│   RefreshTokenRepository)                                        │
+│ - Migrations y DataSeeder                                        │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## FLUJO DE UNA SOLICITUD: EJEMPLO `POST /api/v1/auth/register`
 
-```
-1. Solicitud llega a AuthController.Register()
+```text
+1. Solicitud multipart/form-data llega a AuthController.Register()
    ↓
-2. Controller deserializa [FromForm] RegisterDto
+2. Controller recibe [FromForm] RegisterDto y valida con FluentValidation
    ↓
-3. Controller llama authService.RegisterAsync(registerDto)
+3. Controller invoca authService.RegisterAsync(registerDto)
    ↓
-4. AuthService (Application) valida datos:
+4. AuthService (Application) verifica unicidad:
    - ¿Email duplicado? → userRepository.ExistsByEmailAsync()
    - ¿Username duplicado? → userRepository.ExistsByUsernameAsync()
    ↓
-5. AuthService crea entidad User (Domain)
-   - Genera ID único
-   - Hash de contraseña → passwordHashService.HashPassword()
+5. AuthService construye la entidad User (Domain):
+   - Genera ID único ("usr_...")
+   - Calcula hash Argon2id → passwordHashService.HashPassword()
+   - Sube imagen a Cloudinary (si se adjuntó) → cloudinaryService.UploadImageAsync()
    ↓
-6. AuthService guarda usuario:
-   - userRepository.AddAsync(user)
-   - Esto persiste en BD usando ApplicationDbContext
+6. AuthService persiste el agregado en PostgreSQL:
+   - userRepository.CreateAsync(user) (incluye UserProfile, UserEmail y UserRole = USER_ROLE)
    ↓
-7. AuthService envia email:
-   - emailService.SendVerificationEmailAsync()
+7. AuthService envía correo de verificación:
+   - emailService.SendEmailVerificationAsync() (vía Kinal Mail Hub REST o SMTP)
    ↓
-8. AuthService retorna RegisterResponseDto
-   ↓
-9. Controller retorna 201 Created con respuesta
+8. AuthService retorna RegisterResponseDto y el Controller responde 201 Created
 ```
 
 ---
 
-## CHECKLIST DE IMPLEMENTACIÓN
+## CHECKLIST DE IMPLEMENTACIÓN (.NET 10)
 
-```
-DOMAIN:
+```text
+ESTRUCTURA BASE:
+  ✓ Crear AuthService.sln, global.json (SDK 10.0.x) y Directory.Build.props (net10.0, C# 14)
+
+DOMAIN (AuthService.Domain):
   ✓ Crear carpetas (Entities, Enums, Constants, Interfaces)
-  ✓ Crear Enums (UserRole)
-  ✓ Crear Constantes (RoleConstants)
-  ✓ Crear Entidades (User, Role, UserProfile, UserEmail, UserRole, UserPasswordReset)
-  ✓ Crear Interfaces de Repositorio (IUserRepository, IRoleRepository)
+  ✓ Crear RoleConstants (ADMIN_ROLE, USER_ROLE)
+  ✓ Crear Entidades (User, Role, UserProfile, UserEmail, UserRole, UserPasswordReset, RefreshToken)
+  ✓ Crear Interfaces de Repositorio (IUserRepository, IRoleRepository, IRefreshTokenRepository)
 
-PERSISTENCE:
-  ✓ Crear carpetas (Data, Repositories, Migrations)
-  ✓ Crear DbContext (ApplicationDbContext)
-  ✓ Crear Repositorios (UserRepository, RoleRepository)
-  ✓ Configurar conexión en appsettings.json
-  ✓ Crear migración inicial
-  ✓ Aplicar migración a BD
+APPLICATION (AuthService.Application):
+  ✓ Crear carpetas (DTOs, Exceptions, Interfaces, Services, Validators, Extensions)
+  ✓ Crear Interfaces de Puertos (IAuthService, IUserManagementService, IRefreshTokenService, ICacheService, IEmailService, IJwtTokenService, IPasswordHashService, ICloudinaryService)
+  ✓ Implementar AuthService (con caché Redis kinal:user:profile:{id}), RefreshTokenService y UserManagementService
 
-APPLICATION:
-  ✓ Crear carpetas (DTOs, Services, Interfaces, Validators, Exceptions, Extensions)
-  ✓ Crear Excepciones (ErrorCodes, BusinessException)
-  ✓ Crear DTOs de solicitud (RegisterDto, LoginDto, VerifyEmailDto, etc)
-  ✓ Crear DTOs de respuesta (AuthResponseDto, UserResponseDto, etc)
-  ✓ Crear Interfaces de Servicios (IAuthService, IPasswordHashService, etc)
-  ✓ Implementar Servicios (AuthService, JwtTokenService, PasswordHashService, etc)
+INFRASTRUCTURE (AuthService.Infrastructure):
+  ✓ Implementar PasswordHashService (Argon2id) y JwtTokenService (HS256)
+  ✓ Implementar RedisCacheService (RESP2 + fallback en memoria)
+  ✓ Implementar KinalMailHubEmailService (REST) y EmailService (SMTP MailKit)
+  ✓ Implementar CloudinaryService y DependencyInjection.AddInfrastructure()
 
-API:
-  ✓ Crear carpetas (Controllers, Extensions, Middlewares, Models)
-  ✓ Crear Extensions (ServiceCollectionExtensions, AuthenticationExtensions, etc)
-  ✓ Crear Controllers (AuthController, UsersController)
-  ✓ Configurar Program.cs (Servicios, middlewares, pipeline)
-  ✓ Ejecutar y probar
+PERSISTENCE (AuthService.Persistence):
+  ✓ Crear ApplicationDbContext con UseSnakeCaseNamingConvention()
+  ✓ Implementar UserRepository, RoleRepository y RefreshTokenRepository
+  ✓ Crear migraciones EF Core y DataSeeder
+
+API (AuthService.Api):
+  ✓ Configurar AuthenticationExtensions (Bearer + cookie httpOnly kinal_access)
+  ✓ Configurar InternalServiceTokenAttribute (x-internal-token)
+  ✓ Implementar AuthController (incluyendo cookies httpOnly y verbo QUERY en /profile/by-id y /by-username)
+  ✓ Implementar UsersController (anti-IDOR en GET /users/{userId}/roles) y HealthController
 ```
 
 ---
 
 ## ORDEN CORRECTO DE CREACIÓN (RESUMIDO)
 
-1. **Estructura base** → Proyectos y referencias
-2. **Domain** → Entidades primero (User, Role, etc)
-3. **Persistence** → DbContext y Repositorios
-4. **Migraciones** → Crear BD
-5. **Application** → DTOs, Excepciones, Servicios
-6. **API** → Extensions, Controllers, Program.cs
-7. **Probar** → dotnet run y Swagger
+1. **Estructura base** → `AuthService.sln`, `global.json`, `Directory.Build.props` y los 5 proyectos en `net10.0`.
+2. **Domain** → Entidades, constantes e interfaces de repositorio.
+3. **Application** → DTOs, excepciones, puertos (`ICacheService`, `IEmailService`, etc.) y casos de uso.
+4. **Infrastructure** → Adaptadores de Argon2id, JWT, Redis, Kinal Mail Hub / SMTP y Cloudinary.
+5. **Persistence** → `ApplicationDbContext`, repositorios, migraciones y `DataSeeder`.
+6. **API** → Extensions, Filters, Controllers (`AuthController`, `UsersController`) y `Program.cs`.
+7. **Pruebas y ejecución** → `dotnet test` y `dotnet run --project src/AuthService.Api` (`http://localhost:5156/swagger`).
 
-> La clave es **ir de adentro hacia afuera**: primero lo más interno (Domain), luego capa por capa hasta la presentación (API).
+> La regla fundamental de Clean Architecture es construir **de adentro hacia afuera**: el dominio y los casos de uso definen los contratos, y las capas externas (`Infrastructure`, `Persistence` y `Api`) implementan esos contratos.
