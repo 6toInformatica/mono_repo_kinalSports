@@ -3,6 +3,8 @@
 **/node_modules/
 **/.pnpm-store/
 **/.github/
+!/.github/
+!/.github/**
 
 # Build / dist outputs
 **/dist/

@@ -20,6 +20,7 @@ Plataforma integral de gestion y reservas de espacios deportivos construida con 
 9. [Pruebas Unitarias y de Contrato](#9-pruebas-unitarias-y-de-contrato)
 10. [Seguridad y Reglas de Negocio](#10-seguridad-y-reglas-de-negocio)
 11. [Documentacion por Servicio](#11-documentacion-por-servicio)
+12. [Contribucion, Seguridad y Licencia](#12-contribucion-seguridad-y-licencia)
 
 ---
 
@@ -295,6 +296,11 @@ Todos los READMEs de los microservicios y clientes siguen una estructura uniform
 
 ---
 
-## Autor y Licencia
+## 12. Contribucion, Seguridad y Licencia
 
-**Braulio Echeverria** — Licencia MIT.
+Este repositorio sigue los estandares de gobernanza y calidad de proyectos profesionales de codigo abierto:
+
+- **[Guia de Contribucion (`CONTRIBUTING.md`)](./CONTRIBUTING.md):** Flujo de ramas, convencion de commits (`Conventional Commits` / `pnpm commit`), hooks de Husky, reglas de arquitectura y ejecucion de pruebas.
+- **[Politica de Seguridad (`SECURITY.md`)](./SECURITY.md):** Controles de seguridad implementados, manejo de secretos (`.env` / `.env.docker`) y proceso de reporte responsable de vulnerabilidades.
+- **[Codigo de Conducta (`CODE_OF_CONDUCT.md`)](./CODE_OF_CONDUCT.md):** Estandares de convivencia academica y profesional basados en Contributor Covenant 2.1.
+- **[Licencia MIT (`LICENSE`)](./LICENSE):** Distribuido bajo la licencia **MIT** — Copyright (c) 2026 **Braulio Echeverria** (Centro Educativo Tecnico Laboral Kinal, Guatemala).

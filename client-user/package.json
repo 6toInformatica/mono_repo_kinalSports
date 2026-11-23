@@ -1,6 +1,8 @@
 {
   "name": "client-user",
   "version": "1.0.0",
+  "author": "Braulio Echeverria",
+  "license": "MIT",
   "type": "module",
   "main": "index.js",
   "scripts": {

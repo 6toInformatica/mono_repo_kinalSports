@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "author": "Braulio Echeverria",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

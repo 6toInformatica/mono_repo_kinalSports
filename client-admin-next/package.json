@@ -5,6 +5,7 @@
   "description": "Panel de administración de Kinal Sports (Next.js + TypeScript)",
   "type": "module",
   "author": "Braulio Echeverria",
+  "license": "MIT",
   "engines": {
     "node": ">=22.13.0"
   },

@@ -17,7 +17,7 @@
   },
   "keywords": [],
   "author": "Braulio Echeverria & IN6",
-  "license": "ISC",
+  "license": "MIT",
   "type": "module",
   "dependencies": {
     "@nestjs/common": "^12.4.2",
