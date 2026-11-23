@@ -20,8 +20,10 @@ overrides:
   # Parches de seguridad para dependencias transitivas (ver package.json de cada paquete)
   minimatch: ^11.0.1
   uuid@<11.1.1: ^11.1.1
-  # glob 13 (de @expo/cli y @expo/fingerprint): GHSA-3g3m-2fjr-6pw4, corregido en 14.0.2
-  glob@>=13.0.0 <14.0.2: ^14.0.4
+  # glob 9-13 (de test-exclude, @expo/cli y @expo/fingerprint): GHSA-3g3m-2fjr-6pw4, corregido en 14.0.2
+  glob@>=9.0.0 <14.0.2: ^14.0.4
+  # effect (de @prisma/config): GHSA-7589-6fvf-x4pw, corregido en 3.22.1
+  effect@<=3.22.0: ^3.22.1
   # node-forge (de @expo/cli): GHSA-w4xr-hqv8-ch44, GHSA-6cv4-p8m7-4r25, GHSA-j8rw-jp99-435v y GHSA-6889-vf6x-f3g5, corregidos en 1.4.3
   node-forge@<1.4.3: ^1.4.3
 auditConfig:

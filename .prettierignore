@@ -1,0 +1,12 @@
+pnpm-lock.yaml
+**/pnpm-lock.yaml
+dist/
+**/dist/
+.next/
+**/.next/
+build/
+**/build/
+coverage/
+**/coverage/
+src/generated/
+**/src/generated/

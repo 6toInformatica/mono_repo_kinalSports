@@ -5,3 +5,5 @@ allowBuilds:
   prisma: true
 overrides:
   minimatch: ^11.0.1
+  # effect (de @prisma/config): GHSA-7589-6fvf-x4pw, corregido en 3.22.1
+  effect@<=3.22.0: ^3.22.1
