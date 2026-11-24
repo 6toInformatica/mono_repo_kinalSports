@@ -22,10 +22,10 @@ Dentro del diseño formativo y arquitectónico del monorepo, permite contrastar 
 | :------------------------------- | :-------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------- |
 | **Librería UI y Bundler**        | `react` `^19.3.1`, `react-dom` `^19.3.1`, `vite` `^8.3.7`                         | Renderizado de componentes y empaquetado con _Hot Module Replacement_ (HMR).                               |
 | **Estilos e Iconografía**        | `tailwindcss` `^4.3.5`, `@tailwindcss/vite` `^4.3.5`, `@heroicons/react` `^2.2.0` | Sistema de estilos utilitarios y componentes visuales.                                                     |
-| **Enrutamiento y Estado**        | `react-router-dom` `^7.18.5`, `zustand` `^5.0.16`                                 | Rutas públicas/protegidas y estado global de sesión con persistencia selectiva (`partialize`).             |
+| **Enrutamiento y Estado**        | `react-router-dom` `^7.18.5`, `zustand` `^5.1.0`                                  | Rutas públicas/protegidas y estado global de sesión con persistencia selectiva (`partialize`).             |
 | **Formularios y Notificaciones** | `react-hook-form` `^7.91.0`, `react-hot-toast` `^2.6.1`                           | Validación de formularios y notificaciones emergentes.                                                     |
 | **Cliente HTTP**                 | `axios` `^1.21.1`                                                                 | Instancias `axiosAuth` y `axiosAdmin` con `withCredentials: true` e interceptores de renovación de sesión. |
-| **Pruebas Unitarias**            | `vitest` `^5.1.0`, `@testing-library/react` `^16.3.2`, `jsdom` `^29.0.1`          | Pruebas de componentes, formularios de autenticación y renovación automática de sesión.                    |
+| **Pruebas Unitarias**            | `vitest` `^5.1.0`, `@testing-library/react` `^16.3.3`, `jsdom` `^31.0.1`          | Pruebas de componentes, formularios de autenticación y renovación automática de sesión.                    |
 
 ---
 
@@ -165,7 +165,9 @@ Verifica el flujo de renovación de sesión (`src/shared/api/sessionRefresh.test
 
 ---
 
-## 11. Build y Despliegue en Docker
+## 11. Build, Despliegue en Docker y Limitaciones Relevantes
+
+### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.client-admin`)
 
 El archivo `dockerfiles/Dockerfile.client-admin` define tres etapas principales:
 
@@ -173,11 +175,17 @@ El archivo `dockerfiles/Dockerfile.client-admin` define tres etapas principales:
 2. **`build`:** Recibe los argumentos de compilación `ARG VITE_AUTH_URL`, `ARG VITE_ADMIN_URL` y `ARG VITE_CLOUDINARY_BASE_URL` (definidos en `docker-compose.prod.yml`) y ejecuta `pnpm build` generando `/app/dist`.
 3. **`runtime`:** Copia `/app/dist` dentro de la imagen `nginxinc/nginx-unprivileged:1.27-alpine`, configura `try_files $uri $uri/ /index.html;` para soportar el enrutamiento SPA de React Router y escucha en el puerto interno `8080` (mapeado a `${CLIENT_ADMIN_PORT:-5173}:8080` en `docker-compose.prod.yml`).
 
+### 11.2 Limitaciones y Consideraciones Operativas
+
+- **Variables inyectadas en tiempo de compilación (`VITE_*`):** A diferencia de `client-admin-next` (BFF), en una SPA estática las URLs `VITE_AUTH_URL` y `VITE_ADMIN_URL` quedan incrustadas en el bundle JavaScript durante `pnpm build` y son visibles desde el navegador del cliente.
+- **Requisito de CORS y `SameSite`:** Como el navegador realiza peticiones directas hacia los puertos de autenticación y administración con `withCredentials: true`, los backends deben incluir el origen de `client-admin` en su lista blanca de CORS (`ALLOWED_ORIGINS` / `ADMIN_ALLOWED_ORIGINS`).
+
 ---
 
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
+- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../docs/ARCHITECTURE.md)
 - [Client Admin Next — Implementación alternativa con patrón BFF en Next.js 16](../client-admin-next/README.md)
 - [Server Admin — API administrativa consumida](../server-admin/README.md)
 - [Auth Service (.NET 10)](../authentication-service/auth-service/README.md) y [Auth Node (Fastify)](../authentication-service/auth-node/README.md)

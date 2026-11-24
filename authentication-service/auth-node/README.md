@@ -18,16 +18,16 @@ Su diseño demuestra cómo estructurar un servicio de autenticación bajo **Arqu
 
 ## 3. Stack Tecnológico Verificado
 
-| Categoría                    | Tecnología y Versión (`package.json`)                                                                  | Uso en el Servicio                                                                                               |
-| :--------------------------- | :----------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
-| **Runtime**                  | Node.js `>= 22.13.0` (`node:26-slim` en Docker)                                                        | Ejecución sobre módulos ES (`"type": "module"`).                                                                 |
-| **Framework HTTP**           | Fastify `^5.10.0`                                                                                      | Servidor HTTP de baja sobrecarga, hooks de ciclo de vida y plugins encapsulados.                                 |
-| **Lenguaje**                 | TypeScript `^6.0.2`                                                                                    | Tipado estático de casos de uso, puertos y adaptadores.                                                          |
-| **ORM y Base de Datos**      | Prisma `^7.10.1` + `@prisma/adapter-pg` + `pg` `^8.22.0`                                               | Acceso tipado a PostgreSQL 18 y consultas SQL parametrizadas.                                                    |
-| **Caché**                    | Cliente Redis `RESP2` propio (`src/infrastructure/cache/redis-cache.ts`)                               | Patrón `Cache-Aside` sobre Redis 7 con degradación automática a memoria local.                                   |
-| **Seguridad y Criptografía** | `argon2` `^0.44.0`, `jsonwebtoken` `^9.0.3`, `@fastify/helmet`, `@fastify/cors`, `@fastify/rate-limit` | Hashing `Argon2id`, firma/verificación JWT (`HS256`), cookies `httpOnly`, cabeceras HTTP y límite de peticiones. |
-| **Correo y Archivos**        | `nodemailer` `^10.4.0`, `cloudinary` `^2.9.0`, `@fastify/multipart`                                    | Envío de correos vía API REST de Kinal Mail Hub o SMTP, y subida de avatares a Cloudinary.                       |
-| **Validación y Pruebas**     | `zod` `^4.3.6`, `vitest` `^5.1.0`                                                                      | Validación de variables de entorno, esquemas de entrada y pruebas unitarias con dobles en memoria.               |
+| Categoría                    | Tecnología y Versión (`package.json`)                                                                                                | Uso en el Servicio                                                                                               |
+| :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| **Runtime**                  | Node.js `>= 22.13.0` (`node:26-slim` en Docker)                                                                                      | Ejecución sobre módulos ES (`"type": "module"`).                                                                 |
+| **Framework HTTP**           | Fastify `^5.12.8` (`fastify-plugin` `^6.0.1`)                                                                                        | Servidor HTTP de baja sobrecarga, hooks de ciclo de vida y plugins encapsulados.                                 |
+| **Lenguaje**                 | TypeScript `~6.0.3`                                                                                                                  | Tipado estático de casos de uso, puertos y adaptadores.                                                          |
+| **ORM y Base de Datos**      | Prisma `7.10.1` + `@prisma/client` `7.10.1` + `@prisma/adapter-pg` `7.10.1`                                                          | Acceso tipado a PostgreSQL 18 y consultas SQL parametrizadas.                                                    |
+| **Caché**                    | Cliente Redis `RESP2` propio (`src/infrastructure/cache/redis-cache.ts`)                                                             | Patrón `Cache-Aside` sobre Redis 7 con degradación automática a memoria local.                                   |
+| **Seguridad y Criptografía** | `argon2` `^0.45.2`, `jsonwebtoken` `^9.0.3`, `@fastify/helmet` `^13.2.0`, `@fastify/cors` `^11.4.1`, `@fastify/rate-limit` `^11.2.2` | Hashing `Argon2id`, firma/verificación JWT (`HS256`), cookies `httpOnly`, cabeceras HTTP y límite de peticiones. |
+| **Correo y Archivos**        | `nodemailer` `^10.4.0`, `cloudinary` `^2.11.0`, `@fastify/multipart` `^10.1.8`                                                       | Envío de correos vía API REST de Kinal Mail Hub o SMTP, y subida de avatares a Cloudinary.                       |
+| **Validación y Pruebas**     | `zod` `^4.6.7`, `validator` `^13.15.35`, `vitest` `^5.1.0`                                                                           | Validación de variables de entorno, esquemas de entrada y pruebas unitarias con dobles en memoria.               |
 
 ---
 
@@ -205,18 +205,27 @@ Incluyen pruebas para:
 
 ---
 
-## 11. Build y Despliegue en Docker
+## 11. Build, Despliegue en Docker y Limitaciones Relevantes
+
+### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.auth-node`)
 
 El archivo `dockerfiles/Dockerfile.auth-node` define una construcción multi-etapa sobre `node:26-slim`:
 
 - **Etapa `dev`:** Instala dependencias con `pnpm install --frozen-lockfile` y ejecuta `nodemon --legacy-watch` en el puerto `3007` (usada en `docker-compose.yml`).
 - **Etapa `runtime`:** Compila TypeScript + cliente Prisma (`pnpm build`), instala únicamente dependencias de producción (`pnpm install --frozen-lockfile --prod`), asigna permisos sobre `./uploads` al usuario sin privilegios `node` y ejecuta `node dist/src/main.js` (usada en `docker-compose.prod.yml`).
 
+### 11.2 Limitaciones y Consideraciones Operativas
+
+- **Sincronización de esquema con `auth-service`:** El SQL de inicialización autónoma (`CANONICAL_SCHEMA_SQL` en `src/infrastructure/database/prisma.ts`) y `prisma/schema.prisma` deben mantenerse alineados con las migraciones de EF Core de `auth-service`.
+- **Resolución DNS de Kinal Mail Hub:** El dominio `mail.lab.kinal.edu.gt` pertenece a la red interna del laboratorio; fuera de ella requiere mapear `extra_hosts` en Docker o conmutar `MAIL_PROVIDER=smtp`.
+- **Diferencias de código HTTP frente a `.NET`:** En casos puntuales de error (como registro duplicado `409` frente a `400` en `.NET`), ambos servicios mantienen sus contratos documentados en `tests/contract`.
+
 ---
 
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../../README.md)
+- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../../docs/ARCHITECTURE.md)
 - [Auth Service (.NET 10) — Implementación paralela](../auth-service/README.md)
 - [Server User — Consumidor principal en desarrollo](../../server-user/README.md)
 - [Server Admin — Consumidor administrativo](../../server-admin/README.md)

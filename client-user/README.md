@@ -157,15 +157,23 @@ Cubre el almacenamiento seguro de credenciales en `authStore`, la rotación de t
 
 ---
 
-## 11. Build y Uso en Docker
+## 11. Build, Uso en Docker y Limitaciones Relevantes
+
+### 11.1 Contenedor de Desarrollo (`dockerfiles/Dockerfile.client-user`)
 
 - El archivo `dockerfiles/Dockerfile.client-user` levanta un contenedor de desarrollo sobre `node:26-slim` que expone los puertos `8081` y `19000-19002` ejecutando `expo start --host lan --port 8081` (incluido en `docker-compose.yml`).
 - En `docker-compose.prod.yml` no se incluye `client-user`, ya que en producción una aplicación móvil React Native se distribuye como binario nativo (`.apk` / `.aab` en Android o `.ipa` en iOS) generado mediante **EAS Build** o compilación nativa, no como un servidor web contenedorizado.
+
+### 11.2 Limitaciones y Consideraciones Operativas
+
+- **Enrutamiento de red según emulador o dispositivo físico:** El valor por defecto `10.0.2.2` funciona exclusivamente dentro del emulador de Android Studio; para iOS Simulator debe cambiarse a `localhost` y para dispositivos físicos con Expo Go debe emplearse la dirección IP LAN de la máquina anfitriona.
+- **Compatibilidad de `expo-secure-store`:** El almacenamiento cifrado nativo opera en dispositivos iOS y Android; si se ejecuta la vista web (`pnpm web`), `expo-secure-store` no dispone del llavero nativo del sistema operativo.
 
 ---
 
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
+- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../docs/ARCHITECTURE.md)
 - [Server User — API de negocio consumida](../server-user/README.md)
 - [Auth Node — Servicio de autenticación consumido](../authentication-service/auth-node/README.md)

@@ -22,12 +22,12 @@ Su propósito es centralizar las operaciones de gestión del complejo deportivo 
 
 | Categoría                 | Paquete / Versión (`package.json`)                                                                 | Uso en el Servicio                                                                                                     |
 | :------------------------ | :------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- |
-| **Runtime y Lenguaje**    | Node.js `>= 22.13.0` (`node:26-slim` en Docker), TypeScript `^6.0.2`                               | Ejecución sobre módulos ES y tipado estático con decoradores de NestJS.                                                |
+| **Runtime y Lenguaje**    | Node.js `>= 22.13.0` (`node:26-slim` en Docker), TypeScript `~6.0.3`                               | Ejecución sobre módulos ES y tipado estático con decoradores de NestJS.                                                |
 | **Framework Backend**     | `@nestjs/core`, `@nestjs/common`, `@nestjs/platform-express` `^12.4.2`, `@nestjs/config` `^12.1.1` | Inyección de dependencias, módulos de dominio, controladores, _guards_, _pipes_, _interceptors_ y _exception filters_. |
-| **Persistencia y Caché**  | `@nestjs/mongoose` `^12.0.2`, `mongoose` `^9.12.1`, `RedisCacheService` (`src/common/cache/`)      | Esquemas y modelos de MongoDB 7 y caché `Cache-Aside` sobre Redis 7 con fallback a memoria.                            |
-| **Seguridad HTTP**        | `jsonwebtoken` `^9.0.3`, `helmet` `^8.1.0`, `express-rate-limit` `^8.3.2`                          | Verificación de JWT (`HS256`), cabeceras HTTP de seguridad y límite de tasa de peticiones.                             |
-| **Validación y Archivos** | `zod` `^4.3.6`, `multer` `^2.5.0`, `cloudinary` `^2.9.0`                                           | Validación de variables de entorno al arranque, recepción de archivos en memoria y subida a Cloudinary.                |
-| **Pruebas Unitarias**     | `vitest` `^5.1.0`, `@swc/core` `^1.15.26`, `unplugin-swc` `^1.5.9`                                 | Compilación rápida de decoradores TypeScript y ejecución de pruebas unitarias.                                         |
+| **Persistencia y Caché**  | `@nestjs/mongoose` `^12.0.1`, `mongoose` `^9.12.1`, `RedisCacheService` (`src/common/cache/`)      | Esquemas y modelos de MongoDB 7 y caché `Cache-Aside` sobre Redis 7 con fallback a memoria.                            |
+| **Seguridad HTTP**        | `jsonwebtoken` `^9.0.3`, `helmet` `^8.3.0`, `express-rate-limit` `^8.7.3`                          | Verificación de JWT (`HS256`), cabeceras HTTP de seguridad y límite de tasa de peticiones.                             |
+| **Validación y Archivos** | `zod` `^4.6.7`, `validator` `^13.15.35`, `multer` `^2.5.0`, `cloudinary` `^2.11.0`                 | Validación de variables de entorno al arranque, recepción de archivos en memoria y subida a Cloudinary.                |
+| **Pruebas Unitarias**     | `vitest` `^5.1.0`, `@swc/core` `^1.16.22`, `unplugin-swc` `^2.0.0`                                 | Compilación rápida de decoradores TypeScript y ejecución de pruebas unitarias.                                         |
 
 ---
 
@@ -217,18 +217,26 @@ Cubre:
 
 ---
 
-## 11. Build y Despliegue en Docker
+## 11. Build, Despliegue en Docker y Limitaciones Relevantes
+
+### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.server-admin`)
 
 El archivo `dockerfiles/Dockerfile.server-admin` construye la imagen sobre `node:26-slim`:
 
 - **Etapa `dev`:** Monta el código fuente y ejecuta `nodemon --legacy-watch` en el puerto `3009`.
 - **Etapa `runtime`:** Compila el proyecto con `pnpm build`, instala únicamente dependencias de producción (`--prod`) y ejecuta `node dist/main.js` bajo el usuario sin privilegios `node`.
 
+### 11.2 Limitaciones y Consideraciones Operativas
+
+- **Dependencia de servicio de autenticación para enriquecer perfiles:** Al listar o consultar reservaciones, `server-admin` consulta `AUTH_SERVICE_URL` (`auth-service` en dev, `auth-node` en prod). Si el servicio de autenticación no responde antes del timeout (`5000 ms`) y el perfil no está en Redis, la reservación se entrega sin los datos extendidos del usuario para no bloquear la operación.
+- **Base documental compartida:** Cualquier cambio en los esquemas de Mongoose (`fields`, `reservations`, `teams`, `tournaments`) debe mantenerse sincronizado con los modelos de `server-user`.
+
 ---
 
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
+- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../docs/ARCHITECTURE.md)
 - [Server User — API de usuarios que comparte MongoDB y Redis](../server-user/README.md)
 - [Client Admin (React + Vite)](../client-admin/README.md)
 - [Client Admin Next (Next.js BFF)](../client-admin-next/README.md)

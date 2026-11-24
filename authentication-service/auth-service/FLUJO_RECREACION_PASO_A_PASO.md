@@ -961,11 +961,11 @@ public class EmailService(IConfiguration configuration, ILogger<EmailService> lo
 
     public async Task SendWelcomeEmailAsync(string email, string username)
     {
-        var subject = "Welcome to AuthDotnet!";
+        var subject = "Welcome to KinalSports!";
 
         var body = $@
             """
-            <h2>Welcome to AuthDotnet, {username}!</h2>
+            <h2>Welcome to KinalSports, {username}!</h2>
             <p>Your account has been successfully verified and activated.</p>
             <p>You can now enjoy all the features of our platform.</p>
             <p>If you have any questions, feel free to contact our support team.</p>
@@ -1522,7 +1522,7 @@ public class PasswordHashService : IPasswordHashService
 }
 ```
 
-### 5.2 Crear servicio de JWT - `src/AuthService.Application/Services/JwtTokenService.cs`
+### 5.2 Crear servicio de JWT - `src/AuthService.Infrastructure/Security/JwtTokenService.cs`
 
 ```csharp
 using AuthService.Application.Interfaces;
@@ -1533,7 +1533,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace AuthService.Application.Services;
+namespace AuthService.Infrastructure.Security;
 
 public class JwtTokenService(IConfiguration configuration) : IJwtTokenService
 {
@@ -1541,9 +1541,9 @@ public class JwtTokenService(IConfiguration configuration) : IJwtTokenService
     {
         var jwtSettings = configuration.GetSection("JwtSettings");
         var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
-        var issuer = jwtSettings["Issuer"] ?? "AuthDotnet";
-        var audience = jwtSettings["Audience"] ?? "AuthDotnet";
-        var expiryInMinutes = int.Parse(jwtSettings["ExpiryInMinutes"] ?? "30");
+        var issuer = jwtSettings["Issuer"] ?? "AuthService";
+        var audience = jwtSettings["Audience"] ?? "AuthService";
+        var expiryInMinutes = int.Parse(jwtSettings["ExpiryInMinutes"] ?? "15");
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -2053,9 +2053,9 @@ public class CloudinaryService(IConfiguration configuration) : ICloudinaryServic
         return defaultPath;
     }
 
-    public string GetFullImageUrl(string imagePath)
+    public static string GetFullImageUrl(string imagePath)
     {
-        var baseUrl = configuration["CloudinarySettings:BaseUrl"] ?? "https://res.cloudinary.com/dug3apxt3/image/upload/";
+        var baseUrl = configuration["CloudinarySettings:BaseUrl"] ?? "https://res.cloudinary.com/b3xvlule/image/upload/";
         return string.IsNullOrEmpty(imagePath) ? GetDefaultAvatarUrl() : baseUrl + imagePath;
     }
 }
@@ -2255,33 +2255,21 @@ public class FormFileAdapter : IFileData
 ### 6.1 Crear archivo de extensión - `src/AuthService.Api/Extensions/ServiceCollectionExtensions.cs`
 
 ```csharp
-using AuthService.Application.Interfaces;
-using AuthService.Application.Services;
-using AuthService.Domain.Interfaces;
-using AuthService.Persistence.Data;
-using AuthService.Persistence.Repositories;
-using Microsoft.EntityFrameworkCore;
+using AuthService.Application;
+using AuthService.Infrastructure;
+using AuthService.Persistence;
 
 namespace AuthService.Api.Extensions;
 
 public static class ServiceCollectionExtensions
 {
+    /// <summary>Compone las capas de la aplicación (Clean Architecture).</summary>
     public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
-                   .UseSnakeCaseNamingConvention());
-
-        services.AddScoped<IUserRepository, UserRepository>();
-        services.AddScoped<IRoleRepository, RoleRepository>();
-        services.AddScoped<IAuthService, Application.Services.AuthService>();
-        services.AddScoped<IUserManagementService, UserManagementService>();
-        services.AddScoped<IPasswordHashService, PasswordHashService>();
-        services.AddScoped<IJwtTokenService, JwtTokenService>();
-        services.AddScoped<ICloudinaryService, CloudinaryService>();
-        services.AddScoped<IEmailService, EmailService>();
-
-        services.AddHealthChecks();
+        services
+            .AddApplication()
+            .AddInfrastructure(configuration)
+            .AddPersistence(configuration);
 
         return services;
     }
@@ -2296,48 +2284,7 @@ public static class ServiceCollectionExtensions
 }
 ```
 
-### 6.2 Crear archivo de autenticación JWT - `src/AuthService.Api/Extensions/AuthenticationExtensions.cs`
-
-```csharp
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-
-namespace AuthService.Api.Extensions;
-
-public static class AuthenticationExtensions
-{
-    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
-    {
-        var jwtSettings = configuration.GetSection("JwtSettings");
-        var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey not configured");
-
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
-        {
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = jwtSettings["Issuer"],
-                ValidAudience = jwtSettings["Audience"],
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-                ClockSkew = TimeSpan.Zero
-            };
-        });
-
-        return services;
-    }
-}
-```
-
-### 6.3 Crear Rate Limiting Extensions - `src/AuthService.Api/Extensions/RateLimitingExtensions.cs`
+### 6.2 Crear Rate Limiting Extensions - `src/AuthService.Api/Extensions/RateLimitingExtensions.cs`
 
 ```csharp
 using System.Threading.RateLimiting;
@@ -2637,36 +2584,68 @@ public class AuthController(IAuthService authService) : ControllerBase
         });
     }
 
-    [HttpPost("profile/by-id")]
-    [EnableRateLimiting("ApiPolicy")]
-    public async Task<ActionResult<object>> GetProfileById([FromBody] GetProfileByIdDto request)
-    {
-        if (string.IsNullOrEmpty(request.UserId))
+        // Solo servicios internos: expone email y teléfono (soporta QUERY y POST)
+        [AcceptVerbs("QUERY", "POST", Route = "profile/by-id")]
+        [InternalServiceToken]
+        public async Task<ActionResult<object>> GetProfileById([FromBody] GetProfileByIdDto request)
         {
-            return BadRequest(new
+            if (string.IsNullOrEmpty(request.UserId))
             {
-                success = false,
-                message = "El userId es requerido"
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "El userId es requerido"
+                });
+            }
+
+            var user = await authService.GetUserByIdAsync(request.UserId);
+            if (user == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Usuario no encontrado"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Perfil obtenido exitosamente",
+                data = user
             });
         }
 
-        var user = await authService.GetUserByIdAsync(request.UserId);
-        if (user == null)
+        [AcceptVerbs("QUERY", "POST", Route = "profile/by-username")]
+        [InternalServiceToken]
+        public async Task<ActionResult<object>> GetProfileByUsername([FromBody] GetProfileByUsernameDto request)
         {
-            return NotFound(new
+            if (string.IsNullOrWhiteSpace(request.Username))
             {
-                success = false,
-                message = "Usuario no encontrado"
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "El username es requerido"
+                });
+            }
+
+            var user = await authService.GetUserByUsernameAsync(request.Username.Trim());
+            if (user == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Usuario no encontrado"
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Perfil obtenido exitosamente",
+                data = user
             });
         }
-
-        return Ok(new
-        {
-            success = true,
-            message = "Perfil obtenido exitosamente",
-            data = user
-        });
-    }
     [HttpPost("register")]
     [RequestSizeLimit(10 * 1024 * 1024)] // 10MB
     [EnableRateLimiting("AuthPolicy")]
@@ -2781,6 +2760,12 @@ public class UsersController(IUserManagementService userManagementService) : Con
     [Authorize]
     public async Task<ActionResult<IReadOnlyList<string>>> GetUserRoles(string userId)
     {
+        var currentUserId = User.Claims.FirstOrDefault(c => c.Type == "sub" || c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+        if (currentUserId != userId && !await CurrentUserIsAdmin())
+        {
+            return StatusCode(403, new { success = false, message = "Forbidden" });
+        }
+
         var roles = await userManagementService.GetUserRolesAsync(userId);
         return Ok(roles);
     }
@@ -3181,35 +3166,35 @@ dotnet run --project src/AuthService.Api
 
 ```text
 ESTRUCTURA BASE:
-  ✓ Crear AuthService.sln, global.json (SDK 10.0.x) y Directory.Build.props (net10.0, C# 14)
+  - Crear AuthService.sln, global.json (SDK 10.0.x) y Directory.Build.props (net10.0, C# 14)
 
 DOMAIN (AuthService.Domain):
-  ✓ Crear carpetas (Entities, Enums, Constants, Interfaces)
-  ✓ Crear RoleConstants (ADMIN_ROLE, USER_ROLE)
-  ✓ Crear Entidades (User, Role, UserProfile, UserEmail, UserRole, UserPasswordReset, RefreshToken)
-  ✓ Crear Interfaces de Repositorio (IUserRepository, IRoleRepository, IRefreshTokenRepository)
+  - Crear carpetas (Entities, Enums, Constants, Interfaces)
+  - Crear RoleConstants (ADMIN_ROLE, USER_ROLE)
+  - Crear Entidades (User, Role, UserProfile, UserEmail, UserRole, UserPasswordReset, RefreshToken)
+  - Crear Interfaces de Repositorio (IUserRepository, IRoleRepository, IRefreshTokenRepository)
 
 APPLICATION (AuthService.Application):
-  ✓ Crear carpetas (DTOs, Exceptions, Interfaces, Services, Validators, Extensions)
-  ✓ Crear Interfaces de Puertos (IAuthService, IUserManagementService, IRefreshTokenService, ICacheService, IEmailService, IJwtTokenService, IPasswordHashService, ICloudinaryService)
-  ✓ Implementar AuthService (con caché Redis kinal:user:profile:{id}), RefreshTokenService y UserManagementService
+  - Crear carpetas (DTOs, Exceptions, Interfaces, Services, Validators, Extensions)
+  - Crear Interfaces de Puertos (IAuthService, IUserManagementService, IRefreshTokenService, ICacheService, IEmailService, IJwtTokenService, IPasswordHashService, ICloudinaryService)
+  - Implementar AuthService (con caché Redis kinal:user:profile:{id}), RefreshTokenService y UserManagementService
 
 INFRASTRUCTURE (AuthService.Infrastructure):
-  ✓ Implementar PasswordHashService (Argon2id) y JwtTokenService (HS256)
-  ✓ Implementar RedisCacheService (RESP2 + fallback en memoria)
-  ✓ Implementar KinalMailHubEmailService (REST) y EmailService (SMTP MailKit)
-  ✓ Implementar CloudinaryService y DependencyInjection.AddInfrastructure()
+  - Implementar PasswordHashService (Argon2id) y JwtTokenService (HS256)
+  - Implementar RedisCacheService (RESP2 + fallback en memoria)
+  - Implementar KinalMailHubEmailService (REST) y EmailService (SMTP MailKit)
+  - Implementar CloudinaryService y DependencyInjection.AddInfrastructure()
 
 PERSISTENCE (AuthService.Persistence):
-  ✓ Crear ApplicationDbContext con UseSnakeCaseNamingConvention()
-  ✓ Implementar UserRepository, RoleRepository y RefreshTokenRepository
-  ✓ Crear migraciones EF Core y DataSeeder
+  - Crear ApplicationDbContext con UseSnakeCaseNamingConvention()
+  - Implementar UserRepository, RoleRepository y RefreshTokenRepository
+  - Crear migraciones EF Core y DataSeeder
 
 API (AuthService.Api):
-  ✓ Configurar AuthenticationExtensions (Bearer + cookie httpOnly kinal_access)
-  ✓ Configurar InternalServiceTokenAttribute (x-internal-token)
-  ✓ Implementar AuthController (incluyendo cookies httpOnly y verbo QUERY en /profile/by-id y /by-username)
-  ✓ Implementar UsersController (anti-IDOR en GET /users/{userId}/roles) y HealthController
+  - Configurar AuthenticationExtensions (Bearer + cookie httpOnly kinal_access)
+  - Configurar InternalServiceTokenAttribute (x-internal-token)
+  - Implementar AuthController (incluyendo cookies httpOnly y verbo QUERY en /profile/by-id y /by-username)
+  - Implementar UsersController (anti-IDOR en GET /users/{userId}/roles) y HealthController
 ```
 
 ---

@@ -1,118 +1,192 @@
-# Guía de Contribución (`CONTRIBUTING.md`)
+# Guía de Colaboración y Contribución (`CONTRIBUTING.md`)
 
-Esta guía establece los lineamientos técnicos, arquitectónicos y de colaboración para participar en el monorepo **KinalSports**, desarrollado en el contexto formativo y tecnológico de **Fundación Kinal** (Guatemala).
+**KinalSports · Fundación Kinal · Sexto Perito en Computación**
 
-El documento toma como referencias los **GitHub Community Standards**, la especificación **Conventional Commits**, las prácticas de revisión de código en ingeniería de software y lineamientos de integridad académica y uso responsable de inteligencia artificial.
-
----
-
-## Tabla de Contenidos
-
-1. [Formas de Participación](#1-formas-de-participación)
-2. [Requisitos del Entorno](#2-requisitos-del-entorno)
-3. [Flujo de Trabajo de Contribución](#3-flujo-de-trabajo-de-contribución)
-4. [Convenciones de Ramas y Mensajes de Commit](#4-convenciones-de-ramas-y-mensajes-de-commit)
-5. [Validaciones Automáticas (Husky y Commitlint)](#5-validaciones-automáticas-husky-y-commitlint)
-6. [Criterios de Calidad Técnica y Arquitectónica](#6-criterios-de-calidad-técnica-y-arquitectónica)
-7. [Uso Responsable de Herramientas de Inteligencia Artificial](#7-uso-responsable-de-herramientas-de-inteligencia-artificial)
+Esta guía define los lineamientos técnicos, arquitectónicos y formativos propuestos para colaborar en el monorepo **KinalSports**. Sus reglas operativas son específicas de este repositorio, no constituyen políticas institucionales oficiales de **[Fundación Kinal](https://www.kinal.org.gt/)** y se aplican de forma complementaria a las disposiciones institucionales vigentes. Adopta además referencias de ingeniería como **Conventional Commits**, **GitHub Community Standards** y prácticas profesionales de revisión de código (_Code Review_).
 
 ---
 
-## 1. Formas de Participación
+## Índice de Navegación
 
-### 1.1 Participación en el contexto educativo (Fundación Kinal)
-
-Los estudiantes y colaboradores que utilizan este repositorio como parte de su formación técnica pueden:
-
-- Analizar la arquitectura e implementación de cada microservicio y cliente como material de estudio.
-- Desarrollar prácticas, extensiones funcionales, correcciones de errores y pruebas automatizadas siguiendo el flujo de ramas y revisión por pares (_Code Review_).
-- Reportar defectos técnicos o imprecisiones documentales mediante las plantillas de Issues del repositorio.
-
-### 1.2 Contribuciones técnicas y reporte de problemas
-
-- **Reporte de errores (_Bug Reports_):** Utiliza la plantilla `.github/ISSUE_TEMPLATE/bug_report.md` indicando el componente afectado, el entorno (`Docker Dev`, `Docker Prod` o `Local`), los pasos reproducibles y la salida observada.
-- **Propuestas de mejora (_Feature Requests_):** Utiliza `.github/ISSUE_TEMPLATE/feature_request.md` detallando el impacto en contratos HTTP, modelos de datos (PostgreSQL / MongoDB) y claves de caché en Redis.
-- **Problemas de seguridad:** No publiques vulnerabilidades en Issues abiertos; consulta el procedimiento en [`SECURITY.md`](./SECURITY.md).
+1. [Propósito Formativo y Técnico](#1-propósito-formativo-y-técnico)
+2. [Participantes y Roles en el Repositorio](#2-participantes-y-roles-en-el-repositorio)
+3. [Valores Institucionales Aplicados a la Ingeniería de Software](#3-valores-institucionales-aplicados-a-la-ingeniería-de-software)
+4. [Flujo de Trabajo de Contribución (9 Pasos)](#4-flujo-de-trabajo-de-contribución-9-pasos)
+5. [Convenciones Técnicas (Ramas, Commits, Pruebas y Formato)](#5-convenciones-técnicas-ramas-commits-pruebas-y-formato)
+6. [Validaciones Automáticas con Husky y Commitlint](#6-validaciones-automáticas-con-husky-y-commitlint)
+7. [Criterios Arquitectónicos y Protección de Información Sensible](#7-criterios-arquitectónicos-y-protección-de-información-sensible)
+8. [Orientaciones sobre el Uso de Inteligencia Artificial](#8-orientaciones-sobre-el-uso-de-inteligencia-artificial)
+9. [Documentación Relacionada](#9-documentación-relacionada)
 
 ---
 
-## 2. Requisitos del Entorno
+## 1. Propósito Formativo y Técnico
 
-Verifica contar con las herramientas requeridas por el monorepo antes de iniciar cambios:
+Contribuir a **KinalSports** implica participar en un entorno que combina la exigencia de un sistema real de microservicios con el proceso formativo de **Sexto Perito en Computación** (`IN6AM` / `IN6AV`) en **Fundación Kinal**.
 
-- **Node.js:** `>= 22.13.0` (`package.json` `engines.node`)
-- **pnpm:** `>= 10` (`packageManager: pnpm@10.29.2`)
-- **.NET SDK:** `10.0.x` (requerido para compilar `auth-service` y para el hook `pre-commit` que ejecuta `dotnet format`)
-- **Docker y Docker Compose:** Requeridos para levantar la infraestructura y ejecutar las pruebas de contrato (`tests/contract`).
+Cada cambio propuesto en este repositorio persigue dos objetivos simultáneos:
 
-Instalación de dependencias desde la raíz:
+1. **Calidad de ingeniería:** Mantener la integridad funcional, la seguridad, el rendimiento y la coherencia arquitectónica entre los servicios en Node.js (`auth-node`, `server-admin`, `server-user`), la solución en `.NET 10` (`auth-service`) y las aplicaciones cliente (`client-admin`, `client-admin-next`, `client-user`).
+2. **Desarrollo de competencias profesionales:** Practicar el análisis de requerimientos, la lectura de código existente, el diseño limpio, las pruebas automatizadas, la documentación técnica y la defensa argumentada de decisiones durante el _Code Review_.
+
+---
+
+## 2. Participantes y Roles en el Repositorio
+
+A diferencia de un repositorio público abierto a contribuciones anónimas sin control, **KinalSports** es un monorepo académico y técnico administrado. No cualquier usuario externo cuenta con permisos de escritura directa sobre el repositorio. Se distinguen cuatro perfiles de participación:
+
+| Perfil                                        | Alcance y Responsabilidades                                                                                                                                                                                                   |
+| :-------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Estudiantes (Sexto Perito en Computación)** | Utilizan el monorepo como referencia de arquitectura, desarrollan laboratorios, correcciones, pruebas o extensiones asignadas en ramas de trabajo o _forks_ académicos, y participan en revisiones constructivas entre pares. |
+| **Responsables Técnicos**                     | Definen la arquitectura de sistemas, los contratos entre microservicios, las políticas de seguridad, la configuración de infraestructura y las guías técnicas del proyecto, encabezados por **Braulio Echeverría**.           |
+| **Revisores Técnicos**                        | Evalúan Pull Requests verificando cumplimiento arquitectónico, cobertura de pruebas, ausencia de secretos, claridad del código y comprensión real por parte del autor antes de autorizar una fusión hacia `master`.           |
+| **Colaboradores Externos Autorizados**        | Profesionales, docentes invitados o colaboradores con autorización explícita de los administradores del repositorio que aportan mejoras técnicas, auditorías o correcciones mediante Pull Requests revisados.                 |
+
+---
+
+## 3. Valores Institucionales Aplicados a la Ingeniería de Software
+
+La colaboración en **KinalSports** traduce los valores formativos de **[Fundación Kinal](https://www.kinal.org.gt/quienes-somos)** en prácticas de ingeniería verificables:
+
+### 3.1 Trabajo Bien Hecho
+
+En el desarrollo de software, el **trabajo bien hecho** no consiste únicamente en que una función parezca operar en el camino feliz (_happy path_), sino en entregar soluciones completas y confiables:
+
+- Resolver la causa raíz del problema y no solo ocultar el síntoma.
+- Mantener la claridad en nombres de variables, funciones, clases y contratos HTTP.
+- Respetar el patrón arquitectónico propio de cada componente (Hexagonal, Clean Architecture, Modular, Por Capas, SPA o BFF) sin introducir atajos que rompan el aislamiento entre capas.
+- Evitar complejidad innecesaria o dependencias injustificadas.
+- Incorporar o actualizar las pruebas unitarias y de contrato cuando el cambio lo requiera.
+- Documentar decisiones relevantes, cambios de configuración y variables de entorno.
+- **No trasladar defectos conocidos, código sin probar ni advertencias de linter a otros integrantes del equipo.**
+
+### 3.2 Espíritu de Servicio
+
+El desarrollo en equipo dentro de un monorepo requiere pensar en quienes leerán, operarán y mantendrán el código después:
+
+- Colaborar activamente con los compañeros cuando enfrenten bloqueos técnicos de configuración, compilación o arquitectura.
+- Compartir conocimiento técnico explicando el porqué de una solución, sin sustituir el esfuerzo ni apropiarse del aprendizaje ajeno.
+- Realizar revisiones de código (_Code Reviews_) constructivas, señalando oportunidades de mejora con fundamento técnico y proponiendo alternativas claras.
+- Mantener una comunicación respetuosa y profesional en Issues, commits y Pull Requests.
+
+### 3.3 Respeto a la Dignidad de la Persona
+
+- Dirigir toda observación en el _Code Review_ al diseño, la arquitectura o la implementación, nunca a la capacidad personal del autor.
+- Valorar el proceso de aprendizaje de cada estudiante y reconocer las contribuciones de todos los participantes.
+
+### 3.4 Libertad Personal Responsable
+
+- Tomar decisiones técnicas fundamentadas en el estudio del código fuente y asumir la responsabilidad sobre el impacto de cada commit en los servicios compartidos.
+- Emplear las herramientas de Inteligencia Artificial con juicio crítico, verificación empírica y protección de credenciales (ver [Sección 8](#8-orientaciones-sobre-el-uso-de-inteligencia-artificial)).
+
+### 3.5 Visión Cristiana de la Vida
+
+- Reconocerla como parte de la identidad formativa de Fundación Kinal, reflejada en este proyecto mediante la honestidad intelectual, la integridad académica, el respeto mutuo y el servicio a través de un trabajo técnico bien realizado.
+
+---
+
+## 4. Flujo de Trabajo de Contribución (9 Pasos)
+
+Toda contribución técnica debe seguir ordenadamente estas nueve etapas:
+
+### Paso 1. Comprender el requerimiento
+
+Antes de escribir código, identifica qué problema de negocio o técnico se resuelve, qué componente(s) del monorepo intervienen y si existe un Issue o especificación asociada. Si detectas un defecto o propones una mejora, regístrala utilizando las plantillas en [`.github/ISSUE_TEMPLATE/`](./.github/ISSUE_TEMPLATE/).
+
+### Paso 2. Revisar la arquitectura del componente
+
+Inspecciona el `README.md` del servicio o cliente afectado y consulta [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md):
+
+- **`auth-node`:** Arquitectura Hexagonal (`modules/*/application` -> `interface/http` -> `infrastructure`).
+- **`auth-service`:** Clean Architecture en `.NET 10` (`Domain`, `Application`, `Infrastructure`, `Persistence`, `Api`).
+- **`server-admin`:** Arquitectura Modular en NestJS (`modules`, `guards`, `pipes`, `interceptors`).
+- **`server-user`:** Arquitectura por Capas en Express 5 (`routes` -> `controller` -> `service` -> `repository`).
+- **`client-admin` y `client-user`:** Organización modular por _features_ (`src/features/*`, `src/shared/*`).
+- **`client-admin-next`:** Patrón Backend for Frontend (`src/server/*`, `src/proxy.ts`, `src/app/api/*`).
+
+### Paso 3. Crear una rama de trabajo
+
+Sincroniza la rama principal (`master`) y crea una rama descriptiva siguiendo la convención de nombres:
 
 ```bash
-pnpm install
+git checkout master
+git pull origin master
+git checkout -b feat/server-user-filtro-canchas
 ```
 
+### Paso 4. Implementar el cambio
+
+Desarrolla la solución manteniendo la cohesión del cambio. Evita mezclar en una misma rama refactorizaciones masivas no relacionadas con la funcionalidad o corrección solicitada.
+
+### Paso 5. Ejecutar pruebas y verificaciones locales
+
+Verifica que el linter, el compilador y las suites de pruebas pasen sin errores:
+
+```bash
+pnpm lint
+pnpm test
+pnpm -r --if-present build
+```
+
+Si modificaste rutas HTTP, códigos de estado, validaciones de entrada o respuestas JSON en algún microservicio, ejecuta también las pruebas de contrato:
+
+```bash
+pnpm contract:up
+pnpm db:seed
+pnpm test:contract
+```
+
+### Paso 6. Actualizar la documentación
+
+Si tu cambio incorpora o modifica endpoints, variables de entorno, scripts, puertos o reglas de negocio:
+
+- Actualiza el archivo `.env.example` o `appsettings.Development.example.json` correspondiente (sin incluir secretos reales).
+- Actualiza el `README.md` del componente modificado y, si el cambio es transversal, la documentación en `docs/`.
+
+### Paso 7. Crear el Pull Request
+
+Envía tu rama al repositorio remoto y abre un Pull Request hacia `master` completando todas las secciones aplicables de [`.github/PULL_REQUEST_TEMPLATE.md`](./.github/PULL_REQUEST_TEMPLATE.md).
+
+### Paso 8. Participar en el Code Review
+
+Atiende las observaciones de los revisores técnicos o compañeros. Responde cada comentario explicando el ajuste aplicado o argumentando técnicamente la decisión tomada, manteniendo siempre un trato profesional conforme a [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md).
+
+### Paso 9. Integrar los cambios aprobados
+
+Una vez aprobada la revisión técnica, resueltos los conflictos si existieran y verificadas todas las pruebas automatizadas, el cambio podrá integrarse en la rama `master`.
+
 ---
 
-## 3. Flujo de Trabajo de Contribución
+## 5. Convenciones Técnicas (Ramas, Commits, Pruebas y Formato)
 
-Todo cambio debe seguir estos 7 pasos:
+### 5.1 Nomenclatura de ramas
 
-1. **Crear una rama descriptiva** a partir de `master` actualizado:
-   ```bash
-   git checkout master
-   git pull origin master
-   git checkout -b feat/server-user-filtro-canchas
-   ```
-2. **Implementar los cambios** respetando la arquitectura interna del servicio correspondiente (Hexagonal en `auth-node`, Clean Architecture en `auth-service`, Modular en `server-admin`, Por Capas en `server-user`, Features en `client-admin` / `client-user` y BFF en `client-admin-next`).
-3. **Ejecutar las pruebas y verificaciones estáticas:**
-   ```bash
-   pnpm lint
-   pnpm test
-   pnpm -r --if-present build
-   ```
-   Si el cambio modifica rutas HTTP, códigos de respuesta o esquemas JSON de algún backend, ejecuta también las pruebas de contrato:
-   ```bash
-   pnpm contract:up
-   pnpm db:seed
-   pnpm test:contract
-   ```
-4. **Documentar las modificaciones:** Si agregas o modificas endpoints, variables de entorno o scripts, actualiza el `.env.example` y el `README.md` del servicio afectado.
-5. **Crear un Pull Request (PR)** hacia `master` completando la plantilla `.github/PULL_REQUEST_TEMPLATE.md`.
-6. **Participar en la revisión técnica:** Atender las observaciones de arquitectura, seguridad, pruebas o legibilidad planteadas durante el _Code Review_.
-7. **Integrar los cambios aprobados** una vez superadas las revisiones y verificaciones.
+Utiliza el formato `<prefijo>/<componente>-<descripcion-corta>` en `kebab-case`:
 
----
+- `feat/<componente>-<descripcion>`: Nueva funcionalidad (ej. `feat/server-admin-exportar-torneos`).
+- `fix/<componente>-<descripcion>`: Corrección de defecto (ej. `fix/auth-node-rotacion-refresh-token`).
+- `docs/<componente>-<descripcion>`: Creación o actualización documental (ej. `docs/monorepo-arquitectura-c4`).
+- `refactor/<componente>-<descripcion>`: Mejora estructural sin cambiar el contrato externo.
+- `test/<componente>-<descripcion>`: Adición o fortalecimiento de pruebas unitarias o de contrato.
+- `chore/<componente>-<descripcion>`: Mantenimiento de herramientas, dependencias o scripts.
 
-## 4. Convenciones de Ramas y Mensajes de Commit
+### 5.2 Estructura de mensajes de commit (Conventional Commits)
 
-### 4.1 Nomenclatura de ramas
-
-Utiliza prefijos que identifiquen la naturaleza del trabajo:
-
-- `feat/<scope>-<descripcion>` — Nueva funcionalidad.
-- `fix/<scope>-<descripcion>` — Corrección de un defecto.
-- `docs/<scope>-<descripcion>` — Creación o mejora de documentación.
-- `refactor/<scope>-<descripcion>` — Reestructuración interna sin alterar el comportamiento externo.
-- `test/<scope>-<descripcion>` — Adición o ajuste de pruebas unitarias o de contrato.
-- `chore/<scope>-<descripcion>` — Tareas de mantenimiento o configuración.
-
-### 4.2 Mensajes de commit (Conventional Commits)
-
-El repositorio valida automáticamente el formato de los mensajes de commit mediante **Commitlint** (`commitlint.config.cjs`, basado en `@commitlint/config-conventional`).
-
-**Estructura obligatoria:**
+El repositorio exige la especificación **Conventional Commits** validada por `commitlint.config.cjs` (`@commitlint/config-conventional`):
 
 ```text
-<tipo>(<scope opcional>): <descripción en minúsculas o sentence-case sin punto final>
+<tipo>(<scope opcional>): <descripción breve en minúsculas o sentence-case sin punto final>
+
+[cuerpo opcional con líneas de máximo 120 caracteres]
 ```
 
 - **Tipos permitidos:** `feat`, `fix`, `docs`, `refactor`, `test`, `perf`, `build`, `ci`, `chore`, `style`, `revert`.
-- **Reglas verificadas por `commitlint.config.cjs`:**
-  - `subject-case`: únicamente `lower-case` o `sentence-case` (sin punto final).
-  - `body-max-line-length`: máximo `120` caracteres por línea en el cuerpo del mensaje.
-- **Scopes recomendados del monorepo:** `auth-node`, `auth-service`, `server-admin`, `server-user`, `client-admin`, `client-admin-next`, `client-user`, `contract-tests`, `docker`, `seed`, `docs`.
+- **Reglas configuradas en `commitlint.config.cjs`:**
+  - `subject-case`: Nivel de error (`2`), admite únicamente `sentence-case` o `lower-case` y prohíbe punto final.
+  - `body-max-line-length`: Nivel de advertencia (`1`), máximo `120` caracteres por línea.
+- **Scopes recomendados:** `auth-node`, `auth-service`, `server-admin`, `server-user`, `client-admin`, `client-admin-next`, `client-user`, `contract-tests`, `docker`, `seed`, `docs`.
 
-**Ejemplos válidos:**
+**Ejemplos verificados:**
 
 ```bash
 git commit -m "feat(server-admin): agregar filtro por tipo de superficie en canchas"
@@ -120,53 +194,74 @@ git commit -m "fix(auth-node): invalidar cache de perfil al verificar correo"
 git commit -m "docs(auth-service): actualizar guia de recreacion a net10.0"
 ```
 
-También puedes utilizar el asistente interactivo configurado en la raíz:
+Puedes utilizar el asistente interactivo de Commitizen configurado en la raíz:
 
 ```bash
 pnpm commit
 ```
 
----
+### 5.3 Lint, Formato y Pruebas
 
-## 5. Validaciones Automáticas (Husky y Commitlint)
+- **ESLint (`pnpm lint`):** Configurado con `--max-warnings=0` en `lint-staged`; cualquier advertencia bloquea el commit.
+- **Prettier (`pnpm format`):** Aplica formato uniforme a código JavaScript/TypeScript, JSON, CSS, YAML y Markdown.
+- **Formato C# (`dotnet format`):** Aplica las reglas de `.editorconfig` sobre `authentication-service/auth-service/AuthService.sln`.
+- **Pruebas (`pnpm test`):** Toda funcionalidad nueva o corrección de bug debe incluir pruebas que verifiquen el comportamiento esperado y los casos borde.
 
-El repositorio tiene configurados tres hooks de Git en `.husky/`:
+### 5.4 Pull Requests y Resolución de Conflictos
 
-1. **`.husky/pre-commit`:**
-   - Ejecuta `pnpm lint-staged`: aplica **Prettier** (`--write`) sobre archivos modificados y **ESLint** (`--fix --max-warnings=0`) sobre archivos `.js`, `.mjs`, `.cjs`, `.jsx`, `.ts`, `.tsx`.
-   - Ejecuta `dotnet format authentication-service/auth-service/AuthService.sln` para garantizar que el código C# cumpla `.editorconfig` (indentación y saltos de línea `LF`).
-2. **`.husky/commit-msg`:**
-   - Ejecuta `pnpm exec commitlint --edit "$1"` para validar el mensaje de commit.
-3. **`.husky/pre-push`:**
-   - Ejecuta `pnpm test` (todas las suites unitarias de Node.js y .NET 10) antes de permitir el envío de cambios al remoto.
+- Mantén cada Pull Request enfocado en un objetivo claro y verificable.
+- Si tu rama presenta conflictos con `master`, sincronízala localmente (`git fetch origin && git merge origin/master` o `git rebase origin/master`), resuelve los conflictos preservando el trabajo de tus compañeros y vuelve a ejecutar `pnpm lint && pnpm test` antes de actualizar el PR.
 
 ---
 
-## 6. Criterios de Calidad Técnica y Arquitectónica
+## 6. Validaciones Automáticas con Husky y Commitlint
 
-Toda contribución será revisada bajo los siguientes criterios verificables:
+El directorio `.husky/` ejecuta automáticamente tres controles locales en el flujo de Git:
 
-1. **Seguridad de sesiones y credenciales:**
-   - En aplicaciones web (`client-admin` y `client-admin-next`), está prohibido almacenar tokens JWT o _refresh tokens_ en `localStorage` o `sessionStorage`; deben mantenerse en cookies `httpOnly`.
-   - En la aplicación móvil (`client-user`), los tokens deben almacenarse exclusivamente en `expo-secure-store`.
-   - Ningún commit puede incluir archivos `.env`, `.env.docker`, claves de API ni secretos reales.
-2. **Compatibilidad entre servicios de autenticación:**
-   - `auth-node` y `auth-service` comparten esquema en PostgreSQL 18 y contrato HTTP. Cualquier cambio en rutas, claims del JWT o estructura de respuesta debe mantener la interoperabilidad entre ambos servicios.
-3. **Coherencia de caché en Redis:**
-   - Las mutaciones sobre canchas (`fields`) deben invalidar el prefijo `kinal:fields:`.
-   - Las mutaciones sobre perfil, fotografía, verificación de correo o rol de usuario deben invalidar `kinal:user:profile:<userId>`.
-4. **Pruebas y mantenibilidad:**
-   - Las nuevas funcionalidades o correcciones de errores deben acompañarse de sus pruebas unitarias correspondientes sin degradar las existentes.
+| Hook de Git      | Archivo                                    | Verificación Ejecutada                                                                                                                                                                                                                                                                                                                                                                           |
+| :--------------- | :----------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`pre-commit`** | [`.husky/pre-commit`](./.husky/pre-commit) | 1. Ejecuta `pnpm lint-staged`: formatea con `prettier --write --ignore-unknown` (`.js`, `.mjs`, `.cjs`, `.jsx`, `.ts`, `.tsx`, `.json`, `.css`, `.md`, `.yaml`, `.yml`) y valida con `eslint --fix --max-warnings=0` los archivos de código modificados.<br>2. Ejecuta `dotnet format authentication-service/auth-service/AuthService.sln` para verificar el estilo de código en C# (`.NET 10`). |
+| **`commit-msg`** | [`.husky/commit-msg`](./.husky/commit-msg) | Ejecuta `pnpm exec commitlint --edit "$1"` comprobando que el mensaje cumpla `commitlint.config.cjs`.                                                                                                                                                                                                                                                                                            |
+| **`pre-push`**   | [`.husky/pre-push`](./.husky/pre-push)     | Ejecuta `pnpm test` (todas las suites unitarias de Node.js, React, React Native y `.NET 10`) antes de enviar commits al remoto.                                                                                                                                                                                                                                                                  |
+
+> **Importante:** No utilices `--no-verify` para evadir los hooks de calidad salvo indicación expresa del responsable técnico ante una contingencia documentada.
 
 ---
 
-## 7. Uso Responsable de Herramientas de Inteligencia Artificial
+## 7. Criterios Arquitectónicos y Protección de Información Sensible
 
-En el contexto formativo y de ingeniería de software de **KinalSports**, el uso de asistentes de IA para desarrollo, consulta o redacción debe regirse por los siguientes principios:
+Todo Pull Request se evalúa contra las siguientes invariantes técnicas del monorepo:
 
-1. **Comprensión obligatoria de la solución:** El autor de un commit o Pull Request debe comprender íntegramente el funcionamiento, las implicaciones arquitectónicas y el flujo de ejecución del código que entrega. No se debe enviar código generado automáticamente que el autor no pueda explicar ni depurar.
-2. **Responsabilidad del autor:** La responsabilidad técnica sobre la exactitud, calidad, seguridad y mantenibilidad del cambio recae siempre en la persona que firma el commit o abre el Pull Request, independientemente de las herramientas de apoyo utilizadas.
-3. **Verificación empírica:** Todo fragmento sugerido por una herramienta de IA debe contrastarse contra el código real del monorepo y validarse ejecutando los linters (`pnpm lint`), compilaciones (`build`) y pruebas automatizadas (`pnpm test`).
-4. **Protección de información confidencial:** Nunca ingreses en herramientas externas de IA credenciales reales, tokens internos (`INTERNAL_SERVICE_TOKEN`, `JWT_SECRET`), llaves de API (`KMH_PROJECT_API_KEY`, `CLOUDINARY_API_SECRET`), cadenas de conexión productivas ni datos personales.
-5. **Respeto a licencias y derechos de autor:** Verifica que el código incorporado no reproduzca fragmentos con licencias incompatibles ni vulnere la autoría de terceros.
-6. **Transparencia:** Cuando una contribución haya contado con asistencia significativa de herramientas generativas, decláralo de forma transparente en la descripción del Pull Request o en los metadatos del commit (`Co-authored-by`).
+1. **Prohibición absoluta de secretos en el repositorio:**
+   - Nunca agregues al control de versiones archivos `.env`, `.env.local`, `.env.docker`, `appsettings.Development.json`, certificados privados ni credenciales reales (`JWT_SECRET`, `INTERNAL_SERVICE_TOKEN`, `KMH_PROJECT_API_KEY`, `CLOUDINARY_API_SECRET`, `POSTGRES_PASSWORD`).
+2. **Almacenamiento seguro de sesión:**
+   - En `client-admin` y `client-admin-next`, los tokens de acceso y refresco deben viajar exclusivamente en cookies `httpOnly` (`kinal_access` y `kinal_refresh`); está prohibido persistirlos en `localStorage` o `sessionStorage`.
+   - En `client-user`, las credenciales deben resguardarse únicamente mediante `expo-secure-store`.
+3. **Paridad e interoperabilidad de autenticación:**
+   - `auth-node` y `auth-service` comparten la base de datos PostgreSQL 18 (`kinal_sports`). Cualquier cambio en tablas, claims del JWT o endpoints `/api/v1/auth/*` y `/api/v1/users/*` debe mantener la compatibilidad entre ambos servicios.
+4. **Coherencia de caché en Redis:**
+   - Toda mutación sobre canchas (`fields`) debe invalidar el prefijo `kinal:fields:`.
+   - Toda mutación sobre perfil, fotografía, verificación de correo o rol de usuario debe invalidar `kinal:user:profile:<userId>`.
+
+---
+
+## 8. Orientaciones sobre el Uso de Inteligencia Artificial
+
+En coherencia con el valor institucional de **libertad personal responsable** y **trabajo bien hecho**, las herramientas de Inteligencia Artificial (asistentes de código, modelos de lenguaje o autocompletado inteligente) pueden utilizarse como apoyo técnico y formativo bajo las siguientes reglas obligatorias:
+
+1. **Comprensión íntegra del código:** El autor de un commit o Pull Request debe comprender línea por línea qué hace el código que entrega, cómo se integra con la arquitectura del servicio y qué implicaciones tiene en seguridad y rendimiento. No es aceptable entregar código generado automáticamente que el autor no sepa explicar o depurar.
+2. **Verificación obligatoria:** Toda sugerencia generada por IA debe contrastarse con la fuente de verdad del repositorio y validarse mediante compilación (`build`), análisis estático (`pnpm lint`, `dotnet format`) y pruebas automatizadas (`pnpm test`).
+3. **Protección de secretos y datos sensibles:** Jamás compartas en prompts o servicios externos de IA contraseñas, tokens internos (`INTERNAL_SERVICE_TOKEN`, `JWT_SECRET`), llaves de API (`KMH_PROJECT_API_KEY`, `CLOUDINARY_API_SECRET`), cadenas de conexión productivas ni datos personales de estudiantes o colaboradores.
+4. **Respeto a licencias y derechos de terceros:** Verifica que cualquier fragmento incorporado sea compatible con la licencia **MIT** del proyecto y no vulnere derechos de autor ni copie soluciones de otros compañeros sin atribución.
+5. **Mismos estándares de calidad:** Toda contribución será evaluada con idéntico rigor técnico y arquitectónico en el _Code Review_, independientemente de si fue escrita de forma manual o con apoyo de IA.
+6. **Transparencia:** Declara el uso relevante de herramientas de IA en la sección correspondiente de la plantilla de Pull Request o según los requisitos específicos de la actividad académica o revisión técnica aplicable.
+
+---
+
+## 9. Documentación Relacionada
+
+- [README Principal del Monorepo](./README.md)
+- [Código de Conducta (`CODE_OF_CONDUCT.md`)](./CODE_OF_CONDUCT.md)
+- [Política de Seguridad (`SECURITY.md`)](./SECURITY.md)
+- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](./docs/ARCHITECTURE.md)
+- [Guía de Desarrollo, Operación y Solución de Problemas (`docs/DEVELOPMENT_AND_OPERATIONS.md`)](./docs/DEVELOPMENT_AND_OPERATIONS.md)

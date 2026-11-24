@@ -1,26 +1,33 @@
 ---
 name: Propuesta de Funcionalidad (Feature Request)
-about: Propón una mejora, nuevo endpoint o pantalla para KinalSports
-title: "feat(<servicio>): <descripción breve de la mejora>"
+about: Propón una nueva capacidad funcional, endpoint o flujo de interfaz para KinalSports
+title: "feat(<componente>): <descripción breve de la funcionalidad>"
 labels: ["enhancement"]
 assignees: ""
 ---
 
-## Servicio(s) o Cliente(s) Involucrados
+## 1. Componente(s) Involucrado(s)
 
-Indica qué partes del monorepo participarían (`auth-node`, `auth-service`, `server-admin`, `server-user`, `client-admin`, `client-admin-next`, `client-user`):
+Indica qué servicios o clientes participan (`auth-node`, `auth-service`, `server-admin`, `server-user`, `client-admin`, `client-admin-next`, `client-user`):
 
 - **Componentes:**
 
-## Objetivo / Problema a Resolver
+## 2. Problema o Necesidad que Resuelve
 
-¿Qué necesidad de negocio, rendimiento o aprendizaje resuelve esta propuesta?
+Describe qué necesidad del complejo deportivo, de los administradores o de los jugadores atiende esta funcionalidad.
 
-## Diseño Propuesto (Rutas, Modelos o Flujo UI)
+## 3. Propuesta de Diseño Técnico
 
-Describe el endpoint HTTP (`GET`, `POST`, `QUERY`, `PUT`, `PATCH`, `DELETE`), cambios en esquemas de PostgreSQL/MongoDB, claves de caché en Redis o pantallas involucradas.
+Detalla los elementos aplicables:
 
-## Criterios de Aceptación
+- **Rutas y verbos HTTP (`GET`, `POST`, `QUERY`, `PUT`, `PATCH`, `DELETE`):**
+- **Impacto en persistencia (PostgreSQL `kinal_sports` / MongoDB `kinalSports`):**
+- **Impacto en caché Redis (`kinal:fields:*` / `kinal:user:profile:*`):**
+- **Consideraciones de autorización (`ADMIN_ROLE` / `USER_ROLE` / `x-internal-token`):**
 
-- [ ] ...
-- [ ] ...
+## 4. Criterios de Aceptación
+
+- [ ] Respeta la arquitectura interna del componente afectado.
+- [ ] Mantiene la paridad entre `auth-node` y `auth-service` (si involucra autenticación).
+- [ ] Incluye pruebas unitarias y/o actualización de pruebas de contrato.
+- [ ] Actualiza la documentación correspondiente.

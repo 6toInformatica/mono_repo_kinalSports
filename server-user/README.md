@@ -21,10 +21,10 @@ Su objetivo es exponer los flujos operativos del deportista (exploración y filt
 | Categoría                    | Paquete / Versión (`package.json`)                                                                                       | Uso en el Servicio                                                                                             |
 | :--------------------------- | :----------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
 | **Runtime y Módulos**        | Node.js `>= 22.13.0` (`node:26-slim` en Docker), ECMAScript Modules (`"type": "module"`)                                 | Ejecución nativa en JavaScript moderno sin paso de transpilación.                                              |
-| **Framework HTTP**           | `express` `^5.2.1`                                                                                                       | Enrutamiento modular, soporte nativo de promesas en middlewares y método `router.query`.                       |
+| **Framework HTTP**           | `express` `^5.3.0`                                                                                                       | Enrutamiento modular, soporte nativo de promesas en middlewares y método `router.query`.                       |
 | **Base de Datos y Caché**    | `mongoose` `^9.12.1`, `src/infrastructure/redis.cache.js`                                                                | Modelos sobre MongoDB 7 y caché `Cache-Aside` sobre Redis 7 con fallback en memoria.                           |
-| **Seguridad y Validación**   | `jsonwebtoken` `^9.0.3`, `helmet` `^8.1.0`, `cors` `^2.8.6`, `express-rate-limit` `^8.3.2`, `express-validator` `^7.3.1` | Validación de JWT (Bearer o cookie `httpOnly`), cabeceras HTTP, control de tasa y validación de entradas.      |
-| **Archivos y Clientes HTTP** | `multer` `^2.5.0`, `cloudinary` `^2.9.0`, `axios` `^1.21.1`, `form-data` `^4.0.5`                                        | Subida de logos de equipos a Cloudinary y cliente HTTP hacia `auth-node` / `server-admin` con timeouts de 8 s. |
+| **Seguridad y Validación**   | `jsonwebtoken` `^9.0.3`, `helmet` `^8.3.0`, `cors` `^2.8.6`, `express-rate-limit` `^8.7.4`, `express-validator` `^7.3.2` | Validación de JWT (Bearer o cookie `httpOnly`), cabeceras HTTP, control de tasa y validación de entradas.      |
+| **Archivos y Clientes HTTP** | `multer` `^2.5.0`, `cloudinary` `^2.11.0`, `axios` `^1.21.1`, `uuid` `^13.0.2`                                           | Subida de logos de equipos a Cloudinary y cliente HTTP hacia `auth-node` / `server-admin` con timeouts de 8 s. |
 | **Pruebas Unitarias**        | `vitest` `^5.1.0`                                                                                                        | Pruebas unitarias de servicios de dominio, middlewares y caché Redis.                                          |
 
 ---
@@ -205,18 +205,26 @@ Verifican las reglas de negocio de `fields` (incluyendo consultas `QUERY` y cach
 
 ---
 
-## 11. Build y Despliegue en Docker
+## 11. Build, Despliegue en Docker y Limitaciones Relevantes
+
+### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.server-user`)
 
 Al estar escrito directamente en JavaScript ESM, `server-user` no requiere etapa de transpilación. El archivo `dockerfiles/Dockerfile.server-user` define dos etapas sobre `node:26-slim`:
 
 - **Etapa `dev`:** Instala todas las dependencias y ejecuta `nodemon --legacy-watch index.js` en el puerto `3008`.
 - **Etapa `runtime`:** Instala exclusivamente las dependencias de producción (`pnpm install --frozen-lockfile --prod`) y ejecuta `node index.js` bajo el usuario sin privilegios `node`.
 
+### 11.2 Limitaciones y Consideraciones Operativas
+
+- **Acceso compartido a MongoDB y Redis:** Las operaciones de canchas (`src/fields/field.service.js` y `src/reservations/reservation.service.js`) consultan directamente la colección `fields` de MongoDB y las claves `kinal:fields:*` de Redis compartidas con `server-admin`, por lo que ambos servicios deben apuntar a la misma instancia de MongoDB y Redis para reflejar cambios e invalidaciones de caché inmediatamente.
+- **Dependencia de `auth-node`:** El módulo `/users/profile` y la resolución de integrantes por `username` dependen de que `auth-node` (`AUTH_NODE_URL`) esté disponible y comparta el mismo `INTERNAL_SERVICE_TOKEN`.
+
 ---
 
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
+- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../docs/ARCHITECTURE.md)
 - [Client User — Aplicación móvil consumidora](../client-user/README.md)
 - [Auth Node — Servicio de autenticación consumido](../authentication-service/auth-node/README.md)
 - [Server Admin — Servicio administrativo con MongoDB y Redis compartidos](../server-admin/README.md)

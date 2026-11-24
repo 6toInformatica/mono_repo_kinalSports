@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Política de Seguridad y Reporte Privado de Vulnerabilidades
+    url: https://github.com/6toInformatica/mono_repo_kinalSports/blob/master/SECURITY.md
+    about: No publiques vulnerabilidades de seguridad en Issues abiertos. Consulta SECURITY.md para el procedimiento de divulgación coordinada.
+  - name: Guía de Contribución y Convenciones del Monorepo
+    url: https://github.com/6toInformatica/mono_repo_kinalSports/blob/master/CONTRIBUTING.md
+    about: Revisa el flujo de trabajo, las reglas de Conventional Commits y los criterios arquitectónicos antes de abrir un Pull Request.

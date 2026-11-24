@@ -22,9 +22,9 @@ Su propósito dentro del monorepo es mostrar cómo una capa BFF en servidor perm
 | Categoría                  | Paquete / Versión (`package.json`)                                                      | Uso en la Aplicación                                                                                |
 | :------------------------- | :-------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- |
 | **Framework Full-Stack**   | `next` `^16.4.6` (App Router, Turbopack, `output: 'standalone'`)                        | Renderizado híbrido, Route Handlers (`/api/*`) y middleware `src/proxy.ts`.                         |
-| **Librería UI y Lenguaje** | `react` `^19.3.1`, `react-dom` `^19.3.1`, `typescript` `^6.0.2`, `server-only` `^0.0.1` | Componentes de cliente y módulos garantizados exclusivamente en servidor.                           |
+| **Librería UI y Lenguaje** | `react` `^19.3.1`, `react-dom` `^19.3.1`, `typescript` `~6.0.3`, `server-only` `^0.0.1` | Componentes de cliente y módulos garantizados exclusivamente en servidor.                           |
 | **Estilos**                | `tailwindcss` `^4.3.5`, `@tailwindcss/postcss` `^4.3.5`                                 | Diseño responsivo del panel administrativo.                                                         |
-| **Pruebas Unitarias**      | `vitest` `^5.1.0`, `@testing-library/react` `^16.3.2`, `jsdom` `^29.0.1`                | Pruebas unitarias del middleware `proxy.ts`, gestión de cookies BFF, validación de origen y vistas. |
+| **Pruebas Unitarias**      | `vitest` `^5.1.0`, `@testing-library/react` `^16.3.3`, `jsdom` `^31.0.1`                | Pruebas unitarias del middleware `proxy.ts`, gestión de cookies BFF, validación de origen y vistas. |
 
 ---
 
@@ -179,18 +179,26 @@ Valida `proxy.ts` (redirección sin sesión, bloqueo cuando el claim `role` del 
 
 ---
 
-## 11. Build y Despliegue en Docker
+## 11. Build, Despliegue en Docker y Limitaciones Relevantes
+
+### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.client-admin-next`)
 
 `next.config.ts` habilita `output: 'standalone'`. El archivo `dockerfiles/Dockerfile.client-admin-next` construye la imagen sobre `node:26-slim`:
 
 - **Etapa `dev`:** Ejecuta `next dev --port 3000 --hostname 0.0.0.0`.
 - **Etapa `runtime`:** Copia `.next/standalone`, `.next/static` y `public`, y ejecuta `node server.js` en el puerto `3000` bajo el usuario sin privilegios `node`.
 
+### 11.2 Limitaciones y Consideraciones Operativas
+
+- **La verificación criptográfica del JWT reside en los backends:** El BFF (`src/server/session.ts` y `src/proxy.ts`) decodifica el payload `base64url` de `kinal_access` para validar la coherencia del claim `role` durante la navegación, pero **no verifica criptográficamente la firma `HS256`** ni posee `JWT_SECRET`. Toda autorización efectiva ocurre cuando el proxy BFF reenvía el token hacia `auth-service`, `auth-node` o `server-admin`.
+- **Timeout en el proxy BFF:** Las llamadas servidor-a-servidor aplican un timeout de `10 000 ms` (`src/server/auth-api.ts`); cargas multimedia de gran tamaño deben respetar los límites configurados en los microservicios destino.
+
 ---
 
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
+- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../docs/ARCHITECTURE.md)
 - [Client Admin (React + Vite) — Implementación SPA equivalente](../client-admin/README.md)
 - [Server Admin — API administrativa](../server-admin/README.md)
 - [Auth Service (.NET 10)](../authentication-service/auth-service/README.md) y [Auth Node (Fastify)](../authentication-service/auth-node/README.md)

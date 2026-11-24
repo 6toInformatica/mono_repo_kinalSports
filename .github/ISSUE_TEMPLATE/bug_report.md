@@ -1,32 +1,38 @@
 ---
-name: Reporte de Bug
-about: Reporta un error o comportamiento inesperado en algún microservicio o cliente de KinalSports
-title: "fix(<servicio>): <descripción breve del problema>"
+name: Reporte de Error (Bug Report)
+about: Reporta un fallo funcional, error HTTP o comportamiento inesperado en algún componente de KinalSports
+title: "fix(<componente>): <descripción breve del error>"
 labels: ["bug"]
 assignees: ""
 ---
 
-## Servicio o Cliente Afectado
+> **Aviso de seguridad:** No utilices Issues públicos para divulgar vulnerabilidades de seguridad ni adjuntes credenciales reales (`.env`, tokens JWT activos o llaves de API). Para reportes de seguridad, sigue el protocolo de [`SECURITY.md`](../../SECURITY.md).
 
-Indica dónde ocurre el problema (`auth-node`, `auth-service`, `server-admin`, `server-user`, `client-admin`, `client-admin-next`, `client-user`, `docker`):
+## 1. Componente y Entorno Afectado
 
-- **Componente:**
-- **Entorno:** (Docker Desarrollo / Docker Producción / Local sin Docker)
+- **Componente:** (`auth-node` / `auth-service` / `server-admin` / `server-user` / `client-admin` / `client-admin-next` / `client-user` / `docker`)
+- **Modo de ejecución:** (`Docker Desarrollo` / `Docker Producción` / `Local sin Docker`)
+- **Sistema operativo / Navegador / Emulador:**
 
-## Descripción del Problema
+## 2. Descripción del Problema
 
-Explica de forma clara qué sucedió.
+Explica con precisión qué falla se presenta y en qué endpoint, pantalla o flujo ocurre.
 
-## Pasos para Reproducirlo
+## 3. Pasos Reproducibles
 
-1. Levantar el servicio con `...`
-2. Enviar la petición / navegar a `...`
-3. Observar el error `...`
+1. Iniciar el entorno o servicio con `...`
+2. Ejecutar la petición o acción `...`
+3. Observar el fallo `...`
 
-## Comportamiento Esperado
+## 4. Comportamiento Esperado vs. Comportamiento Observado
 
-Describe qué debería ocurrir normalmente (código de estado HTTP, respuesta JSON o comportamiento en pantalla).
+- **Esperado:** (Código HTTP, estructura JSON o estado en interfaz que debería producirse)
+- **Observado:** (Respuesta o error real obtenido)
 
-## Logs o Capturas de Pantalla
+## 5. Evidencia Técnica (Logs, Salida de Consola o Petición HTTP)
 
-Pega aquí el mensaje de error, stack trace o comando `curl` que reproduce el fallo.
+Incluye el fragmento de log, stack trace o comando reproducible (asegúrate de omitir cualquier secreto o token real):
+
+```text
+Pega aquí el error o salida de consola
+```

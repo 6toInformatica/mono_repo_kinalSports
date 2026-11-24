@@ -31,7 +31,7 @@ En el contexto técnico y formativo de **Fundación Kinal**, este componente cum
 | **Seguridad y Criptografía**      | `Microsoft.AspNetCore.Authentication.JwtBearer` `10.0.14`, `Konscious.Security.Cryptography.Argon2` `1.3.1`, `NetEscapades.AspNetCore.SecurityHeaders` `1.3.1` | Autenticación JWT (Bearer y cookie `httpOnly`), hashing Argon2id y cabeceras de seguridad.                            |
 | **Caché Distribuida**             | `RedisCacheService` (`src/AuthService.Infrastructure/Cache/RedisCacheService.cs`)                                                                              | Cliente TCP `RESP2` para Redis 7 con patrón `Cache-Aside` y fallback en memoria (`ConcurrentDictionary`).             |
 | **Validación, Correo y Archivos** | `FluentValidation` `12.2.0`, `MailKit` `4.18.2`, `CloudinaryDotNet` `1.29.3`, `Serilog.AspNetCore` `10.0.0`                                                    | Validación de DTOs, envío de correos por Kinal Mail Hub (REST) o SMTP, subida a Cloudinary y bitácoras estructuradas. |
-| **Pruebas Unitarias**             | `xunit.v3` `3.2.2`, `NSubstitute` `5.3.0`, `Microsoft.NET.Test.Sdk` `18.0.1`                                                                                   | Pruebas unitarias de casos de uso e infraestructura sobre `Microsoft.Testing.Platform`.                               |
+| **Pruebas Unitarias**             | `xunit.v3` `4.0.3`, `NSubstitute` `6.2.0`, `Microsoft.Testing.Extensions.CodeCoverage` `18.12.0`                                                               | Pruebas unitarias de casos de uso e infraestructura sobre `Microsoft.Testing.Platform`.                               |
 
 ---
 
@@ -41,12 +41,12 @@ La solución `AuthService.sln` se divide en **5 proyectos de código fuente** (`
 
 ```mermaid
 flowchart LR
-  Api["AuthService.Api\n(Controllers, Middlewares, Filters)"] --> App["AuthService.Application\n(Services, DTOs, Validators, Interfaces)"]
-  Api --> Infra["AuthService.Infrastructure\n(JWT, Argon2id, Redis, KMH/SMTP, Cloudinary)"]
-  Api --> Pers["AuthService.Persistence\n(ApplicationDbContext, Migrations, Repositories)"]
+  Api["AuthService.Api<br/>(Controllers, Middlewares, Filters)"] --> App["AuthService.Application<br/>(Services, DTOs, Validators, Interfaces)"]
+  Api --> Infra["AuthService.Infrastructure<br/>(JWT, Argon2id, Redis, KMH/SMTP, Cloudinary)"]
+  Api --> Pers["AuthService.Persistence<br/>(ApplicationDbContext, Migrations, Repositories)"]
   Infra --> App
   Pers --> App
-  Pers --> Dom["AuthService.Domain\n(Entities, Constants, Repository Interfaces)"]
+  Pers --> Dom["AuthService.Domain<br/>(Entities, Constants, Repository Interfaces)"]
   App --> Dom
 ```
 
@@ -214,13 +214,21 @@ pnpm --filter auth-service test
 
 ---
 
-## 11. Build y Despliegue en Docker
+## 11. Build, Despliegue en Docker y Limitaciones Relevantes
+
+### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.auth-service`)
 
 El archivo `dockerfiles/Dockerfile.auth-service` define tres destinos (`target`) a partir de las imágenes oficiales de Microsoft (`mcr.microsoft.com/dotnet/sdk:10.0` y `aspnet:10.0`):
 
 1. **`dev`:** Imagen con SDK `.NET 10` que ejecuta `dotnet watch --project src/AuthService.Api run --urls http://+:5156` para desarrollo con recarga en caliente.
 2. **`runtime`:** Imagen ligera `aspnet:10.0` con la aplicación publicada en modo `Release`, ejecutándose bajo el usuario sin privilegios `$APP_UID` con permisos de escritura acotados a `/app/keys` (Data Protection) y `/app/logs` (Serilog).
 3. **`migrator`:** Hereda de `runtime` con `ENTRYPOINT ["dotnet", "AuthService.Api.dll", "--migrate-only"]` para aplicar migraciones y terminar antes de que arranquen los servicios dependientes en `docker-compose.yml`.
+
+### 11.2 Limitaciones y Consideraciones Operativas
+
+- **Exclusión en `docker-compose.prod.yml`:** En el despliegue de producción 100% Node.js, este contenedor no se levanta; `auth-node` asume la totalidad del tráfico de autenticación sobre la misma base PostgreSQL 18.
+- **Claves de Data Protection en Linux:** En entornos Linux sin certificado X.509 configurado, las llaves de ASP.NET Core Data Protection se persisten sin cifrar en `./keys` (uso exclusivo para desarrollo; la autenticación principal del sistema utiliza JWT firmado con `HS256`).
+- **Requisito en pre-commit:** El hook `.husky/pre-commit` invoca `dotnet format authentication-service/auth-service/AuthService.sln`, por lo que se requiere contar con el SDK `.NET 10` instalado localmente para realizar commits.
 
 ---
 
@@ -229,4 +237,5 @@ El archivo `dockerfiles/Dockerfile.auth-service` define tres destinos (`target`)
 - [Guía Rápida de Recreación en .NET 10 (`GUIA_RAPIDA.md`)](./GUIA_RAPIDA.md)
 - [Flujo Lógico Paso a Paso para Recrear la API (`FLUJO_RECREACION_PASO_A_PASO.md`)](./FLUJO_RECREACION_PASO_A_PASO.md)
 - [Auth Node — Implementación equivalente en Node.js + Fastify](../auth-node/README.md)
+- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../../docs/ARCHITECTURE.md)
 - [README Principal del Monorepo](../../README.md)
