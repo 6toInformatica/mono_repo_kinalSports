@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useEffect,
   useId,
   useState,
   type InputHTMLAttributes,
@@ -145,14 +144,32 @@ export function TextAreaField({
  * Selector de imagen con vista previa. `currentUrl` es la imagen guardada;
  * al elegir un archivo se muestra el nuevo hasta guardar.
  */
-const isSafeImageSrc = (url: string | null | undefined): url is string => {
-  if (!url) return false;
-  return (
-    url.startsWith("blob:") ||
-    url.startsWith("https://") ||
-    url.startsWith("http://") ||
-    url.startsWith("/")
-  );
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+]);
+
+const sanitizeImageSrc = (url: string | null | undefined): string | null => {
+  if (!url) return null;
+  if (url.startsWith("/")) return url;
+  if (/^data:image\/(jpeg|png|webp|avif);base64,[A-Za-z0-9+/=]+$/.test(url)) {
+    return url;
+  }
+  try {
+    const parsed = new URL(url);
+    if (
+      parsed.protocol === "https:" ||
+      parsed.protocol === "http:" ||
+      parsed.protocol === "blob:"
+    ) {
+      return parsed.href;
+    }
+  } catch {
+    return null;
+  }
+  return null;
 };
 
 export function ImageField({
@@ -167,16 +184,7 @@ export function ImageField({
   className?: string;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
-
-  useEffect(
-    () => () => {
-      if (preview) URL.revokeObjectURL(preview);
-    },
-    [preview],
-  );
-
-  const rawShown = preview ?? currentUrl ?? null;
-  const shown = isSafeImageSrc(rawShown) ? rawShown : null;
+  const shown = sanitizeImageSrc(preview ?? currentUrl);
 
   return (
     <FieldWrapper
@@ -203,7 +211,17 @@ export function ImageField({
             aria-describedby={describedBy}
             onChange={(event) => {
               const file = event.target.files?.[0];
-              setPreview(file ? URL.createObjectURL(file) : null);
+              if (!file || !ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+                setPreview(null);
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = () => {
+                if (typeof reader.result === "string") {
+                  setPreview(reader.result);
+                }
+              };
+              reader.readAsDataURL(file);
             }}
             className="min-h-11 w-full cursor-pointer rounded-[10px] border border-dashed border-[#9aa9c2] bg-white px-3 py-2 text-sm text-brand file:mr-3 file:rounded-lg file:border-0 file:bg-brand-soft file:px-3 file:py-1.5 file:font-semibold file:text-brand"
           />

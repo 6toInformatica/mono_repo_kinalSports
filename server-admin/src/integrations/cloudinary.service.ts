@@ -5,25 +5,11 @@ import { ConfigService } from '@nestjs/config';
 import { v2 as cloudinary, type UploadApiResponse } from 'cloudinary';
 import type { Env } from '../config/env.validation.js';
 
-const normalizeFilename = (name: string) => {
-  const parts: string[] = [];
-  let current = '';
-  for (let i = 0; i < name.length; i++) {
-    const code = name.charCodeAt(i);
-    const isAlnum =
-      (code >= 48 && code <= 57) ||
-      (code >= 65 && code <= 90) ||
-      (code >= 97 && code <= 122);
-    if (isAlnum) {
-      current += name[i];
-    } else if (current.length > 0) {
-      parts.push(current);
-      current = '';
-    }
-  }
-  if (current.length > 0) parts.push(current);
-  return parts.join('-');
-};
+const normalizeFilename = (name: string) =>
+  name
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .join('-');
 @Injectable()
 export class CloudinaryService {
   constructor(config: ConfigService<Env, true>) {
