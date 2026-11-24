@@ -243,7 +243,7 @@ mkdir -p src/AuthService.Api/{Controllers,Extensions,Filters,Middlewares,ModelBi
 
 ---
 
-## Paso 7: Configuración de `appsettings.Development.json` y Ejecución
+## Paso 7: Configuración del Entorno de Desarrollo y Ejecución
 
 Crear `src/AuthService.Api/appsettings.Development.json` alineado con los puertos del monorepo:
 

@@ -1,6 +1,6 @@
-# Política de Seguridad (`SECURITY.md`)
+# Política de Seguridad
 
-**KinalSports · Fundación Kinal · Sexto Perito en Computación**
+**KinalSports · Fundación Kinal · 6to. Perito en Computación**
 
 Este documento establece la política de seguridad de aplicaciones, los controles implementados en la arquitectura y el procedimiento de divulgación coordinada de vulnerabilidades (_Coordinated Vulnerability Disclosure_) para el monorepo **KinalSports**.
 
@@ -126,7 +126,7 @@ En coherencia con los criterios de privacidad y convivencia adoptados en este pr
 
 ## 7. Uso Responsable de Pruebas de Seguridad
 
-El análisis de seguridad y la verificación de controles dentro del contexto formativo de **Sexto Perito en Computación** deben realizarse con responsabilidad ética:
+El análisis de seguridad y la verificación de controles dentro del contexto formativo de **6to. Perito en Computación** deben realizarse con responsabilidad ética:
 
 1. **Entorno autorizado:** Toda prueba de verificación de seguridad, validación de tokens o comprobación de límites de tasa debe ejecutarse exclusivamente sobre la instancia local de contenedores del propio estudiante (`localhost`), nunca contra infraestructura compartida del colegio ni contra entornos de otros compañeros sin autorización expresa.
 2. **Prohibición de acciones destructivas:** No se deben ejecutar ataques de denegación de servicio (DoS), fuerza bruta masiva contra servicios externos (como Kinal Mail Hub o Cloudinary) ni alteración no autorizada de datos.
@@ -142,7 +142,7 @@ Este proyecto aplica el principio de **Divulgación Coordinada de Vulnerabilidad
 
 1. **No abras un Issue público ni un Pull Request público** que describa un vector de ataque explotable antes de que haya sido evaluado y remediado.
 2. **Canal técnico en GitHub:** Si tienes acceso al repositorio remoto, utiliza la función privada de **GitHub Security Advisories** (`https://github.com/6toInformatica/mono_repo_kinalSports/security/advisories/new`).
-3. **Comunicación directa:** Notifica el hallazgo de forma privada al responsable técnico del proyecto (**Braulio Echeverría**) o a los administradores del repositorio en el contexto de **Sexto Perito en Computación**.
+3. **Comunicación directa:** Notifica el hallazgo de forma privada al responsable técnico del proyecto (**Braulio Echeverría**) o a los administradores del repositorio en el contexto de **6to. Perito en Computación**.
 4. **Canal institucional formal:** _La designación de un buzón de correo institucional específico para reportes externos de seguridad de este repositorio se encuentra pendiente de confirmación oficial._
 
 ### 8.2 Contenido recomendado del reporte

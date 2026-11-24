@@ -89,9 +89,9 @@ authentication-service/auth-service/
 
 ---
 
-## 7. Configuración (`appsettings.Development.json` y Variables de Entorno)
+## 7. Configuración y Variables de Entorno
 
-Para desarrollo local fuera de Docker, copia el archivo de ejemplo:
+Para desarrollo local fuera de Docker, copia el archivo de ejemplo `appsettings.Development.example.json`:
 
 ```bash
 cp authentication-service/auth-service/src/AuthService.Api/appsettings.Development.example.json \
@@ -216,7 +216,7 @@ pnpm --filter auth-service test
 
 ## 11. Build, Despliegue en Docker y Limitaciones Relevantes
 
-### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.auth-service`)
+### 11.1 Construcción Multi-Etapa en Docker
 
 El archivo `dockerfiles/Dockerfile.auth-service` define tres destinos (`target`) a partir de las imágenes oficiales de Microsoft (`mcr.microsoft.com/dotnet/sdk:10.0` y `aspnet:10.0`):
 
@@ -234,8 +234,8 @@ El archivo `dockerfiles/Dockerfile.auth-service` define tres destinos (`target`)
 
 ## 12. Documentación Relacionada
 
-- [Guía Rápida de Recreación en .NET 10 (`GUIA_RAPIDA.md`)](./GUIA_RAPIDA.md)
-- [Flujo Lógico Paso a Paso para Recrear la API (`FLUJO_RECREACION_PASO_A_PASO.md`)](./FLUJO_RECREACION_PASO_A_PASO.md)
+- [Guía Rápida de Recreación en .NET 10](./GUIA_RAPIDA.md)
+- [Flujo Lógico Paso a Paso para Recrear la API](./FLUJO_RECREACION_PASO_A_PASO.md)
 - [Auth Node — Implementación equivalente en Node.js + Fastify](../auth-node/README.md)
-- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../../docs/ARCHITECTURE.md)
+- [Arquitectura Detallada del Sistema](../../docs/ARCHITECTURE.md)
 - [README Principal del Monorepo](../../README.md)

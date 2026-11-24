@@ -91,7 +91,7 @@ server-admin/
 
 ---
 
-## 7. Configuración (`.env`)
+## 7. Configuración de Variables de Entorno
 
 Copia `.env.example` a `.env`:
 
@@ -219,7 +219,7 @@ Cubre:
 
 ## 11. Build, Despliegue en Docker y Limitaciones Relevantes
 
-### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.server-admin`)
+### 11.1 Construcción Multi-Etapa en Docker
 
 El archivo `dockerfiles/Dockerfile.server-admin` construye la imagen sobre `node:26-slim`:
 
@@ -236,7 +236,7 @@ El archivo `dockerfiles/Dockerfile.server-admin` construye la imagen sobre `node
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
-- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../docs/ARCHITECTURE.md)
+- [Arquitectura Detallada del Sistema](../docs/ARCHITECTURE.md)
 - [Server User — API de usuarios que comparte MongoDB y Redis](../server-user/README.md)
-- [Client Admin (React + Vite)](../client-admin/README.md)
-- [Client Admin Next (Next.js BFF)](../client-admin-next/README.md)
+- [Client Admin — React + Vite](../client-admin/README.md)
+- [Client Admin Next — Next.js BFF](../client-admin-next/README.md)

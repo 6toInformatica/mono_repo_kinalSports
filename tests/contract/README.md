@@ -1,4 +1,6 @@
-# Pruebas de Contrato HTTP (`tests/contract`)
+# Pruebas de Contrato HTTP
+
+**Ubicación en el monorepo:** `tests/contract`
 
 Suite de pruebas automatizadas de caja negra ejecutadas con **Vitest** contra el ecosistema completo levantado en Docker. Su objetivo es fijar y verificar el **contrato HTTP real** de cada microservicio para garantizar que mejoras internas, cambios de versión o migraciones tecnológicas mantengan intacto el comportamiento esperado por los clientes.
 
@@ -70,4 +72,4 @@ La línea base documenta las siguientes particularidades verificadas entre `auth
 ## 6. Documentación Relacionada
 
 - [README Principal del Monorepo](../../README.md)
-- [Guía de Contribución (`CONTRIBUTING.md`)](../../CONTRIBUTING.md)
+- [Guía de Colaboración y Contribución](../../CONTRIBUTING.md)

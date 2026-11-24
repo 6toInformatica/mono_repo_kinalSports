@@ -93,7 +93,7 @@ client-admin/
 
 ---
 
-## 7. Configuración (`.env`)
+## 7. Configuración de Variables de Entorno
 
 Copia `.env.example` a `.env`:
 
@@ -167,7 +167,7 @@ Verifica el flujo de renovación de sesión (`src/shared/api/sessionRefresh.test
 
 ## 11. Build, Despliegue en Docker y Limitaciones Relevantes
 
-### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.client-admin`)
+### 11.1 Construcción Multi-Etapa en Docker
 
 El archivo `dockerfiles/Dockerfile.client-admin` define tres etapas principales:
 
@@ -185,7 +185,7 @@ El archivo `dockerfiles/Dockerfile.client-admin` define tres etapas principales:
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
-- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../docs/ARCHITECTURE.md)
+- [Arquitectura Detallada del Sistema](../docs/ARCHITECTURE.md)
 - [Client Admin Next — Implementación alternativa con patrón BFF en Next.js 16](../client-admin-next/README.md)
 - [Server Admin — API administrativa consumida](../server-admin/README.md)
 - [Auth Service (.NET 10)](../authentication-service/auth-service/README.md) y [Auth Node (Fastify)](../authentication-service/auth-node/README.md)

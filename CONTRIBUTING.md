@@ -1,6 +1,6 @@
-# Guía de Colaboración y Contribución (`CONTRIBUTING.md`)
+# Guía de Colaboración y Contribución
 
-**KinalSports · Fundación Kinal · Sexto Perito en Computación**
+**KinalSports · Fundación Kinal · 6to. Perito en Computación**
 
 Esta guía define los lineamientos técnicos, arquitectónicos y formativos propuestos para colaborar en el monorepo **KinalSports**. Sus reglas operativas son específicas de este repositorio, no constituyen políticas institucionales oficiales de **[Fundación Kinal](https://www.kinal.org.gt/)** y se aplican de forma complementaria a las disposiciones institucionales vigentes. Adopta además referencias de ingeniería como **Conventional Commits**, **GitHub Community Standards** y prácticas profesionales de revisión de código (_Code Review_).
 
@@ -22,7 +22,7 @@ Esta guía define los lineamientos técnicos, arquitectónicos y formativos prop
 
 ## 1. Propósito Formativo y Técnico
 
-Contribuir a **KinalSports** implica participar en un entorno que combina la exigencia de un sistema real de microservicios con el proceso formativo de **Sexto Perito en Computación** (`IN6AM` / `IN6AV`) en **Fundación Kinal**.
+Contribuir a **KinalSports** implica participar en un entorno que combina la exigencia de un sistema real de microservicios con el proceso formativo de **6to. Perito en Computación** en **Fundación Kinal**.
 
 Cada cambio propuesto en este repositorio persigue dos objetivos simultáneos:
 
@@ -35,12 +35,12 @@ Cada cambio propuesto en este repositorio persigue dos objetivos simultáneos:
 
 A diferencia de un repositorio público abierto a contribuciones anónimas sin control, **KinalSports** es un monorepo académico y técnico administrado. No cualquier usuario externo cuenta con permisos de escritura directa sobre el repositorio. Se distinguen cuatro perfiles de participación:
 
-| Perfil                                        | Alcance y Responsabilidades                                                                                                                                                                                                   |
-| :-------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Estudiantes (Sexto Perito en Computación)** | Utilizan el monorepo como referencia de arquitectura, desarrollan laboratorios, correcciones, pruebas o extensiones asignadas en ramas de trabajo o _forks_ académicos, y participan en revisiones constructivas entre pares. |
-| **Responsables Técnicos**                     | Definen la arquitectura de sistemas, los contratos entre microservicios, las políticas de seguridad, la configuración de infraestructura y las guías técnicas del proyecto, encabezados por **Braulio Echeverría**.           |
-| **Revisores Técnicos**                        | Evalúan Pull Requests verificando cumplimiento arquitectónico, cobertura de pruebas, ausencia de secretos, claridad del código y comprensión real por parte del autor antes de autorizar una fusión hacia `master`.           |
-| **Colaboradores Externos Autorizados**        | Profesionales, docentes invitados o colaboradores con autorización explícita de los administradores del repositorio que aportan mejoras técnicas, auditorías o correcciones mediante Pull Requests revisados.                 |
+| Perfil                                       | Alcance y Responsabilidades                                                                                                                                                                                                   |
+| :------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Estudiantes (6to. Perito en Computación)** | Utilizan el monorepo como referencia de arquitectura, desarrollan laboratorios, correcciones, pruebas o extensiones asignadas en ramas de trabajo o _forks_ académicos, y participan en revisiones constructivas entre pares. |
+| **Responsables Técnicos**                    | Definen la arquitectura de sistemas, los contratos entre microservicios, las políticas de seguridad, la configuración de infraestructura y las guías técnicas del proyecto, encabezados por **Braulio Echeverría**.           |
+| **Revisores Técnicos**                       | Evalúan Pull Requests verificando cumplimiento arquitectónico, cobertura de pruebas, ausencia de secretos, claridad del código y comprensión real por parte del autor antes de autorizar una fusión hacia `master`.           |
+| **Colaboradores Externos Autorizados**       | Profesionales, docentes invitados o colaboradores con autorización explícita de los administradores del repositorio que aportan mejoras técnicas, auditorías o correcciones mediante Pull Requests revisados.                 |
 
 ---
 
@@ -261,7 +261,7 @@ En coherencia con el valor institucional de **libertad personal responsable** y 
 ## 9. Documentación Relacionada
 
 - [README Principal del Monorepo](./README.md)
-- [Código de Conducta (`CODE_OF_CONDUCT.md`)](./CODE_OF_CONDUCT.md)
-- [Política de Seguridad (`SECURITY.md`)](./SECURITY.md)
-- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](./docs/ARCHITECTURE.md)
-- [Guía de Desarrollo, Operación y Solución de Problemas (`docs/DEVELOPMENT_AND_OPERATIONS.md`)](./docs/DEVELOPMENT_AND_OPERATIONS.md)
+- [Código de Conducta](./CODE_OF_CONDUCT.md)
+- [Política de Seguridad](./SECURITY.md)
+- [Arquitectura Detallada del Sistema](./docs/ARCHITECTURE.md)
+- [Guía de Desarrollo, Operación y Solución de Problemas](./docs/DEVELOPMENT_AND_OPERATIONS.md)

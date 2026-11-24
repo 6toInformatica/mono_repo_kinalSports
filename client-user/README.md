@@ -91,7 +91,7 @@ client-user/
 
 ---
 
-## 7. Configuración (`.env`)
+## 7. Configuración de Variables de Entorno
 
 Copia `.env.example` a `.env`:
 
@@ -159,7 +159,7 @@ Cubre el almacenamiento seguro de credenciales en `authStore`, la rotación de t
 
 ## 11. Build, Uso en Docker y Limitaciones Relevantes
 
-### 11.1 Contenedor de Desarrollo (`dockerfiles/Dockerfile.client-user`)
+### 11.1 Contenedor de Desarrollo en Docker
 
 - El archivo `dockerfiles/Dockerfile.client-user` levanta un contenedor de desarrollo sobre `node:26-slim` que expone los puertos `8081` y `19000-19002` ejecutando `expo start --host lan --port 8081` (incluido en `docker-compose.yml`).
 - En `docker-compose.prod.yml` no se incluye `client-user`, ya que en producción una aplicación móvil React Native se distribuye como binario nativo (`.apk` / `.aab` en Android o `.ipa` en iOS) generado mediante **EAS Build** o compilación nativa, no como un servidor web contenedorizado.
@@ -174,6 +174,6 @@ Cubre el almacenamiento seguro de credenciales en `authStore`, la rotación de t
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
-- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../docs/ARCHITECTURE.md)
+- [Arquitectura Detallada del Sistema](../docs/ARCHITECTURE.md)
 - [Server User — API de negocio consumida](../server-user/README.md)
 - [Auth Node — Servicio de autenticación consumido](../authentication-service/auth-node/README.md)

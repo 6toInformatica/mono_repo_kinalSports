@@ -1,6 +1,6 @@
-# Código de Conducta (`CODE_OF_CONDUCT.md`)
+# Código de Conducta
 
-**KinalSports · Fundación Kinal · Sexto Perito en Computación**
+**KinalSports · Fundación Kinal · 6to. Perito en Computación**
 
 ---
 
@@ -8,7 +8,7 @@
 
 Este Código de Conducta establece las expectativas de convivencia, colaboración técnica, integridad académica y responsabilidad profesional para todas las personas que participan en el desarrollo, estudio, revisión y mantenimiento del monorepo **KinalSports**.
 
-El proyecto se desarrolla en el marco formativo de **Sexto Perito en Computación** (`IN6AM` / `IN6AV`) de **[Fundación Kinal](https://www.kinal.org.gt/)**, institución educativa privada y no lucrativa en Guatemala cuya misión integra preparación técnica de alto nivel, desarrollo humano y servicio a la sociedad.
+El proyecto se desarrolla en el marco formativo de **6to. Perito en Computación** de **[Fundación Kinal](https://www.kinal.org.gt/)**, institución educativa privada y no lucrativa en Guatemala cuya misión integra preparación técnica de alto nivel, desarrollo humano y servicio a la sociedad.
 
 > **Alcance normativo:** Las reglas operativas descritas en este documento para el uso del repositorio, las revisiones de código y la infraestructura de desarrollo constituyen normas operativas propuestas para el proyecto **KinalSports**, no políticas institucionales oficiales aprobadas por **Fundación Kinal**, y **complementan —sin sustituir— los reglamentos internos y las disposiciones institucionales vigentes**.
 

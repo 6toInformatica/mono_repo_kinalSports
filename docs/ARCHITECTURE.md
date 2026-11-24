@@ -1,6 +1,6 @@
-# Arquitectura del Sistema (`docs/ARCHITECTURE.md`)
+# Arquitectura del Sistema
 
-**KinalSports · Fundación Kinal · Sexto Perito en Computación**
+**KinalSports · Fundación Kinal · 6to. Perito en Computación**
 
 Este documento ofrece la referencia arquitectónica transversal del monorepo **KinalSports**, estructurada bajo principios del **C4 Model** (Contexto, Contenedores, Componentes y Secuencias) y del marco documental **Diátaxis** (sección de Explicación y Referencia Técnica).
 
@@ -26,7 +26,7 @@ Este documento ofrece la referencia arquitectónica transversal del monorepo **K
 Esta arquitectura cumple dos propósitos simultáneos:
 
 1. **Propósito técnico:** Garantizar desacoplamiento entre operaciones administrativas (`server-admin`) y operaciones de autoservicio de los deportistas (`server-user`), permitiendo incluso conmutar el motor de autenticación entre `.NET 10` y `Node.js` sin alterar los clientes ni migrar datos.
-2. **Propósito formativo:** Permitir a los estudiantes de **Sexto Perito en Computación** contrastar en un mismo repositorio seis patrones arquitectónicos reales (_Clean Architecture_, _Arquitectura Hexagonal_, _Arquitectura Modular_, _Arquitectura por Capas_, _SPA_ y _Backend for Frontend_).
+2. **Propósito formativo:** Permitir a los estudiantes de **6to. Perito en Computación** contrastar en un mismo repositorio seis patrones arquitectónicos reales (_Clean Architecture_, _Arquitectura Hexagonal_, _Arquitectura Modular_, _Arquitectura por Capas_, _SPA_ y _Backend for Frontend_).
 
 ---
 
@@ -54,13 +54,13 @@ flowchart LR
 
 El monorepo soporta dos topologías de ejecución definidas en `docker-compose.yml` (Desarrollo) y `docker-compose.prod.yml` (Producción):
 
-### 3.1 Topología de Desarrollo y Formación (`docker-compose.yml`)
+### 3.1 Topología de Desarrollo y Formación
 
-En desarrollo se ejecutan simultáneamente `auth-service` (`.NET 10`, `:5156`) y `auth-node` (`Fastify`, `:3007`) tras la inicialización del contenedor efímero `auth-migrator`. El stack administrativo consume `auth-service` y el stack móvil/usuario consume `auth-node`.
+En desarrollo (`docker-compose.yml`) se ejecutan simultáneamente `auth-service` (`.NET 10`, `:5156`) y `auth-node` (`Fastify`, `:3007`) tras la inicialización del contenedor efímero `auth-migrator`. El stack administrativo consume `auth-service` y el stack móvil/usuario consume `auth-node`.
 
-### 3.2 Topología de Producción (`docker-compose.prod.yml`)
+### 3.2 Topología de Producción
 
-En producción se despliega una arquitectura **100% Node.js** donde `auth-node` (`:3007`) inicializa de forma idempotente el esquema SQL canónico en PostgreSQL 18 y atiende tanto a los paneles administrativos (`client-admin`, `client-admin-next`, `server-admin`) como al ecosistema de usuarios (`server-user`, `client-user`).
+En producción (`docker-compose.prod.yml`) se despliega una arquitectura **100% Node.js** donde `auth-node` (`:3007`) inicializa de forma idempotente el esquema SQL canónico en PostgreSQL 18 y atiende tanto a los paneles administrativos (`client-admin`, `client-admin-next`, `server-admin`) como al ecosistema de usuarios (`server-user`, `client-user`).
 
 ```mermaid
 flowchart TB
@@ -202,6 +202,6 @@ El monorepo utiliza el método HTTP `QUERY` (definido por IETF HTTPbis como mét
 ## 8. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
-- [Guía de Desarrollo, Operación y Solución de Problemas (`docs/DEVELOPMENT_AND_OPERATIONS.md`)](./DEVELOPMENT_AND_OPERATIONS.md)
-- [Política de Seguridad (`SECURITY.md`)](../SECURITY.md)
-- [Pruebas de Contrato HTTP (`tests/contract/README.md`)](../tests/contract/README.md)
+- [Guía de Desarrollo, Operación y Solución de Problemas](./DEVELOPMENT_AND_OPERATIONS.md)
+- [Política de Seguridad](../SECURITY.md)
+- [Pruebas de Contrato HTTP](../tests/contract/README.md)

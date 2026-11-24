@@ -4,7 +4,7 @@
 
 _Plataforma de gestión deportiva basada en arquitectura de microservicios._
 
-**Fundación Kinal · Sexto Perito en Computación**
+**Fundación Kinal · 6to. Perito en Computación**
 
 [![Licencia: MIT](https://img.shields.io/badge/Licencia-MIT-0f172a.svg?style=flat-square)](./LICENSE)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D22.13.0-339933.svg?style=flat-square&logo=nodedotjs&logoColor=white)](./package.json)
@@ -18,7 +18,7 @@ _Plataforma de gestión deportiva basada en arquitectura de microservicios._
 
 **KinalSports** es una plataforma integral para la administración de complejos deportivos, reserva de canchas, gestión de equipos y organización de torneos. Está diseñada como un monorepo poliglota que integra cuatro microservicios backend, dos paneles web administrativos, una aplicación móvil nativa y una suite de pruebas automatizadas de contrato HTTP.
 
-Desarrollado y orientado técnicamente en el marco formativo de **Sexto Perito en Computación** (`IN6AM` / `IN6AV`) de **[Fundación Kinal](https://www.kinal.org.gt/)** (Guatemala), el proyecto articula ingeniería de software aplicada, diseño arquitectónico verificable y formación técnica profesional bajo el principio institucional del **trabajo bien hecho**.
+Desarrollado y orientado técnicamente en el marco formativo de **6to. Perito en Computación** de **[Fundación Kinal](https://www.kinal.org.gt/)** (Guatemala), el proyecto articula ingeniería de software aplicada, diseño arquitectónico verificable y formación técnica profesional bajo el principio institucional del **trabajo bien hecho**.
 
 ---
 
@@ -170,7 +170,7 @@ flowchart TB
 4. **MongoDB y Redis compartidos en operaciones de negocio:** `server-admin` y `server-user` comparten la base documental `kinalSports` en MongoDB 7 y el espacio de claves `kinal:fields:*` (TTL 120 s) y `kinal:user:profile:*` (TTL 60 s) en Redis 7. Aunque `server-user` incluye un cliente HTTP hacia `server-admin`, sus consultas y validaciones de canchas leen directamente de MongoDB y Redis compartidos para evitar latencia de red innecesaria.
 5. **Uso del método HTTP `QUERY`:** Los servicios soportan peticiones `QUERY` con cuerpo JSON estructurado tanto para el filtrado avanzado de canchas como para las consultas internas de perfiles autenticadas con la cabecera `x-internal-token`.
 
-Para profundizar en los diagramas de contenedores, flujos de secuencia y decisiones de diseño, consulta **[`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)**.
+Para profundizar en los diagramas de contenedores, flujos de secuencia y decisiones de diseño, consulta la **[Guía de Arquitectura del Sistema](./docs/ARCHITECTURE.md)**.
 
 ---
 
@@ -364,7 +364,7 @@ pnpm -r --if-present build
 | `client-admin-next` | Vitest 5 + React Testing Library           | `pnpm --filter @kinal/client-admin-next test` |
 | `client-user`       | Jest 30 + `jest-expo`                      | `pnpm --filter client-user test`              |
 
-### 9.3 Pruebas de Contrato HTTP (`tests/contract`)
+### 9.3 Pruebas de Contrato HTTP
 
 Levantan el ecosistema con `tests/contract/compose.contract.yml` (que incorpora **Mailpit** en `http://localhost:8025` para capturar correos transaccionales y amplía las ventanas de _rate limit_) y verifican el contrato HTTP contra los snapshots en `tests/contract/specs/__snapshots__/`:
 
@@ -378,7 +378,7 @@ pnpm test:contract
 
 ## 10. Propósito Didáctico y Formativo
 
-**KinalSports** no es un ejercicio escolar aislado, sino una plataforma funcional diseñada como laboratorio de ingeniería de software para los estudiantes de **Sexto Perito en Computación** de **Fundación Kinal**. Su estudio y evolución permiten aplicar en un contexto real:
+**KinalSports** no es un ejercicio escolar aislado, sino una plataforma funcional diseñada como laboratorio de ingeniería de software para los estudiantes de **6to. Perito en Computación** de **Fundación Kinal**. Su estudio y evolución permiten aplicar en un contexto real:
 
 - **Estilos arquitectónicos comparados:**
   - _Clean Architecture_ en `.NET 10` (`auth-service`).
@@ -395,26 +395,26 @@ pnpm test:contract
 
 ## 11. Documentación Adicional
 
-### Guías Transversales del Monorepo (`docs/`)
+### Guías Transversales del Monorepo
 
-- **[Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](./docs/ARCHITECTURE.md):** Diagramas C4/Mermaid, flujos de autenticación web/BFF/móvil, interoperabilidad `.NET 10` ↔ `Node.js`, modelo de datos y estrategia de caché en Redis.
-- **[Operación, Desarrollo, Pruebas y Solución de Problemas (`docs/DEVELOPMENT_AND_OPERATIONS.md`)](./docs/DEVELOPMENT_AND_OPERATIONS.md):** Flujo de desarrollo local y con Docker, despliegue en producción, matriz de puertos, comandos de sembrado y diagnóstico de errores frecuentes (_Troubleshooting_).
+- **[Arquitectura Detallada del Sistema](./docs/ARCHITECTURE.md):** Diagramas C4/Mermaid, flujos de autenticación web/BFF/móvil, interoperabilidad `.NET 10` ↔ `Node.js`, modelo de datos y estrategia de caché en Redis.
+- **[Operación, Desarrollo, Pruebas y Solución de Problemas](./docs/DEVELOPMENT_AND_OPERATIONS.md):** Flujo de desarrollo local y con Docker, despliegue en producción, matriz de puertos, comandos de sembrado y diagnóstico de errores frecuentes (_Troubleshooting_).
 
-### Guías Educativas de Recreación (`.NET 10`)
+### Guías Educativas de Recreación en .NET 10
 
-- **[Guía Rápida de Recreación de `auth-service` (`GUIA_RAPIDA.md`)](./authentication-service/auth-service/GUIA_RAPIDA.md)**
-- **[Flujo Lógico Paso a Paso para Recrear la API en `.NET 10` (`FLUJO_RECREACION_PASO_A_PASO.md`)](./authentication-service/auth-service/FLUJO_RECREACION_PASO_A_PASO.md)**
+- **[Guía Rápida de Recreación de `auth-service`](./authentication-service/auth-service/GUIA_RAPIDA.md)**
+- **[Flujo Lógico Paso a Paso para Recrear la API en `.NET 10`](./authentication-service/auth-service/FLUJO_RECREACION_PASO_A_PASO.md)**
 
 ---
 
 ## 12. Contribuciones
 
-La participación en este repositorio se realiza dentro del proceso formativo y técnico de **Sexto Perito en Computación** de **Fundación Kinal**, guiado por los valores de **trabajo bien hecho**, **espíritu de servicio**, **respeto a la dignidad de la persona** y **libertad personal responsable**.
+La participación en este repositorio se realiza dentro del proceso formativo y técnico de **6to. Perito en Computación** de **Fundación Kinal**, guiado por los valores de **trabajo bien hecho**, **espíritu de servicio**, **respeto a la dignidad de la persona** y **libertad personal responsable**.
 
 Antes de crear una rama, realizar un commit o abrir un Pull Request, revisa:
 
-- **[Guía de Contribución (`CONTRIBUTING.md`)](./CONTRIBUTING.md):** Roles de participación, flujo de trabajo en 9 pasos, convenciones de ramas, reglas de **Conventional Commits** validadas por Husky/Commitlint y lineamientos para el uso ético y verificado de herramientas de Inteligencia Artificial.
-- **[Código de Conducta (`CODE_OF_CONDUCT.md`)](./CODE_OF_CONDUCT.md):** Principios de convivencia, integridad académica, respeto a la autoría, revisión constructiva de código y uso responsable de la infraestructura compartida.
+- **[Guía de Colaboración y Contribución](./CONTRIBUTING.md):** Roles de participación, flujo de trabajo en 9 pasos, convenciones de ramas, reglas de **Conventional Commits** validadas por Husky/Commitlint y lineamientos para el uso ético y verificado de herramientas de Inteligencia Artificial.
+- **[Código de Conducta](./CODE_OF_CONDUCT.md):** Principios de convivencia, integridad académica, respeto a la autoría, revisión constructiva de código y uso responsable de la infraestructura compartida.
 
 ---
 
@@ -423,20 +423,20 @@ Antes de crear una rama, realizar un commit o abrir un Pull Request, revisa:
 La protección de credenciales, sesiones y datos forma parte esencial del diseño de **KinalSports**. Si identificas una vulnerabilidad o un riesgo de exposición de secretos:
 
 - **No abras un Issue público** con detalles explotables.
-- Consulta los controles implementados y el procedimiento de divulgación coordinada en **[`SECURITY.md`](./SECURITY.md)**.
+- Consulta los controles implementados y el procedimiento de divulgación coordinada en la **[Política de Seguridad](./SECURITY.md)**.
 
 ---
 
 ## 14. Licencia
 
-Este proyecto se distribuye bajo los términos de la **[Licencia MIT](./LICENSE)** (`SPDX-License-Identifier: MIT`). Consulta el archivo [`LICENSE`](./LICENSE) en la raíz del repositorio y los avisos de cada paquete para conocer las condiciones de uso, copia, modificación y distribución, así como la preservación obligatoria de los avisos de derechos de autor.
+Este proyecto se distribuye bajo los términos de la **[Licencia MIT](./LICENSE)** (`SPDX-License-Identifier: MIT`). Consulta el archivo de licencia en la raíz del repositorio y los avisos de cada paquete para conocer las condiciones de uso, copia, modificación y distribución, así como la preservación obligatoria de los avisos de derechos de autor.
 
 ---
 
 ## 15. Créditos y Contexto Institucional
 
 - **Institución educativa:** **[Fundación Kinal](https://www.kinal.org.gt/)** (Centro Educativo Técnico Laboral Kinal, Guatemala) — institución educativa privada y no lucrativa dedicada a la formación técnica, tecnológica y humana.
-- **Contexto académico:** **Sexto Perito en Computación** (jornadas `IN6AM` e `IN6AV`), como proyecto técnico y formativo de referencia en ingeniería de software y arquitectura de sistemas.
+- **Contexto académico:** **6to. Perito en Computación** (en sus distintas jornadas y secciones técnicas), como proyecto técnico y formativo de referencia en ingeniería de software y arquitectura de sistemas.
 - **Desarrollo y arquitectura técnica:** **Braulio Echeverría** (`Braulio Echeverria`), reconocido en los metadatos técnicos del repositorio por el diseño arquitectónico, desarrollo de software, integración de tecnologías modernas y orientación técnica de futuros desarrolladores. Esta atribución reconoce su autoría y responsabilidad técnica sobre el proyecto, diferenciándola de la titularidad patrimonial de derechos de autor.
-- **Colaboración estudiantil:** Estudiantes de Sexto Perito en Computación (`IN6`, referenciados en `server-admin/package.json` como `Braulio Echeverria & IN6` y en los contextos de curso `IN6AM` / `IN6AV`) que participan en el estudio, pruebas y evolución controlada de los módulos.
+- **Colaboración estudiantil:** Estudiantes de **6to. Perito en Computación** (referenciados en los metadatos del repositorio bajo el identificador de grado `IN6`) que participan en el estudio, pruebas y evolución controlada de los módulos.
 - **Titularidad de derechos de autor:** La titularidad institucional propuesta para la unificación bajo licencia **MIT** corresponde a **Fundación Kinal**, sujeta a la confirmación formal de los derechos y la autorización correspondiente, conservando los avisos legales de terceros y contribuyentes que correspondan. Mientras dicha confirmación no se aplique sobre los archivos `LICENSE`, se mantienen vigentes los avisos actuales del repositorio sin asumir cotitularidad automática.

@@ -852,7 +852,9 @@ public class RoleRepository(ApplicationDbContext context) : IRoleRepository
 }
 ```
 
-### 3.5 Configurar conexión a BD en `appsettings.Development.json` (Api)
+### 3.5 Configurar la cadena de conexión en la capa Api
+
+Archivo destino: `src/AuthService.Api/appsettings.Development.json`
 
 ```json
 {
@@ -3006,7 +3008,7 @@ app.Run();
 
 ---
 
-## PASO 8: CONFIGURAR `appsettings.Development.json` Y EJECUTAR
+## PASO 8: CONFIGURAR EL ENTORNO DE DESARROLLO Y EJECUTAR
 
 Crear `src/AuthService.Api/appsettings.Development.json` alineado con los servicios del monorepo:
 

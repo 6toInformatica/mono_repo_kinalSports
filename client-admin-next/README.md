@@ -107,7 +107,7 @@ client-admin-next/
 
 ---
 
-## 7. Configuración (`.env.local`)
+## 7. Configuración de Variables de Entorno
 
 Copia `.env.example` a `.env.local`:
 
@@ -181,7 +181,7 @@ Valida `proxy.ts` (redirección sin sesión, bloqueo cuando el claim `role` del 
 
 ## 11. Build, Despliegue en Docker y Limitaciones Relevantes
 
-### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.client-admin-next`)
+### 11.1 Construcción Multi-Etapa en Docker
 
 `next.config.ts` habilita `output: 'standalone'`. El archivo `dockerfiles/Dockerfile.client-admin-next` construye la imagen sobre `node:26-slim`:
 
@@ -198,7 +198,7 @@ Valida `proxy.ts` (redirección sin sesión, bloqueo cuando el claim `role` del 
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
-- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../docs/ARCHITECTURE.md)
-- [Client Admin (React + Vite) — Implementación SPA equivalente](../client-admin/README.md)
+- [Arquitectura Detallada del Sistema](../docs/ARCHITECTURE.md)
+- [Client Admin — Implementación SPA equivalente en React + Vite](../client-admin/README.md)
 - [Server Admin — API administrativa](../server-admin/README.md)
 - [Auth Service (.NET 10)](../authentication-service/auth-service/README.md) y [Auth Node (Fastify)](../authentication-service/auth-node/README.md)

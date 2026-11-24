@@ -89,7 +89,7 @@ server-user/
 
 ---
 
-## 7. Configuración (`.env`)
+## 7. Configuración de Variables de Entorno
 
 Copia `.env.example` a `.env`:
 
@@ -207,7 +207,7 @@ Verifican las reglas de negocio de `fields` (incluyendo consultas `QUERY` y cach
 
 ## 11. Build, Despliegue en Docker y Limitaciones Relevantes
 
-### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.server-user`)
+### 11.1 Construcción Multi-Etapa en Docker
 
 Al estar escrito directamente en JavaScript ESM, `server-user` no requiere etapa de transpilación. El archivo `dockerfiles/Dockerfile.server-user` define dos etapas sobre `node:26-slim`:
 
@@ -224,7 +224,7 @@ Al estar escrito directamente en JavaScript ESM, `server-user` no requiere etapa
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
-- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../docs/ARCHITECTURE.md)
+- [Arquitectura Detallada del Sistema](../docs/ARCHITECTURE.md)
 - [Client User — Aplicación móvil consumidora](../client-user/README.md)
 - [Auth Node — Servicio de autenticación consumido](../authentication-service/auth-node/README.md)
 - [Server Admin — Servicio administrativo con MongoDB y Redis compartidos](../server-admin/README.md)

@@ -1,6 +1,6 @@
-# Guía de Desarrollo, Operación, Pruebas y Solución de Problemas (`docs/DEVELOPMENT_AND_OPERATIONS.md`)
+# Guía de Desarrollo, Operación, Pruebas y Solución de Problemas
 
-**KinalSports · Fundación Kinal · Sexto Perito en Computación**
+**KinalSports · Fundación Kinal · 6to. Perito en Computación**
 
 Este documento centraliza los procedimientos operativos transversales del monorepo **KinalSports**: configuración de entornos, matriz de puertos, uso de scripts globales, ejecución de pruebas, despliegue en producción y diagnóstico de errores frecuentes (_Troubleshooting_).
 
@@ -9,9 +9,9 @@ Este documento centraliza los procedimientos operativos transversales del monore
 ## Índice de Navegación
 
 1. [Matriz de Puertos y Contenedores del Monorepo](#1-matriz-de-puertos-y-contenedores-del-monorepo)
-2. [Referencia de Scripts Globales (`package.json`)](#2-referencia-de-scripts-globales-packagejson)
-3. [Sembrado y Reinicio de Datos (`scripts/seed/seed.mjs`)](#3-sembrado-y-reinicio-de-datos-scriptsseedseedmjs)
-4. [Despliegue en Entorno de Producción (`docker-compose.prod.yml`)](#4-despliegue-en-entorno-de-producción-docker-composeprodyml)
+2. [Referencia de Scripts Globales](#2-referencia-de-scripts-globales)
+3. [Sembrado y Reinicio de Datos](#3-sembrado-y-reinicio-de-datos)
+4. [Despliegue en Entorno de Producción](#4-despliegue-en-entorno-de-producción)
 5. [Estrategia de Pruebas Automatizadas](#5-estrategia-de-pruebas-automatizadas)
 6. [Solución de Problemas Frecuentes (_Troubleshooting_)](#6-solución-de-problemas-frecuentes-troubleshooting)
 7. [Documentación Relacionada](#7-documentación-relacionada)
@@ -37,9 +37,9 @@ Este documento centraliza los procedimientos operativos transversales del monore
 
 ---
 
-## 2. Referencia de Scripts Globales (`package.json`)
+## 2. Referencia de Scripts Globales
 
-Todos los comandos siguientes se ejecutan desde la raíz del monorepo:
+Todos los comandos siguientes están definidos en el archivo `package.json` de la raíz del monorepo:
 
 | Script                    | Comando Ejecutado                                                                                                                                                                               | Descripción                                                                                                                                                                       |
 | :------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -61,7 +61,7 @@ Todos los comandos siguientes se ejecutan desde la raíz del monorepo:
 
 ---
 
-## 3. Sembrado y Reinicio de Datos (`scripts/seed/seed.mjs`)
+## 3. Sembrado y Reinicio de Datos
 
 El script `scripts/seed/seed.mjs` interactúa mediante `docker exec` con los contenedores `pg-kinal-sports`, `kinal_mongodb`, `kinal_server_admin` y `kinal_auth_service` (o `kinal_auth_node` si `kinal_auth_service` no está en ejecución):
 
@@ -77,9 +77,9 @@ El script `scripts/seed/seed.mjs` interactúa mediante `docker exec` con los con
 
 ---
 
-## 4. Despliegue en Entorno de Producción (`docker-compose.prod.yml`)
+## 4. Despliegue en Entorno de Producción
 
-Para ejecutar el monorepo en modo producción (etapas `runtime` compiladas y sin runtime de `.NET`):
+Para ejecutar el monorepo en modo producción (`docker-compose.prod.yml`, con etapas `runtime` compiladas y sin runtime de `.NET`):
 
 1. **Crear el archivo `.env.docker` en la raíz del proyecto** definiendo obligatoriamente los secretos requeridos:
    ```dotenv
@@ -113,9 +113,9 @@ Para ejecutar el monorepo en modo producción (etapas `runtime` compiladas y sin
 - No requieren que PostgreSQL, MongoDB ni Redis estén levantados, ya que utilizan dobles de prueba en memoria (`fakes.ts` en `auth-node`, `NSubstitute` en `auth-service`, mocks de Vitest en `server-admin` / `server-user` / clientes web y Jest en `client-user`).
 - Las pruebas de caché (`redis-cache.test.ts`, `RedisCacheServiceTests.cs`, `redis.cache.test.js`) verifican también el comportamiento de degradación en memoria cuando no existe servidor Redis activo.
 
-### 5.2 Pruebas de Contrato HTTP (`tests/contract`)
+### 5.2 Pruebas de Contrato HTTP
 
-- Se ejecutan con `pnpm test:contract` tras levantar `pnpm contract:up` y ejecutar `pnpm db:seed`.
+- Ubicadas en el paquete `tests/contract`, se ejecutan con `pnpm test:contract` tras levantar `pnpm contract:up` y ejecutar `pnpm db:seed`.
 - Evalúan en caja negra la paridad entre `auth-node` (`:3007`) y `auth-service` (`:5156`), los flujos administrativos de `server-admin` (`:3009`), las reglas de negocio de `server-user` (`:3008`) y la interoperabilidad cruzada de tokens JWT (`specs/cross-service.test.js`).
 
 ---
@@ -125,7 +125,7 @@ Para ejecutar el monorepo en modo producción (etapas `runtime` compiladas y sin
 ### 6.1 `docker compose` falla indicando que `.env.docker` no existe o faltan variables
 
 - **Causa:** Los scripts `pnpm docker:*` pasan el argumento `--env-file .env.docker` a Docker Compose. Además, `docker-compose.prod.yml` exige obligatoriamente `POSTGRES_USER`, `POSTGRES_PASSWORD`, `JWT_SECRET` e `INTERNAL_SERVICE_TOKEN`.
-- **Solución:** En desarrollo basta con crear un archivo vacío (`touch .env.docker`). En producción, define las cuatro variables obligatorias dentro de `.env.docker` (ver [Sección 4](#4-despliegue-en-entorno-de-producción-docker-composeprodyml)).
+- **Solución:** En desarrollo basta con crear un archivo vacío (`touch .env.docker`). En producción, define las cuatro variables obligatorias dentro de `.env.docker` (ver [Sección 4](#4-despliegue-en-entorno-de-producción)).
 
 ### 6.2 Error de conexión a PostgreSQL al iniciar `auth-service` o `auth-node` localmente
 
@@ -163,6 +163,6 @@ Para ejecutar el monorepo en modo producción (etapas `runtime` compiladas y sin
 ## 7. Documentación Relacionada
 
 - [README Principal del Monorepo](../README.md)
-- [Arquitectura del Sistema (`docs/ARCHITECTURE.md`)](./ARCHITECTURE.md)
-- [Guía de Contribución (`CONTRIBUTING.md`)](../CONTRIBUTING.md)
-- [Pruebas de Contrato HTTP (`tests/contract/README.md`)](../tests/contract/README.md)
+- [Arquitectura del Sistema](./ARCHITECTURE.md)
+- [Guía de Colaboración y Contribución](../CONTRIBUTING.md)
+- [Pruebas de Contrato HTTP](../tests/contract/README.md)

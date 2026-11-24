@@ -97,7 +97,7 @@ authentication-service/auth-node/
 
 ---
 
-## 7. Configuración (`.env`)
+## 7. Configuración de Variables de Entorno
 
 Crea el archivo `authentication-service/auth-node/.env` a partir de `.env.example`:
 
@@ -207,7 +207,7 @@ Incluyen pruebas para:
 
 ## 11. Build, Despliegue en Docker y Limitaciones Relevantes
 
-### 11.1 Construcción Multi-Etapa (`dockerfiles/Dockerfile.auth-node`)
+### 11.1 Construcción Multi-Etapa en Docker
 
 El archivo `dockerfiles/Dockerfile.auth-node` define una construcción multi-etapa sobre `node:26-slim`:
 
@@ -225,7 +225,7 @@ El archivo `dockerfiles/Dockerfile.auth-node` define una construcción multi-eta
 ## 12. Documentación Relacionada
 
 - [README Principal del Monorepo](../../README.md)
-- [Arquitectura Detallada del Sistema (`docs/ARCHITECTURE.md`)](../../docs/ARCHITECTURE.md)
+- [Arquitectura Detallada del Sistema](../../docs/ARCHITECTURE.md)
 - [Auth Service (.NET 10) — Implementación paralela](../auth-service/README.md)
 - [Server User — Consumidor principal en desarrollo](../../server-user/README.md)
 - [Server Admin — Consumidor administrativo](../../server-admin/README.md)
