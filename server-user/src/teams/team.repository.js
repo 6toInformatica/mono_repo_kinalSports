@@ -8,12 +8,12 @@ export const teamRepository = {
   },
 
   findById(id) {
-    return Team.findById(id);
+    return Team.findById(String(id));
   },
 
   /** Solo el capitán (para autorizar acciones sobre el equipo) */
   findManager(id) {
-    return Team.findById(id).select('managerId');
+    return Team.findById(String(id)).select('managerId');
   },
 
   /** Equipos activos donde el usuario es miembro o capitán */

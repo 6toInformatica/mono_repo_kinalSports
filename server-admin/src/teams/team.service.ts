@@ -22,7 +22,7 @@ export interface ListTeamsQuery {
 }
 
 // Campos que no se cambian con la edición general del equipo
-const PROTECTED_FIELDS = ['isActive', 'managerId', 'members'];
+const ALLOWED_TEAM_UPDATE_FIELDS = ['teamName', 'category'] as const;
 
 const MANAGER_NOT_FOUND =
   'El capitán seleccionado no existe o no tiene cuenta activa';
@@ -45,7 +45,7 @@ export class TeamService {
     const filter: Record<string, unknown> = {
       isActive: isActive === undefined ? true : isActive === 'true',
     };
-    if (category) filter.category = category;
+    if (category) filter.category = String(category);
 
     const pageNumber = parseInt(String(page));
     const limitNumber = parseInt(String(limit));
@@ -122,10 +122,14 @@ export class TeamService {
     const current = await this.teams.findById(id);
     if (!current) return null;
 
-    const changes = { ...data };
-    for (const field of PROTECTED_FIELDS) delete changes[field];
-    if (Object.hasOwn(changes, 'namedMembers')) {
-      changes.namedMembers = parseNamedMembers(changes.namedMembers);
+    const changes: Record<string, unknown> = {};
+    for (const field of ALLOWED_TEAM_UPDATE_FIELDS) {
+      if (data[field] !== undefined) {
+        changes[field] = String(data[field]);
+      }
+    }
+    if (Object.hasOwn(data, 'namedMembers')) {
+      changes.namedMembers = parseNamedMembers(data.namedMembers);
     }
     if (logo) {
       changes.logo = (await this.images.upload(logo, this.#folder)).secure_url;

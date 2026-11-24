@@ -43,7 +43,7 @@ export class TournamentService {
     const filter: Record<string, unknown> = {
       isActive: isActive === undefined ? true : isActive === 'true',
     };
-    if (category) filter.category = category;
+    if (category) filter.category = String(category);
 
     const pageNumber = parseInt(String(page));
     const limitNumber = parseInt(String(limit));
@@ -103,7 +103,31 @@ export class TournamentService {
     const current = await this.tournaments.findById(id);
     if (!current) return null;
 
-    const changes = { ...data };
+    const changes: Record<string, unknown> = {};
+    if (data.tournamentsName !== undefined) {
+      changes.tournamentsName = String(data.tournamentsName).trim();
+    }
+    if (data.category !== undefined) {
+      changes.category = String(data.category);
+    }
+    if (data.startDate !== undefined) {
+      changes.startDate = String(data.startDate);
+    }
+    if (data.endDate !== undefined) {
+      changes.endDate = String(data.endDate);
+    }
+    if (Array.isArray(data.teams)) {
+      changes.teams = data.teams.map(String);
+    }
+    if (data.status !== undefined) {
+      changes.status = String(data.status);
+    }
+    if (data.description !== undefined) {
+      changes.description = String(data.description).trim();
+    }
+    if (data.isActive !== undefined && typeof data.isActive === 'boolean') {
+      changes.isActive = data.isActive;
+    }
     if (logo) {
       changes.logo = (await this.images.upload(logo, this.#folder)).secure_url;
     }

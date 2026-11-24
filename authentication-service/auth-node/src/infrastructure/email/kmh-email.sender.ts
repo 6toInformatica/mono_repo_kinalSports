@@ -4,13 +4,29 @@ import type { EmailSender } from '../../modules/auth/application/ports.ts';
 import { createTemplatedEmailSender } from './templates.ts';
 
 /** Versión en texto plano del HTML (campo `text` del gateway) */
+const stripHtmlTags = (input: string) => {
+  let out = '';
+  let inTag = false;
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i];
+    if (ch === '<') {
+      inTag = true;
+    } else if (ch === '>') {
+      inTag = false;
+    } else if (!inTag) {
+      out += ch;
+    }
+  }
+  return out;
+};
+
 const toPlainText = (html: string) =>
-  html
-    .replace(
+  stripHtmlTags(
+    html.replace(
       /<a\s[^>]*href=['"]([^'"]+)['"][^>]*>\s*([\s\S]*?)\s*<\/a>/gi,
       '$2: $1'
     )
-    .replace(/<[^>]+>/g, '')
+  )
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)

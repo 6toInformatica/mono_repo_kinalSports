@@ -37,12 +37,12 @@ export const buildApp = async (config: AppConfig, container: Container) => {
   app.decorateRequest('user', null);
   app.decorateRequest('userId', null);
   app.decorateRequest('uploadedFile', null);
-  app.addHook('onResponse', removeUploadedFile);
 
   await app.register(securityPlugin, { config });
   await app.register(globalRateLimitPlugin, { config });
   await app.register(errorHandlerPlugin);
   await app.register(bodyParsersPlugin, { config });
+  app.addHook('onResponse', removeUploadedFile);
 
   await app.register(
     async (api) => {

@@ -51,7 +51,9 @@ export class FieldService {
     search,
   }: ListFieldsQuery = {}) {
     // isActive llega como texto desde la query o booleano desde QUERY body
-    const filter: Record<string, unknown> = { isActive };
+    const activeBool =
+      typeof isActive === 'boolean' ? isActive : String(isActive) !== 'false';
+    const filter: Record<string, unknown> = { isActive: activeBool };
     if (fieldType) filter.fieldType = String(fieldType).trim();
     if (capacity) filter.capacity = String(capacity).trim();
     if (maxPricePerHour !== undefined && maxPricePerHour !== '') {
@@ -64,7 +66,7 @@ export class FieldService {
 
     const pageNumber = parseInt(String(page));
     const limitNumber = parseInt(String(limit));
-    const activeKey = String(isActive) !== 'false';
+    const activeKey = activeBool;
     const extraFilterKey =
       fieldType || capacity || maxPricePerHour !== undefined || search
         ? `:${fieldType ?? ''}:${capacity ?? ''}:${maxPricePerHour ?? ''}:${search?.trim() ?? ''}`
@@ -156,7 +158,25 @@ export class FieldService {
     const current = await this.fields.findById(id);
     if (!current) return null;
 
-    const changes = { ...data };
+    const changes: Record<string, unknown> = {};
+    if (data.fieldName !== undefined) {
+      changes.fieldName = String(data.fieldName).trim();
+    }
+    if (data.fieldType !== undefined) {
+      changes.fieldType = String(data.fieldType);
+    }
+    if (data.capacity !== undefined) {
+      changes.capacity = String(data.capacity);
+    }
+    if (data.pricePerHour !== undefined) {
+      changes.pricePerHour = Number(data.pricePerHour);
+    }
+    if (data.description !== undefined) {
+      changes.description = String(data.description).trim();
+    }
+    if (data.isActive !== undefined && typeof data.isActive === 'boolean') {
+      changes.isActive = data.isActive;
+    }
     if (image) {
       changes.photo = (
         await this.images.upload(image, this.#folder)

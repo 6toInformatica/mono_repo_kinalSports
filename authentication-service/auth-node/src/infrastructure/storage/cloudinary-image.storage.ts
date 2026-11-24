@@ -18,10 +18,6 @@ const removeLocalFile = async (filePath: string, warning: string) => {
 export const createCloudinaryImageStorage = (
   settings: AppConfig['cloudinary']
 ): ImageStorage => {
-  // Se omite la validación del certificado TLS (decisión vigente del proyecto).
-  // Afecta a todo el proceso, igual que en la versión anterior.
-  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
   cloudinary.config({
     cloud_name: settings.cloudName,
     api_key: settings.apiKey,

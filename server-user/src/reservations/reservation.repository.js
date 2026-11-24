@@ -45,7 +45,7 @@ export const reservationRepository = {
   /** Horarios ocupados de la cancha que se traslapan con el rango [start, end) */
   findOccupiedSlots(fieldId, start, end) {
     return Reservation.find({
-      fieldId,
+      fieldId: { $eq: String(fieldId) },
       status: { $nin: ['CANCELLED', 'NO_SHOW'] },
       startTime: { $lt: end },
       endTime: { $gt: start },

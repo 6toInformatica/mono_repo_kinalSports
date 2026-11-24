@@ -20,6 +20,16 @@ adminClient.interceptors.request.use((config) => {
  * axios tal cual para que el servicio decida qué significa cada status.
  */
 export const getAdminTournament = async (tournamentId) => {
-  const { data } = await adminClient.get(`/tournaments/${tournamentId}`);
+  if (
+    typeof tournamentId !== 'string' ||
+    !/^[a-fA-F0-9]{24}$/.test(tournamentId)
+  ) {
+    throw Object.assign(new Error('Invalid tournamentId'), {
+      response: { status: 400 },
+    });
+  }
+  const { data } = await adminClient.get(
+    `/tournaments/${encodeURIComponent(tournamentId)}`
+  );
   return data;
 };

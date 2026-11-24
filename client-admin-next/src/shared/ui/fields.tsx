@@ -145,6 +145,16 @@ export function TextAreaField({
  * Selector de imagen con vista previa. `currentUrl` es la imagen guardada;
  * al elegir un archivo se muestra el nuevo hasta guardar.
  */
+const isSafeImageSrc = (url: string | null | undefined): url is string => {
+  if (!url) return false;
+  return (
+    url.startsWith("blob:") ||
+    url.startsWith("https://") ||
+    url.startsWith("http://") ||
+    url.startsWith("/")
+  );
+};
+
 export function ImageField({
   label,
   name,
@@ -165,7 +175,8 @@ export function ImageField({
     [preview],
   );
 
-  const shown = preview ?? currentUrl ?? null;
+  const rawShown = preview ?? currentUrl ?? null;
+  const shown = isSafeImageSrc(rawShown) ? rawShown : null;
 
   return (
     <FieldWrapper

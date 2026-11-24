@@ -1,7 +1,8 @@
 // Datos de apoyo compartidos por todas las pruebas
+import { randomBytes, randomInt } from "node:crypto";
 
 // Identificador único de esta corrida: evita choques con datos de corridas anteriores
-export const RUN = `ct${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+export const RUN = `ct${Date.now().toString(36)}${randomBytes(3).toString("hex").slice(0, 4)}`;
 
 // PNG válido de 1x1
 export const png = () => ({
@@ -37,7 +38,7 @@ export const guatemalaTime = (daysAhead, hour, minute = 0) => {
 };
 
 // Día futuro aleatorio para que las reservas de cada corrida no choquen con otras
-export const randomFutureDay = () => 20 + Math.floor(Math.random() * 300);
+export const randomFutureDay = () => 20 + randomInt(0, 300);
 
 export const decodeJwt = (token) =>
   JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString("utf8"));
