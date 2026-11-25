@@ -7,9 +7,15 @@ import { isAuthError, performTokenRefresh, tryRefreshSession } from './sessionRe
 // Alinea el hostname con el que se abrió el navegador (localhost, 127.0.0.1 o 0.0.0.0)
 // para que las cookies httpOnly SameSite=Lax (kinal_access y kinal_refresh) compartan
 // exactamente el mismo sitio registrable y el navegador las adjunte en cada petición.
+// En despliegue institucional VITE_* son rutas relativas (/api/v1, /kinalSportsAdmin/v1)
+// y se dejan intactas: axios las resuelve contra el origen CSR (proxy del gateway).
 function alignWithBrowserHost(rawUrl) {
   if (!rawUrl || typeof window === 'undefined' || !window.location?.hostname) {
     return rawUrl;
+  }
+  // Ruta relativa same-origin: no reescribir
+  if (rawUrl.startsWith('/') && !rawUrl.startsWith('//')) {
+    return rawUrl.replace(/\/$/, '') || '/';
   }
   try {
     const parsed = new URL(rawUrl, window.location.origin);

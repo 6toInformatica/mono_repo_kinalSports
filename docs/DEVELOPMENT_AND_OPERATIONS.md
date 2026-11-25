@@ -14,7 +14,7 @@ Este documento centraliza los procedimientos operativos transversales del monore
 4. [Despliegue en Entorno de Producción](#4-despliegue-en-entorno-de-producción)
 5. [Estrategia de Pruebas Automatizadas](#5-estrategia-de-pruebas-automatizadas)
 6. [Solución de Problemas Frecuentes (_Troubleshooting_)](#6-solución-de-problemas-frecuentes-troubleshooting)
-7. [Documentación Relacionada](#7-documentación-relacionada)
+7. [Documentación Relacionada](#7-documentación-relacionada) (incluye [despliegue institucional](./INSTITUTIONAL_DEPLOYMENT.md))
 
 ---
 
@@ -168,5 +168,6 @@ Para ejecutar el monorepo en modo producción (`docker-compose.prod.yml`, con et
 
 - [README Principal del Monorepo](../README.md)
 - [Arquitectura del Sistema](./ARCHITECTURE.md)
+- [Despliegue institucional (HestiaCP + Docker rootless)](./INSTITUTIONAL_DEPLOYMENT.md)
 - [Guía de Colaboración y Contribución](../CONTRIBUTING.md)
 - [Pruebas de Contrato HTTP](../tests/contract/README.md)

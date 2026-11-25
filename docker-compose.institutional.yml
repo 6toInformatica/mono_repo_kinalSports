@@ -1,0 +1,255 @@
+# Despliegue institucional (Ubuntu 24.04 + HestiaCP + Docker rootless)
+# Dominios públicos (configurados en HestiaCP, no en este archivo):
+#   ks-ssr.lab.kinal.edu.gt  → 127.0.0.1:33000  (client-admin-next)
+#   ks-csr.lab.kinal.edu.gt  → 127.0.0.1:33001  (gateway: SPA + proxy /api/v1 + /kinalSportsAdmin/v1)
+#
+# Uso:
+#   cp .env.institutional.example .env.institutional
+#   # completar secretos, luego:
+#   docker compose -f docker-compose.institutional.yml --env-file .env.institutional config
+#   docker compose -f docker-compose.institutional.yml --env-file .env.institutional up --build -d
+#
+# No altera docker-compose.yml ni docker-compose.prod.yml.
+# Rango de puertos host propuesto: 33000–33049 (verificar disponibilidad en el servidor).
+
+name: kinal-sports-institutional
+
+services:
+  postgres:
+    image: postgres:18
+    container_name: kinal_inst_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Define POSTGRES_USER en .env.institutional}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env.institutional}
+      POSTGRES_DB: ${POSTGRES_DB:-kinal_sports}
+    volumes:
+      - inst_postgres18_data:/var/lib/postgresql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB:-kinal_sports}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - kinal-inst-network
+    # Sin puertos en el host: solo red Docker privada
+
+  mongodb:
+    image: mongo:7
+    container_name: kinal_inst_mongodb
+    restart: unless-stopped
+    volumes:
+      - inst_mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - kinal-inst-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: kinal_inst_redis
+    restart: unless-stopped
+    volumes:
+      - inst_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    networks:
+      - kinal-inst-network
+
+  auth-node:
+    build:
+      context: ./authentication-service/auth-node
+      dockerfile: ../../dockerfiles/Dockerfile.auth-node
+      target: runtime
+    container_name: kinal_inst_auth_node
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3007
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-kinal_sports}
+      DB_USERNAME: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Define JWT_SECRET en .env.institutional}
+      JWT_ISSUER: ${JWT_ISSUER:-AuthService}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-AuthService}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Define INTERNAL_SERVICE_TOKEN en .env.institutional}
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?Define ALLOWED_ORIGINS en .env.institutional}
+      FRONTEND_URL: ${FRONTEND_URL:-https://ks-csr.lab.kinal.edu.gt}
+      # Obligatorio detrás de HTTPS en HestiaCP
+      SECURE_COOKIES: ${SECURE_COOKIES:-true}
+      MAIL_PROVIDER: ${MAIL_PROVIDER:-kmh}
+      KMH_API_BASE_URL: ${KMH_API_BASE_URL:-https://mail.lab.kinal.edu.gt}
+      KMH_MAIL_FROM: ${KMH_MAIL_FROM:-}
+      KMH_PROJECT_API_KEY: ${KMH_PROJECT_API_KEY:-}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_ENABLE_SSL: ${SMTP_ENABLE_SSL:-true}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Kinal Sports Support}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      CLOUDINARY_BASE_URL: ${CLOUDINARY_BASE_URL:-}
+      CLOUDINARY_FOLDER: ${CLOUDINARY_FOLDER:-auth_service/profiles}
+      CLOUDINARY_DEFAULT_AVATAR_FILENAME: ${CLOUDINARY_DEFAULT_AVATAR_FILENAME:-}
+    extra_hosts:
+      - "mail.lab.kinal.edu.gt:${KMH_HOST_IP:-181.114.7.76}"
+    env_file:
+      - path: .env.institutional
+        required: false
+    # Sin publicación en el host: solo reachable vía red Docker / gateway
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3007/api/v1/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+    networks:
+      - kinal-inst-network
+
+  server-admin:
+    build:
+      context: ./server-admin
+      dockerfile: ../dockerfiles/Dockerfile.server-admin
+      target: runtime
+    container_name: kinal_inst_server_admin
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      auth-node:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3009
+      URI_MONGODB: mongodb://mongodb:27017/${MONGO_DB_NAME:-kinalSports}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER:-AuthService}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-AuthService}
+      ADMIN_ALLOWED_ORIGINS: ${ADMIN_ALLOWED_ORIGINS:?Define ADMIN_ALLOWED_ORIGINS en .env.institutional}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-node:3007/api/v1}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+    env_file:
+      - path: .env.institutional
+        required: false
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3009/kinalSportsAdmin/v1/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+    networks:
+      - kinal-inst-network
+
+  # Next.js SSR + BFF — único servicio de app publicado hacia el loopback del host
+  client-admin-next:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.client-admin-next
+      target: runtime
+    container_name: kinal_inst_client_admin_next
+    restart: unless-stopped
+    depends_on:
+      auth-node:
+        condition: service_healthy
+      server-admin:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      AUTH_API_URL: ${AUTH_API_URL:-http://auth-node:3007/api/v1}
+      ADMIN_API_URL: ${ADMIN_API_URL:-http://server-admin:3009/kinalSportsAdmin/v1}
+      NEXT_PUBLIC_CLOUDINARY_BASE_URL: ${CLOUDINARY_BASE_URL:-}
+      SECURE_COOKIES: ${SECURE_COOKIES:-true}
+    ports:
+      - "127.0.0.1:${INST_NEXT_PORT:-33000}:3000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    networks:
+      - kinal-inst-network
+
+  # Nginx: estáticos SPA/PWA + proxy same-origin a APIs internas
+  # No es un contenedor Node permanente de React; solo sirve dist + reverse proxy.
+  institutional-gateway:
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.institutional-gateway
+      target: runtime
+      args:
+        VITE_AUTH_URL: ${VITE_AUTH_URL:-/api/v1}
+        VITE_ADMIN_URL: ${VITE_ADMIN_URL:-/kinalSportsAdmin/v1}
+        VITE_CLOUDINARY_BASE_URL: ${VITE_CLOUDINARY_BASE_URL:-https://res.cloudinary.com/b3xvlule/image/upload/}
+    container_name: kinal_inst_gateway
+    restart: unless-stopped
+    depends_on:
+      auth-node:
+        condition: service_healthy
+      server-admin:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${INST_GATEWAY_PORT:-33001}:8080"
+    networks:
+      - kinal-inst-network
+
+networks:
+  kinal-inst-network:
+    driver: bridge
+    name: kinal_inst_network
+
+volumes:
+  inst_postgres18_data:
+  inst_mongo_data:
+  inst_redis_data:

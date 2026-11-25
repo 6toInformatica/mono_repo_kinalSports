@@ -9,6 +9,7 @@ import {
   parseSessionUser,
   writeSession,
   writeSessionUser,
+  type SessionUser,
 } from "@/server/session";
 
 const NOT_ADMIN = "No tienes permisos para acceder como administrador.";
