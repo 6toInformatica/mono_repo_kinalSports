@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useFieldsStore } from '../../users/store/adminStore';
-import { Spinner } from '../../auth/components/Spinner.jsx';
 import { useSaveField } from '../../fields/hooks/useSaveField';
 import { showSuccess, showError } from '../../../shared/utils/toast.js';
 import { resolveCloudinaryUrl } from '../../../shared/utils/cloudinary.js';
+import { readImageFilePreview, sanitizeImageSrc } from '../../../shared/utils/imagePreview.js';
+import { CAPACITY_LABELS, FIELD_TYPE_LABELS } from '../../../shared/utils/formatters.js';
+import { Button } from '../../../shared/components/ui/Button.jsx';
+import { Modal } from '../../../shared/components/ui/Modal.jsx';
+import { FieldWrapper } from '../../../shared/components/ui/fields.jsx';
+import { CONTROL, borderFor } from '../../../shared/components/ui/uiConstants.js';
 
 export const FieldModal = ({ isOpen, onClose, field }) => {
   const {
@@ -46,20 +51,21 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
   }, [isOpen, field, reset]);
 
   useEffect(() => {
-    // Use subscription pattern to avoid memoization issues
     // eslint-disable-next-line react-hooks/incompatible-library
     const subscription = watch((value, { name }) => {
       if (name === 'photo' && value.photo && value.photo.length > 0) {
-        setPreview(URL.createObjectURL(value.photo[0]));
+        readImageFilePreview(value.photo[0], setPreview);
       }
     });
     return () => subscription.unsubscribe();
   }, [watch]);
 
+  const safePreview = sanitizeImageSrc(preview);
+
   const onSubmit = async (data) => {
     try {
       await saveField(data, field?._id);
-      showSuccess(field ? 'Campo actualizado correctamente' : 'Campo creado correctamente');
+      showSuccess(field ? 'Cancha actualizada' : 'Cancha creada');
       reset();
       setPreview(null);
       onClose();
@@ -68,174 +74,153 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
     }
   };
 
-  if (!isOpen) return null;
+  const handleCancel = () => {
+    reset();
+    setPreview(null);
+    onClose();
+  };
 
   return (
-    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 px-3 sm:px-4'>
-      {/* CONTENEDOR */}
-      <div className='bg-white rounded-2xl shadow-2xl w-full max-w-lg md:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden'>
-        {/* HEADER */}
-        <div
-          className='p-4 sm:p-5 text-white sticky top-0 z-10'
-          style={{
-            background: 'linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)',
-          }}
+    <Modal
+      open={isOpen}
+      title={field ? 'Editar cancha' : 'Nueva cancha'}
+      onClose={handleCancel}
+      size='lg'
+      footer={
+        <>
+          <Button variant='secondary' onClick={handleCancel}>
+            Cancelar
+          </Button>
+          <Button type='submit' form='field-form' loading={loading}>
+            Guardar
+          </Button>
+        </>
+      }
+    >
+      <form
+        id='field-form'
+        noValidate
+        onSubmit={handleSubmit(onSubmit)}
+        className='grid gap-4 sm:grid-cols-2'
+      >
+        <FieldWrapper label='Nombre' error={errors.fieldName?.message} className='sm:col-span-2'>
+          {({ id, describedBy }) => (
+            <input
+              id={id}
+              aria-invalid={Boolean(errors.fieldName) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} ${borderFor(errors.fieldName?.message)}`}
+              {...register('fieldName', {
+                required: 'El nombre es obligatorio',
+                minLength: {
+                  value: 3,
+                  message: 'Debe tener al menos 3 caracteres',
+                },
+              })}
+            />
+          )}
+        </FieldWrapper>
+
+        <FieldWrapper label='Tipo de superficie' error={errors.fieldType?.message}>
+          {({ id, describedBy }) => (
+            <select
+              id={id}
+              aria-invalid={Boolean(errors.fieldType) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} ${borderFor(errors.fieldType?.message)}`}
+              {...register('fieldType', {
+                required: 'El tipo es obligatorio',
+              })}
+            >
+              <option value=''>Seleccione un tipo</option>
+              {Object.entries(FIELD_TYPE_LABELS).map(([val, label]) => (
+                <option key={val} value={val}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          )}
+        </FieldWrapper>
+
+        <FieldWrapper label='Capacidad' error={errors.capacity?.message}>
+          {({ id, describedBy }) => (
+            <select
+              id={id}
+              aria-invalid={Boolean(errors.capacity) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} ${borderFor(errors.capacity?.message)}`}
+              {...register('capacity', {
+                required: 'La capacidad es obligatoria',
+              })}
+            >
+              <option value=''>Seleccione capacidad</option>
+              {Object.entries(CAPACITY_LABELS).map(([val, label]) => (
+                <option key={val} value={val}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          )}
+        </FieldWrapper>
+
+        <FieldWrapper label='Precio por hora (Q)' error={errors.pricePerHour?.message}>
+          {({ id, describedBy }) => (
+            <input
+              id={id}
+              type='number'
+              step='0.01'
+              aria-invalid={Boolean(errors.pricePerHour) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} ${borderFor(errors.pricePerHour?.message)}`}
+              {...register('pricePerHour', {
+                required: 'El precio es obligatorio',
+                min: { value: 1, message: 'Debe ser mayor a 0' },
+              })}
+            />
+          )}
+        </FieldWrapper>
+
+        <FieldWrapper
+          label='Descripción'
+          error={errors.description?.message}
+          className='sm:col-span-2'
         >
-          <h2 className='text-xl sm:text-2xl font-bold'>
-            {field ? 'Editar Campo' : 'Nuevo Campo'}
-          </h2>
-          <p className='text-xs sm:text-sm opacity-80'>Completa la información de la cancha</p>
-        </div>
+          {({ id, describedBy }) => (
+            <textarea
+              id={id}
+              rows={3}
+              aria-invalid={Boolean(errors.description) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} py-2.5 ${borderFor(errors.description?.message)}`}
+              {...register('description', {
+                required: 'La descripción es obligatoria',
+              })}
+            />
+          )}
+        </FieldWrapper>
 
-        {/* FORM */}
-        <form onSubmit={handleSubmit(onSubmit)} className='p-4 sm:p-6 space-y-5 overflow-y-auto'>
-          {/* PREVIEW */}
-          <div className='flex justify-center'>
-            <div className='w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl bg-gray-100 border flex items-center justify-center overflow-hidden shadow-inner'>
-              {preview ? (
-                <img src={preview} className='w-full h-full object-cover' />
-              ) : (
-                <span className='text-gray-400 text-xs sm:text-sm'>Sin imagen</span>
-              )}
-            </div>
-          </div>
-
-          {/* INPUTS */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            {/* Nombre */}
-            <div className='flex flex-col md:col-span-2'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Nombre del campo</label>
+        <FieldWrapper label='Foto' hint='JPG, PNG o WEBP, hasta 10 MB' className='sm:col-span-2'>
+          {({ id, describedBy }) => (
+            <div className='flex items-center gap-4'>
+              <div className='flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-surface'>
+                {safePreview ? (
+                  <img src={safePreview} alt='' className='size-full object-cover' />
+                ) : (
+                  <span className='text-xs text-ink-soft'>Sin imagen</span>
+                )}
+              </div>
               <input
-                className='w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
-                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition'
-                placeholder='Ej. Cancha Central'
-                {...register('fieldName', {
-                  required: 'El nombre es obligatorio',
-                  minLength: {
-                    value: 3,
-                    message: 'Debe tener al menos 3 caracteres',
-                  },
-                })}
-              />
-              {errors.fieldName && (
-                <p className='text-red-600 text-xs mt-1'>{errors.fieldName.message}</p>
-              )}
-            </div>
-
-            {/* Tipo */}
-            <div className='flex flex-col'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Tipo de cancha</label>
-              <select
-                className='w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
-                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition'
-                {...register('fieldType', {
-                  required: 'El tipo es obligatorio',
-                })}
-              >
-                <option value=''>Seleccione un tipo</option>
-                <option value='SINTETICA'>Sintética</option>
-                <option value='CONCRETO'>Concreto</option>
-                <option value='NATURAL'>Natural</option>
-              </select>
-              {errors.fieldType && (
-                <p className='text-red-600 text-xs mt-1'>{errors.fieldType.message}</p>
-              )}
-            </div>
-
-            {/* Capacidad */}
-            <div className='flex flex-col'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Capacidad</label>
-              <select
-                className='w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
-                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition'
-                {...register('capacity', {
-                  required: 'La capacidad es obligatoria',
-                })}
-              >
-                <option value=''>Seleccione capacidad</option>
-                <option value='FUTBOL_5'>Fútbol 5</option>
-                <option value='FUTBOL_7'>Fútbol 7</option>
-                <option value='FUTBOL_11'>Fútbol 11</option>
-              </select>
-              {errors.capacity && (
-                <p className='text-red-600 text-xs mt-1'>{errors.capacity.message}</p>
-              )}
-            </div>
-
-            {/* Precio */}
-            <div className='flex flex-col'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Precio por hora</label>
-              <input
-                type='number'
-                className='w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
-                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition'
-                placeholder='Q100'
-                {...register('pricePerHour', {
-                  required: 'El precio es obligatorio',
-                  min: { value: 1, message: 'Debe ser mayor a 0' },
-                })}
-              />
-              {errors.pricePerHour && (
-                <p className='text-red-600 text-xs mt-1'>{errors.pricePerHour.message}</p>
-              )}
-            </div>
-
-            {/* Descripción */}
-            <div className='flex flex-col md:col-span-2'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Descripción</label>
-              <textarea
-                className='w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm 
-                                focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition'
-                placeholder='Detalles del campo...'
-                {...register('description', {
-                  required: 'La descripción es obligatoria',
-                })}
-              />
-              {errors.description && (
-                <p className='text-red-600 text-xs mt-1'>{errors.description.message}</p>
-              )}
-            </div>
-
-            {/* Imagen */}
-            <div className='flex flex-col md:col-span-2'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Imagen del campo</label>
-              <input
+                id={id}
                 type='file'
-                className='w-full px-3 py-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 
-                                hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 transition cursor-pointer'
-                accept='image/*'
+                accept='image/jpeg,image/png,image/webp,image/avif'
+                aria-describedby={describedBy}
+                className='min-h-11 w-full cursor-pointer rounded-[10px] border border-dashed border-[#9aa9c2] bg-white px-3 py-2 text-sm text-brand file:mr-3 file:rounded-lg file:border-0 file:bg-brand-soft file:px-3 file:py-1.5 file:font-semibold file:text-brand'
                 {...register('photo')}
               />
             </div>
-          </div>
-
-          {/* BOTONES */}
-          <div className='flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t'>
-            <button
-              type='button'
-              onClick={() => {
-                reset();
-                setPreview(null);
-                onClose();
-              }}
-              className='w-full sm:w-auto px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition'
-            >
-              Cancelar
-            </button>
-
-            <button
-              type='submit'
-              className='w-full sm:w-auto px-5 py-2 rounded-lg text-white font-medium transition shadow'
-              style={{
-                background: 'linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)',
-                border: 'none',
-              }}
-            >
-              {loading ? <Spinner small /> : field ? 'Guardar cambios' : 'Crear campo'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          )}
+        </FieldWrapper>
+      </form>
+    </Modal>
   );
 };

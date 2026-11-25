@@ -26,6 +26,8 @@ npm-debug.log*
 **/.env
 **/.env.*
 !**/.env.example
+!.env.docker.example
+!**/.env.docker.example
 
 # Uploads (keep structure, use .gitkeep where needed)
 **/uploads/*

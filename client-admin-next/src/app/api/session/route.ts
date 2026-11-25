@@ -8,6 +8,7 @@ import {
   COOKIE,
   parseSessionUser,
   writeSession,
+  writeSessionUser,
 } from "@/server/session";
 
 const NOT_ADMIN = "No tienes permisos para acceder como administrador.";
@@ -78,6 +79,41 @@ export async function POST(request: NextRequest) {
     },
     user,
   );
+  return result;
+}
+
+/** Actualiza los metadatos del usuario en la cookie de sesión (ej. tras cambiar su foto) */
+export async function PATCH(request: NextRequest) {
+  if (!isSameOrigin(request)) {
+    return NextResponse.json(
+      { message: "Origen no permitido" },
+      { status: 403 },
+    );
+  }
+
+  const store = await cookies();
+  const current = parseSessionUser(store.get(COOKIE.user)?.value);
+  const hasSession = Boolean(store.get(COOKIE.refresh)?.value);
+  if (!current || !hasSession) {
+    return NextResponse.json({ user: null }, { status: 401 });
+  }
+
+  const patch = (await request
+    .json()
+    .catch(() => ({}))) as Partial<SessionUser>;
+  const updated: SessionUser = {
+    ...current,
+    ...(typeof patch.name === "string" ? { name: patch.name } : {}),
+    ...(typeof patch.surname === "string" ? { surname: patch.surname } : {}),
+    ...(typeof patch.username === "string" ? { username: patch.username } : {}),
+    ...(typeof patch.email === "string" ? { email: patch.email } : {}),
+    ...(typeof patch.profilePicture === "string"
+      ? { profilePicture: patch.profilePicture }
+      : {}),
+  };
+
+  const result = NextResponse.json({ user: updated });
+  writeSessionUser(result, updated);
   return result;
 }
 

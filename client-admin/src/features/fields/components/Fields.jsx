@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useFieldsStore } from '../../users/store/adminStore';
-import { Spinner } from '../../auth/components/Spinner.jsx';
 import { FieldModal } from './FieldModal.jsx';
 import { useUIStore } from '../../auth/store/uiStore.js';
-import { useEffect as useToastEffect } from 'react';
-import { showError } from '../../../shared/utils/toast.js';
+import { showError, showSuccess } from '../../../shared/utils/toast.js';
 import { resolveCloudinaryUrl } from '../../../shared/utils/cloudinary.js';
+import { CAPACITY_LABELS, FIELD_TYPE_LABELS } from '../../../shared/utils/formatters.js';
+import { Button } from '../../../shared/components/ui/Button.jsx';
+import { EntityCard } from '../../../shared/components/ui/EntityCard.jsx';
+import {
+  Badge,
+  CardGridSkeleton,
+  EmptyState,
+  ErrorState,
+  PageHeader,
+} from '../../../shared/components/ui/feedback.jsx';
+import { PlusIcon } from '../../../shared/components/ui/icons.jsx';
 import defaultFieldImg from '../../../assets/img/kinal_sports.png';
 
 export const Fields = () => {
@@ -18,94 +27,83 @@ export const Fields = () => {
     getFields();
   }, [getFields]);
 
-  // Mostrar toast de error si existe
-  useToastEffect(() => {
+  useEffect(() => {
     if (error) showError(error);
   }, [error]);
 
-  // Con el modal abierto no se reemplaza la vista: así el formulario no se desmonta al guardar
-  if (loading && !openModal) return <Spinner />;
+  const handleDeactivate = (field) => {
+    openConfirm({
+      title: 'Desactivar cancha',
+      message: `¿Desactivar ${field.fieldName}? Ya no se podrá reservar.`,
+      confirmLabel: 'Desactivar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await deleteField(field._id);
+          showSuccess('Cancha desactivada');
+        } catch {
+          // El store ya establece el error
+        }
+      },
+    });
+  };
 
   return (
-    <div className='p-4'>
-      {/* HEADER */}
-      <div className='flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8'>
-        <div>
-          <h1 className='text-3xl font-bold text-main-blue'>Gestión de Canchas</h1>
-          <p className='text-gray-500 text-sm'>Administra las canchas registradas</p>
-        </div>
-
-        <button
-          className='bg-main-blue px-4 py-2 rounded text-white hover:opacity-90 transition'
-          onClick={() => {
-            setSelectedField(null);
-            setOpenModal(true);
-          }}
-        >
-          + Agregar Campo
-        </button>
-      </div>
-
-      {/* GRID RESPONSIVE */}
-      <div className='grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'>
-        {fields.map((field) => (
-          <div
-            key={field._id}
-            className='bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:scale-[1.02]'
+    <section className='flex flex-col gap-6'>
+      <PageHeader
+        title='Canchas'
+        description='Administra las canchas disponibles para reservar'
+        action={
+          <Button
+            onClick={() => {
+              setSelectedField(null);
+              setOpenModal(true);
+            }}
           >
-            {/* IMAGEN */}
-            <div className='w-full h-52 bg-gray-100 flex items-center justify-center'>
-              <img
-                src={resolveCloudinaryUrl(field.photo, defaultFieldImg)}
-                alt={field.fieldName}
-                className='max-h-full max-w-full object-contain rounded-t-xl'
-              />
-            </div>
+            <PlusIcon /> Nueva cancha
+          </Button>
+        }
+      />
 
-            {/* CONTENIDO */}
-            <div className='p-5'>
-              <h2 className='text-xl font-bold text-main-blue'>{field.fieldName}</h2>
+      {error && <ErrorState message={error} onRetry={getFields} />}
 
-              {/* BADGES */}
-              <div className='flex gap-2 mt-2 flex-wrap'>
-                <span className='px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium'>
-                  {field.capacity?.replace('_', ' ')}
-                </span>
-
-                <span className='px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium'>
-                  Q{field.pricePerHour}/hora
-                </span>
-              </div>
-
-              {/* BOTONES */}
-              <div className='flex gap-3 mt-5'>
-                <button
-                  className='flex-1 py-2 rounded-lg bg-main-blue text-white font-medium hover:opacity-90 transition'
-                  onClick={() => {
-                    setSelectedField(field);
-                    setOpenModal(true);
-                  }}
-                >
-                  Editar
-                </button>
-
-                <button
-                  className='flex-1 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition'
-                  onClick={() =>
-                    openConfirm({
-                      title: 'Eliminar campo',
-                      message: `¿Eliminar ${field.fieldName}?`,
-                      onConfirm: () => deleteField(field._id),
-                    })
-                  }
-                >
-                  Eliminar
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {loading && !openModal && fields.length === 0 ? (
+        <CardGridSkeleton />
+      ) : fields.length === 0 && !error ? (
+        <EmptyState
+          title='Sin canchas'
+          message='Crea la primera cancha para empezar a recibir reservas.'
+        />
+      ) : (
+        <div className='grid gap-5 sm:grid-cols-2 xl:grid-cols-3'>
+          {fields.map((field) => (
+            <EntityCard
+              key={field._id}
+              image={resolveCloudinaryUrl(field.photo, null)}
+              imageFallback={defaultFieldImg}
+              title={field.fieldName}
+              badges={
+                <>
+                  <Badge>{CAPACITY_LABELS[field.capacity] ?? field.capacity}</Badge>
+                  <Badge tone='neutral'>
+                    {FIELD_TYPE_LABELS[field.fieldType] ?? field.fieldType}
+                  </Badge>
+                </>
+              }
+              onEdit={() => {
+                setSelectedField(field);
+                setOpenModal(true);
+              }}
+              onDeactivate={() => handleDeactivate(field)}
+            >
+              <p className='font-semibold text-ink'>
+                Q{Number(field.pricePerHour).toFixed(2)} / hora
+              </p>
+              <p className='line-clamp-2'>{field.description}</p>
+            </EntityCard>
+          ))}
+        </div>
+      )}
 
       <FieldModal
         isOpen={openModal}
@@ -115,6 +113,6 @@ export const Fields = () => {
         }}
         field={selectedField}
       />
-    </div>
+    </section>
   );
 };

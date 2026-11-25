@@ -1,17 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import type { ComponentType, SVGProps } from "react";
 import { businessDay, formatLongDate } from "@/shared/lib/format";
 import { useResource } from "@/shared/lib/use-resource";
 import {
+  Badge,
   EmptyState,
   ErrorState,
   PageHeader,
   Skeleton,
   TableSkeleton,
 } from "@/shared/ui/feedback";
-import { CalendarIcon, FieldIcon, TrophyIcon } from "@/shared/ui/icons";
 import { TH, TableCard } from "@/shared/ui/table";
 import { getFields, type Field } from "../fields/api";
 import {
@@ -32,35 +31,43 @@ const load = async () => {
   return { reservations, fields, tournaments };
 };
 
-function Stat({
+function MetricCell({
   label,
   value,
-  icon: Icon,
+  meta,
   href,
-  highlight = false,
+  attention = false,
 }: {
   label: string;
   value: number;
-  icon: ComponentType<SVGProps<SVGSVGElement>>;
+  meta: string;
   href: string;
-  highlight?: boolean;
+  attention?: boolean;
 }) {
   return (
     <Link
       href={href}
-      className={`flex items-center gap-4 rounded-[14px] border bg-white p-5 transition hover:border-brand ${highlight ? "border-attention/60" : "border-line"}`}
+      className="group flex flex-col justify-between gap-2 bg-white px-5 py-4 transition-colors hover:bg-surface/60"
     >
-      <span
-        className={`flex size-11 items-center justify-center rounded-xl ${highlight ? "bg-amber-100 text-amber-800" : "bg-brand-soft text-brand"}`}
-      >
-        <Icon />
-      </span>
-      <span className="flex flex-col">
-        <span className="font-display text-[28px] font-bold leading-none text-ink tabular-nums">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-semibold uppercase tracking-wide text-ink-soft">
+          {label}
+        </span>
+        {attention && (
+          <span
+            aria-hidden="true"
+            className="size-2 rounded-full bg-attention"
+          />
+        )}
+      </div>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="font-display text-3xl font-bold leading-none tabular-nums text-ink">
           {value}
         </span>
-        <span className="mt-1 text-sm text-ink-soft">{label}</span>
-      </span>
+        <span className="text-xs font-medium text-ink-soft transition-colors group-hover:text-brand">
+          {meta} →
+        </span>
+      </div>
     </Link>
   );
 }
@@ -103,50 +110,64 @@ export function OverviewSection({ firstName }: { firstName?: string }) {
       />
       {error && <ErrorState message={error} onRetry={() => void reload()} />}
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {loading ? (
-          Array.from({ length: 4 }, (_, index) => (
-            <Skeleton key={index} className="h-[90px] rounded-[14px]" />
-          ))
-        ) : (
-          <>
-            <Stat
-              label="Reservas por confirmar"
-              value={pending.length}
-              icon={CalendarIcon}
-              href="/dashboard/reservations"
-              highlight={pending.length > 0}
-            />
-            <Stat
-              label="Reservas de hoy"
-              value={todays.length}
-              icon={CalendarIcon}
-              href="/dashboard/reservations"
-            />
-            <Stat
-              label="Canchas activas"
-              value={data.fields.length}
-              icon={FieldIcon}
-              href="/dashboard/fields"
-            />
-            <Stat
-              label="Torneos abiertos"
-              value={openTournaments.length}
-              icon={TrophyIcon}
-              href="/dashboard/tournaments"
-            />
-          </>
-        )}
-      </div>
+      {loading ? (
+        <Skeleton className="h-[88px] rounded-[14px]" />
+      ) : (
+        <div className="grid overflow-hidden rounded-[14px] border border-line bg-line gap-px sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCell
+            label="Por confirmar"
+            value={pending.length}
+            meta={pending.length === 1 ? "1 solicitud" : "Revisar"}
+            href="/dashboard/reservations"
+            attention={pending.length > 0}
+          />
+          <MetricCell
+            label="Agenda de hoy"
+            value={todays.length}
+            meta="Ver horario"
+            href="/dashboard/reservations"
+          />
+          <MetricCell
+            label="Canchas activas"
+            value={data.fields.length}
+            meta="Instalaciones"
+            href="/dashboard/fields"
+          />
+          <MetricCell
+            label="Torneos en curso"
+            value={openTournaments.length}
+            meta="Calendario"
+            href="/dashboard/tournaments"
+          />
+        </div>
+      )}
 
-      <div className="grid gap-6 xl:grid-cols-[1fr_340px]">
+      <div className="grid gap-6 xl:grid-cols-[1fr_320px]">
         <div className="flex min-w-0 flex-col gap-3">
-          <h2 className="font-display text-lg font-semibold text-ink">
-            Por confirmar
-          </h2>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <h2 className="font-display text-lg font-semibold text-ink">
+                Por confirmar
+              </h2>
+              {!loading && pending.length > 0 && (
+                <Badge tone="warning" dot>
+                  {pending.length}{" "}
+                  {pending.length === 1 ? "pendiente" : "pendientes"}
+                </Badge>
+              )}
+            </div>
+            {!loading && pending.length > 0 && (
+              <Link
+                href="/dashboard/reservations"
+                className="text-xs font-semibold text-brand hover:underline"
+              >
+                Ver todas las reservas
+              </Link>
+            )}
+          </div>
           {loading ? (
             <TableCard>
-              <TableSkeleton columns={6} rows={4} />
+              <TableSkeleton columns={5} rows={4} />
             </TableCard>
           ) : pending.length === 0 ? (
             <EmptyState
@@ -166,14 +187,13 @@ export function OverviewSection({ firstName }: { firstName?: string }) {
                 ) : undefined
               }
             >
-              <table className="w-full min-w-[760px]">
+              <table className="w-full">
                 <thead className="bg-surface">
                   <tr>
                     <th className={TH}>Cliente</th>
                     <th className={TH}>Cancha</th>
                     <th className={TH}>Fecha</th>
                     <th className={TH}>Horario</th>
-                    <th className={TH}>Estado</th>
                     <th className={`${TH} text-right`}>Acciones</th>
                   </tr>
                 </thead>
@@ -182,6 +202,7 @@ export function OverviewSection({ firstName }: { firstName?: string }) {
                     <ReservationRow
                       key={reservation._id}
                       reservation={reservation}
+                      showStatus={false}
                       onChanged={() => void reload({ silent: true })}
                     />
                   ))}

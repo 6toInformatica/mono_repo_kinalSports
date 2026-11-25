@@ -62,6 +62,10 @@ export const useAuthStore = create(
       },
 
       clearSessionMessage: () => set({ sessionMessage: null }),
+      updateUser: (patch) =>
+        set((state) => ({
+          user: state.user ? { ...state.user, ...patch } : patch,
+        })),
       login: async ({ emailOrUsername, password }) => {
         try {
           set({ loading: true, error: null });

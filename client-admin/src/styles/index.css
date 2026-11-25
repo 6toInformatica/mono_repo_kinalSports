@@ -1,55 +1,57 @@
 @import 'tailwindcss';
 
+/* Sistema de diseño aprobado (alineado con client-admin-next) */
 @theme {
   --color-main-blue: #08316d;
+  --color-brand: #08316d;
+  --color-brand-light: #0d3f86;
+  --color-brand-dark: #051f45;
+  --color-brand-soft: #dbe4f3;
+  --color-attention: #f59e0b;
+  --color-surface: #f4f6fa;
+  --color-line: #e3e8f0;
+  --color-line-strong: #c9d3e3;
+  --color-ink: #111827;
+  --color-ink-soft: #4b5563;
+  --color-danger: #b91c1c;
+  --color-success: #16a34a;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Space Grotesk', 'Inter', sans-serif;
 }
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
   --main-blue: #08316d;
-
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
+body {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
 
-  to {
+@keyframes skeleton-pulse {
+  0%,
+  100% {
     opacity: 1;
-    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.45;
   }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.15s ease-out;
+.skeleton {
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+  background: #e5e9f0;
 }
 
-.sidebar-underline {
-  position: relative;
-}
-.sidebar-underline.active::after {
-  content: '';
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 6px;
-  height: 5px;
-  border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    rgba(8, 49, 109, 0.18) 0%,
-    #08316d 50%,
-    rgba(8, 49, 109, 0.18) 100%
-  );
-  filter: blur(1.5px);
-  z-index: 1;
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
 }

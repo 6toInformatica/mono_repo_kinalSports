@@ -22,8 +22,17 @@ export const serverConfig = {
   get adminApiUrl() {
     return required("ADMIN_API_URL");
   },
-  /** En producción las cookies solo viajan por HTTPS */
-  secureCookies: process.env.NODE_ENV === "production",
+  /**
+   * Secure cookies: obligatorio detrás de HTTPS.
+   * SECURE_COOKIES=true|false sobrescribe el default (NODE_ENV === "production")
+   * para poder probar docker-compose.prod.yml en http://localhost.
+   */
+  secureCookies:
+    process.env.SECURE_COOKIES === "true"
+      ? true
+      : process.env.SECURE_COOKIES === "false"
+        ? false
+        : process.env.NODE_ENV === "production",
 };
 
 export type BackendService = "auth" | "admin";

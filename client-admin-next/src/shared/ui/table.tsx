@@ -17,6 +17,10 @@ export function Avatar({
       height={size}
       className="shrink-0 rounded-full border border-line object-cover"
       style={{ width: size, height: size }}
+      onError={(event) => {
+        event.currentTarget.onerror = null;
+        event.currentTarget.src = DEFAULT_AVATAR;
+      }}
     />
   );
 }

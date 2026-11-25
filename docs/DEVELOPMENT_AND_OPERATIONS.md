@@ -81,27 +81,31 @@ El script `scripts/seed/seed.mjs` interactúa mediante `docker exec` con los con
 
 Para ejecutar el monorepo en modo producción (`docker-compose.prod.yml`, con etapas `runtime` compiladas y sin runtime de `.NET`):
 
-1. **Crear el archivo `.env.docker` en la raíz del proyecto** definiendo obligatoriamente los secretos requeridos:
-   ```dotenv
-   POSTGRES_USER=KinalSports
-   POSTGRES_PASSWORD=<contraseña-robusta-postgresql>
-   POSTGRES_DB=kinal_sports
-   JWT_SECRET=<clave-aleatoria-minimo-32-caracteres>
-   INTERNAL_SERVICE_TOKEN=<token-interno-compartido-seguro>
-   SEED_ADMIN_PASSWORD=<contraseña-inicial-admin>
-   ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
-   ADMIN_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
-   FRONTEND_URL=http://localhost:3000
+1. **Crear el archivo `.env.docker` a partir de la plantilla** y completar los secretos:
+   ```bash
+   cp .env.docker.example .env.docker
    ```
-2. **Construir e iniciar los contenedores de producción:**
+   Obligatorios: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `JWT_SECRET` (≥ 32 caracteres) e `INTERNAL_SERVICE_TOKEN`.
+   Notas relevantes:
+   - `SECURE_COOKIES=false` permite login en `http://localhost` al probar el compose de producción. En un despliegue real detrás de **HTTPS** usa `SECURE_COOKIES=true` (también necesario para instalar la PWA de `client-admin` fuera de localhost).
+   - `VITE_AUTH_URL` / `VITE_ADMIN_URL` son las URLs que el **navegador** usa hacia los backends (se incrustan en el build de la SPA).
+   - `AUTH_API_URL` / `ADMIN_API_URL` son las URLs **internas** de Docker que usa el BFF de `client-admin-next`.
+2. **Detener el stack de desarrollo** (comparten los mismos `container_name`):
+   ```bash
+   pnpm docker:down
+   ```
+3. **Construir e iniciar los contenedores de producción:**
    ```bash
    pnpm docker:prod:up
    ```
-3. **Verificar el estado de los contenedores:**
+4. **Verificar el estado de los contenedores y la PWA:**
    ```bash
    docker ps
    pnpm docker:prod:logs
    ```
+   - Panel SPA + PWA: `http://localhost:5173` (Nginx sirve `sw.js` + `manifest.webmanifest`).
+   - Panel Next (BFF): `http://localhost:3000`.
+   - Auth (`auth-node`): `http://localhost:3007/api/v1/health`.
 
 ---
 

@@ -62,6 +62,13 @@ export const writeSession = (
   }
 };
 
+export const writeSessionUser = (response: NextResponse, user: SessionUser) => {
+  response.cookies.set(COOKIE.user, JSON.stringify(user), {
+    ...baseCookie(),
+    maxAge: REFRESH_MAX_AGE,
+  });
+};
+
 export const clearSession = (response: NextResponse) => {
   for (const name of Object.values(COOKIE)) {
     response.cookies.set(name, "", { ...baseCookie(), maxAge: 0 });

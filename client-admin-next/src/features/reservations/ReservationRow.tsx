@@ -24,10 +24,12 @@ export function ReservationRow({
   reservation,
   onChanged,
   showDate = true,
+  showStatus = true,
 }: {
   reservation: Reservation;
   onChanged: () => void;
   showDate?: boolean;
+  showStatus?: boolean;
 }) {
   const toast = useToast();
   const confirm = useConfirm();
@@ -64,7 +66,7 @@ export function ReservationRow({
   return (
     <tr className="border-t border-line">
       <td className={TD}>
-        <div className="flex min-w-48 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <Avatar src={customer.avatar} />
           <div className="min-w-0">
             <p className="truncate font-semibold">{customer.displayName}</p>
@@ -83,11 +85,13 @@ export function ReservationRow({
       <td className={`${TD} whitespace-nowrap tabular-nums`}>
         {formatTime(reservation.startTime)} – {formatTime(reservation.endTime)}
       </td>
-      <td className={TD}>
-        <Badge tone={STATUS[status]?.tone ?? "neutral"} dot>
-          {STATUS[status]?.label ?? status}
-        </Badge>
-      </td>
+      {showStatus && (
+        <td className={TD}>
+          <Badge tone={STATUS[status]?.tone ?? "neutral"} dot>
+            {STATUS[status]?.label ?? status}
+          </Badge>
+        </td>
+      )}
       <td className={`${TD} text-right`}>
         <div className="flex justify-end gap-2">
           {canConfirm(status) && (

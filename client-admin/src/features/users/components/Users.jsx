@@ -1,12 +1,28 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useUserManagementStore } from '../store/useUserManagementStore.js';
 import { useAuthStore } from '../../auth/store/authStore.js';
-import { Spinner } from '../../auth/components/Spinner.jsx';
 import { CreateUserModal } from './CreateUserModal.jsx';
 import { UserDetailModal } from './UserDetailModal.jsx';
 import { showError, showSuccess } from '../../../shared/utils/toast.js';
+import { ROLE_LABELS, fullName } from '../../../shared/utils/formatters.js';
+import { Button } from '../../../shared/components/ui/Button.jsx';
+import {
+  Badge,
+  EmptyState,
+  ErrorState,
+  PageHeader,
+  TableSkeleton,
+} from '../../../shared/components/ui/feedback.jsx';
+import { SelectField, TextField } from '../../../shared/components/ui/fields.jsx';
+import { PlusIcon } from '../../../shared/components/ui/icons.jsx';
+import { Avatar, FilterBar, Pagination, TableCard } from '../../../shared/components/ui/table.jsx';
+import { TD, TH, paginate } from '../../../shared/components/ui/uiConstants.js';
 
 const PAGE_SIZE = 8;
+const ROLE_OPTIONS = [
+  { value: 'ADMIN_ROLE', label: ROLE_LABELS.ADMIN_ROLE },
+  { value: 'USER_ROLE', label: ROLE_LABELS.USER_ROLE },
+];
 
 export const Users = () => {
   const { users, loading, error, fetchUsers, updateUserRole } = useUserManagementStore();
@@ -14,7 +30,7 @@ export const Users = () => {
   const currentUser = useAuthStore((state) => state.user);
 
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('ALL');
+  const [role, setRole] = useState('');
   const [page, setPage] = useState(1);
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [openDetailModal, setOpenDetailModal] = useState(false);
@@ -30,28 +46,19 @@ export const Users = () => {
     }
   }, [error]);
 
-  const filteredUsers = useMemo(() => {
-    const normalizedSearch = search.trim().toLowerCase();
-    return users.filter((u) => {
-      const fullName = `${u.name || ''} ${u.surname || ''}`.trim().toLowerCase();
-      const username = (u.username || '').toLowerCase();
-      const role = (u.role || '').toUpperCase();
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return users.filter((user) => {
       const matchesSearch =
-        !normalizedSearch ||
-        fullName.includes(normalizedSearch) ||
-        username.includes(normalizedSearch);
-      const matchesRole = roleFilter === 'ALL' ? true : role === roleFilter.toUpperCase();
+        !term ||
+        fullName(user).toLowerCase().includes(term) ||
+        (user.username ?? '').toLowerCase().includes(term);
+      const matchesRole = !role || (user.role ?? '').toUpperCase() === role;
       return matchesSearch && matchesRole;
     });
-  }, [users, search, roleFilter]);
+  }, [users, search, role]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-
-  const paginatedUsers = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredUsers.slice(start, start + PAGE_SIZE);
-  }, [filteredUsers, currentPage]);
+  const view = paginate(filtered, page, PAGE_SIZE);
 
   const handleOpenDetail = (user) => {
     setSelectedUser(user);
@@ -80,138 +87,113 @@ export const Users = () => {
     return false;
   };
 
-  if (loading && users.length === 0) return <Spinner />;
-
   return (
-    <div className='p-4'>
-      <div className='flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-6'>
-        <div>
-          <h1 className='text-3xl font-bold text-main-blue'>Usuarios</h1>
-          <p className='text-gray-500 text-sm'>
-            Administra usuarios, consulta su información y cambia su rol
-          </p>
-        </div>
+    <section className='flex flex-col gap-6'>
+      <PageHeader
+        title='Usuarios'
+        description='Administra usuarios, consulta su información y cambia su rol'
+        action={
+          <Button onClick={() => setOpenCreateModal(true)}>
+            <PlusIcon /> Nuevo usuario
+          </Button>
+        }
+      />
 
-        <button
-          className='bg-main-blue px-4 py-2 rounded text-white hover:opacity-90 transition'
-          onClick={() => setOpenCreateModal(true)}
+      <FilterBar>
+        <TextField
+          label='Buscar'
+          type='search'
+          placeholder='Nombre o usuario'
+          value={search}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            setPage(1);
+          }}
+          className='w-full sm:w-72'
+        />
+        <SelectField
+          label='Rol'
+          value={role}
+          placeholder='Todos los roles'
+          options={ROLE_OPTIONS}
+          onChange={(event) => {
+            setRole(event.target.value);
+            setPage(1);
+          }}
+          className='w-full sm:w-52'
+        />
+      </FilterBar>
+
+      {error && (
+        <ErrorState message={error} onRetry={() => void fetchUsers(undefined, { force: true })} />
+      )}
+
+      {loading && users.length === 0 ? (
+        <TableCard>
+          <TableSkeleton columns={4} />
+        </TableCard>
+      ) : filtered.length === 0 && !error ? (
+        <EmptyState title='Sin usuarios' message='Ningún usuario coincide con los filtros.' />
+      ) : (
+        <TableCard
+          footer={
+            <Pagination
+              page={view.current}
+              totalPages={view.totalPages}
+              total={filtered.length}
+              onChange={setPage}
+            />
+          }
         >
-          + Agregar Usuario
-        </button>
-      </div>
-
-      <div className='bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4'>
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-3'>
-          <input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder='Buscar por nombre o username...'
-            className='md:col-span-2 w-full px-3 py-2 border rounded-lg'
-          />
-          <select
-            value={roleFilter}
-            onChange={(e) => {
-              setRoleFilter(e.target.value);
-              setPage(1);
-            }}
-            className='w-full px-3 py-2 border rounded-lg'
-          >
-            <option value='ALL'>Todos los roles</option>
-            <option value='ADMIN_ROLE'>ADMIN_ROLE</option>
-            <option value='USER_ROLE'>USER_ROLE</option>
-          </select>
-        </div>
-      </div>
-
-      <div className='bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden'>
-        <div className='overflow-x-auto'>
-          <table className='min-w-full text-sm'>
-            <thead className='bg-gray-50 text-gray-700'>
+          <table className='w-full min-w-[640px]'>
+            <thead className='bg-surface'>
               <tr>
-                <th className='text-left px-4 py-3'>Nombre</th>
-                <th className='text-left px-4 py-3'>Username</th>
-                <th className='text-left px-4 py-3'>Rol</th>
-                <th className='text-right px-4 py-3'>Acciones</th>
+                <th className={TH}>Usuario</th>
+                <th className={TH}>Correo</th>
+                <th className={TH}>Rol</th>
+                <th className={`${TH} text-right`}>Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {paginatedUsers.length === 0 ? (
-                <tr>
-                  <td className='px-4 py-6 text-center text-gray-500' colSpan={4}>
-                    No hay usuarios para mostrar.
+              {view.items.map((user) => (
+                <tr key={user.id} className='border-t border-line'>
+                  <td className={TD}>
+                    <div className='flex items-center gap-3'>
+                      <Avatar src={user.profilePicture} />
+                      <div className='min-w-0'>
+                        <p className='truncate font-semibold'>
+                          {fullName(user) || user.username}
+                          {user.id === currentUser?.id && (
+                            <span className='ml-2 text-xs font-normal text-ink-soft'>(tú)</span>
+                          )}
+                        </p>
+                        <p className='truncate text-xs text-ink-soft'>@{user.username}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className={`${TD} break-all`}>{user.email}</td>
+                  <td className={TD}>
+                    <Badge tone={user.role === 'ADMIN_ROLE' ? 'info' : 'neutral'}>
+                      {ROLE_LABELS[user.role ?? ''] ?? user.role}
+                    </Badge>
+                  </td>
+                  <td className={`${TD} text-right`}>
+                    <Button size='sm' variant='secondary' onClick={() => handleOpenDetail(user)}>
+                      Ver detalle
+                    </Button>
                   </td>
                 </tr>
-              ) : (
-                paginatedUsers.map((u) => (
-                  <tr key={u.id} className='border-t hover:bg-gray-50'>
-                    <td className='px-4 py-3 font-medium text-gray-800'>
-                      {[u.name, u.surname].filter(Boolean).join(' ') || '-'}
-                    </td>
-                    <td className='px-4 py-3 text-gray-700'>@{u.username}</td>
-                    <td className='px-4 py-3'>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          u.role === 'ADMIN_ROLE'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-700'
-                        }`}
-                      >
-                        {u.role}
-                      </span>
-                    </td>
-                    <td className='px-4 py-3 text-right'>
-                      <button
-                        onClick={() => handleOpenDetail(u)}
-                        className='px-3 py-1.5 rounded-lg bg-main-blue text-white text-xs font-semibold hover:opacity-90'
-                      >
-                        Ver / Editar
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
-        </div>
-
-        <div className='flex items-center justify-between px-4 py-3 border-t bg-gray-50'>
-          <p className='text-xs text-gray-600'>
-            Mostrando {(currentPage - 1) * PAGE_SIZE + (paginatedUsers.length ? 1 : 0)}
-            {' - '}
-            {(currentPage - 1) * PAGE_SIZE + paginatedUsers.length} de {filteredUsers.length}
-          </p>
-
-          <div className='flex gap-2'>
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className='px-3 py-1.5 rounded border bg-white text-sm disabled:opacity-50'
-            >
-              Anterior
-            </button>
-            <span className='px-2 py-1.5 text-sm text-gray-700'>
-              {currentPage} / {totalPages}
-            </span>
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className='px-3 py-1.5 rounded border bg-white text-sm disabled:opacity-50'
-            >
-              Siguiente
-            </button>
-          </div>
-        </div>
-      </div>
+        </TableCard>
+      )}
 
       <CreateUserModal
         isOpen={openCreateModal}
         onClose={() => setOpenCreateModal(false)}
         onCreate={handleCreate}
         loading={loading}
-        error={error}
       />
 
       <UserDetailModal
@@ -226,6 +208,6 @@ export const Users = () => {
         onSaveRole={handleSaveRole}
         loading={loading}
       />
-    </div>
+    </section>
   );
 };

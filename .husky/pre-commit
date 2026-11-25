@@ -25,9 +25,12 @@ if [ $status -ne 0 ]; then
   exit 1
 fi
 
-# Corrección automática de formato C# para la solución .NET
+# Corrección automática de formato C# para la solución .NET.
+# --no-restore: en algunos entornos (p. ej. NTFS/fuse) el restore implícito de
+# MSBuildWorkspace falla aunque `dotnet restore` ya haya dejado los proyectos listos.
 echo "[Husky] Corrigiendo formato de C# (.NET)..."
-dotnet format authentication-service/auth-service/AuthService.sln
+dotnet restore authentication-service/auth-service/AuthService.sln >/dev/null
+dotnet format authentication-service/auth-service/AuthService.sln --no-restore
 if [ $? -ne 0 ]; then
   echo ""
   echo "✖ dotnet format detectó y corrigió problemas de formato en archivos C#."

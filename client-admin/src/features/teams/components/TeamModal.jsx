@@ -1,36 +1,41 @@
 import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { useTeamsStore } from '../../teams/store/teamStore';
-import { Spinner } from '../../auth/components/Spinner.jsx';
 import { useSaveTeam } from '../../teams/hooks/useSaveTeam';
-import { UserComboBox } from '../../users/components/UserComboBox.jsx';
+import { useUserManagementStore } from '../../users/store/useUserManagementStore';
 import { resolveCloudinaryUrl } from '../../../shared/utils/cloudinary.js';
-import defaultTeamImg from '../../../assets/img/avatarDefault-1749508519496.png';
+import { readImageFilePreview, sanitizeImageSrc } from '../../../shared/utils/imagePreview.js';
+import { fullName } from '../../../shared/utils/formatters.js';
+import { showSuccess } from '../../../shared/utils/toast.js';
+import { Button } from '../../../shared/components/ui/Button.jsx';
+import { Modal } from '../../../shared/components/ui/Modal.jsx';
+import { FieldWrapper, TextField } from '../../../shared/components/ui/fields.jsx';
+import { CONTROL, borderFor } from '../../../shared/components/ui/uiConstants.js';
+
+const userLabel = (user) => `${fullName(user) || user.username} (@${user.username})`;
 
 export const TeamModal = ({ isOpen, onClose, team }) => {
   const {
     register,
     handleSubmit,
     reset,
-    control,
     formState: { errors },
   } = useForm();
 
   const { saveTeam } = useSaveTeam();
   const loading = useTeamsStore((state) => state.loading);
+  const { users, fetchUsers } = useUserManagementStore();
 
   const [filePreview, setFilePreview] = useState(null);
   const [namedMembers, setNamedMembers] = useState([]);
   const [memberName, setMemberName] = useState('');
 
-  const displayPreview = filePreview || resolveCloudinaryUrl(team?.logo, defaultTeamImg);
+  const displayPreview = sanitizeImageSrc(filePreview || resolveCloudinaryUrl(team?.logo, null));
 
-  // Estado local derivado de las props: se ajusta durante el render (patrón recomendado por React)
   const [prevOpen, setPrevOpen] = useState(isOpen);
   const [prevTeam, setPrevTeam] = useState(team);
   if (isOpen !== prevOpen || team !== prevTeam) {
     if (isOpen !== prevOpen) {
-      if (filePreview) URL.revokeObjectURL(filePreview);
       setFilePreview(null);
     }
     setPrevOpen(isOpen);
@@ -41,7 +46,12 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
     }
   }
 
-  // El formulario de react-hook-form se sincroniza en un efecto (reset no es estado de React)
+  useEffect(() => {
+    if (isOpen && (!users || users.length === 0)) {
+      fetchUsers();
+    }
+  }, [isOpen, users, fetchUsers]);
+
   useEffect(() => {
     if (isOpen) {
       if (team) {
@@ -61,17 +71,13 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
     }
   }, [isOpen, reset, team]);
 
-  useEffect(() => {
-    return () => {
-      if (filePreview && filePreview.startsWith('blob:')) {
-        URL.revokeObjectURL(filePreview);
-      }
-    };
-  }, [filePreview]);
-
   const onSubmit = async (data) => {
     try {
-      await saveTeam({ ...data, namedMembers }, team?._id);
+      await saveTeam(
+        { ...data, managerId: team ? team.managerId : data.managerId, namedMembers },
+        team?._id
+      );
+      showSuccess(team ? 'Equipo actualizado' : 'Equipo creado');
       reset();
       setFilePreview(null);
       setNamedMembers([]);
@@ -93,204 +99,173 @@ export const TeamModal = ({ isOpen, onClose, team }) => {
     setNamedMembers((prev) => prev.filter((_, i) => i !== index));
   };
 
-  if (!isOpen) return null;
+  const handleCancel = () => {
+    reset();
+    setFilePreview(null);
+    onClose();
+  };
+
+  const manager = team ? users?.find((u) => u.id === team.managerId) : undefined;
 
   return (
-    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 px-3 sm:px-4'>
-      {/* CONTENEDOR */}
-      <div className='bg-white rounded-2xl shadow-2xl w-full max-w-lg md:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden'>
-        {/* HEADER */}
-        <div
-          className='p-4 sm:p-5 text-white sticky top-0 z-10'
-          style={{
-            background: 'linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)',
-          }}
+    <Modal
+      open={isOpen}
+      title={team ? 'Editar equipo' : 'Nuevo equipo'}
+      onClose={handleCancel}
+      size='lg'
+      footer={
+        <>
+          <Button variant='secondary' onClick={handleCancel}>
+            Cancelar
+          </Button>
+          <Button type='submit' form='team-form' loading={loading}>
+            Guardar
+          </Button>
+        </>
+      }
+    >
+      <form
+        id='team-form'
+        noValidate
+        onSubmit={handleSubmit(onSubmit)}
+        className='grid gap-4 sm:grid-cols-2'
+      >
+        <FieldWrapper
+          label='Nombre del equipo'
+          error={errors.teamName?.message}
+          className='sm:col-span-2'
         >
-          <h2 className='text-xl sm:text-2xl font-bold'>
-            {team ? 'Editar Equipo' : 'Nuevo Equipo'}
-          </h2>
-          <p className='text-xs sm:text-sm opacity-80'>Completa la información del equipo</p>
-        </div>
+          {({ id, describedBy }) => (
+            <input
+              id={id}
+              aria-invalid={Boolean(errors.teamName) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} ${borderFor(errors.teamName?.message)}`}
+              {...register('teamName', {
+                required: 'El nombre es obligatorio',
+                minLength: {
+                  value: 3,
+                  message: 'Debe tener al menos 3 caracteres',
+                },
+              })}
+            />
+          )}
+        </FieldWrapper>
 
-        {/* FORM SCROLL */}
-        <form onSubmit={handleSubmit(onSubmit)} className='p-4 sm:p-6 space-y-5 overflow-y-auto'>
-          {/* PREVIEW */}
-          <div className='flex justify-center'>
-            <div className='w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl bg-gray-100 border flex items-center justify-center overflow-hidden shadow-inner'>
-              {displayPreview ? (
-                <img
-                  src={displayPreview}
-                  className='w-full h-full object-cover'
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = defaultTeamImg;
-                  }}
-                />
-              ) : (
-                <span className='text-gray-400 text-xs sm:text-sm'>Sin imagen</span>
-              )}
-            </div>
-          </div>
-
-          {/* INPUTS */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            {/* Nombre */}
-            <div className='flex flex-col md:col-span-2'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Nombre del equipo</label>
-              <input
-                className='w-full px-3 py-2 rounded-lg border-2 bg-gray-50 shadow-sm transition'
-                style={{ borderColor: 'var(--main-blue)', outline: 'none' }}
-                placeholder='Ej. Barcelona FC'
-                {...register('teamName', {
-                  required: 'El nombre es obligatorio',
-                  minLength: {
-                    value: 3,
-                    message: 'Debe tener al menos 3 caracteres',
-                  },
-                })}
-              />
-              {errors.teamName && (
-                <p className='text-red-600 text-xs mt-1'>{errors.teamName.message}</p>
-              )}
-            </div>
-
-            {/* Manager */}
-            <div className='flex flex-col'>
-              <Controller
-                name='managerId'
-                control={control}
-                rules={{
-                  required: !team ? 'El manager es obligatorio' : false,
-                }}
-                render={({ field }) => (
-                  <UserComboBox
-                    value={field.value}
-                    onChange={field.onChange}
-                    error={errors.managerId}
-                    disabled={!!team}
-                  />
-                )}
-              />
-            </div>
-
-            {/* Categoría */}
-            <div className='flex flex-col'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Categoría</label>
+        {team ? (
+          <TextField
+            label='Manager'
+            value={manager ? userLabel(manager) : team.managerId}
+            disabled
+            hint='El manager no se puede cambiar'
+          />
+        ) : (
+          <FieldWrapper label='Manager' error={errors.managerId?.message}>
+            {({ id, describedBy }) => (
               <select
-                className='w-full px-3 py-2 rounded-lg border-2 bg-gray-50 shadow-sm transition'
-                style={{ borderColor: 'var(--main-blue)', outline: 'none' }}
-                {...register('category', {
-                  required: 'La categoría es obligatoria',
+                id={id}
+                aria-invalid={Boolean(errors.managerId) || undefined}
+                aria-describedby={describedBy}
+                className={`${CONTROL} ${borderFor(errors.managerId?.message)}`}
+                {...register('managerId', {
+                  required: 'El manager es obligatorio',
                 })}
               >
-                <option value=''>Seleccione categoría</option>
-                <option value='FUTBOL_7'>Fútbol 7</option>
-                <option value='FUTBOL_11'>Fútbol 11</option>
+                <option value=''>Seleccione un usuario</option>
+                {(users ?? []).map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {userLabel(u)}
+                  </option>
+                ))}
               </select>
-              {errors.category && (
-                <p className='text-red-600 text-xs mt-1'>{errors.category.message}</p>
-              )}
-            </div>
+            )}
+          </FieldWrapper>
+        )}
 
-            {/* Roster por nombre */}
-            <div className='flex flex-col md:col-span-2'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>
-                Miembros del roster (nombre)
-              </label>
-              <div className='flex gap-2'>
-                <input
-                  className='flex-1 px-3 py-2 rounded-lg border-2 bg-gray-50 shadow-sm transition'
-                  style={{ borderColor: 'var(--main-blue)', outline: 'none' }}
-                  placeholder='Nombre del jugador'
-                  value={memberName}
-                  onChange={(e) => setMemberName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddMember();
-                    }
-                  }}
-                />
-                <button
-                  type='button'
-                  onClick={handleAddMember}
-                  className='px-4 py-2 rounded-lg text-white font-medium'
-                  style={{ background: 'var(--main-blue)' }}
+        <FieldWrapper label='Categoría' error={errors.category?.message}>
+          {({ id, describedBy }) => (
+            <select
+              id={id}
+              aria-invalid={Boolean(errors.category) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} ${borderFor(errors.category?.message)}`}
+              {...register('category', {
+                required: 'La categoría es obligatoria',
+              })}
+            >
+              <option value=''>Seleccione categoría</option>
+              <option value='FUTBOL_7'>Fútbol 7</option>
+              <option value='FUTBOL_11'>Fútbol 11</option>
+            </select>
+          )}
+        </FieldWrapper>
+
+        <div className='flex flex-col gap-2 sm:col-span-2'>
+          <div className='flex items-end gap-2'>
+            <TextField
+              label='Integrantes por nombre'
+              value={memberName}
+              onChange={(e) => setMemberName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddMember();
+                }
+              }}
+              className='flex-1'
+            />
+            <Button variant='secondary' onClick={handleAddMember}>
+              Agregar
+            </Button>
+          </div>
+          {namedMembers.length > 0 && (
+            <ul className='flex flex-wrap gap-2'>
+              {namedMembers.map((name, index) => (
+                <li
+                  key={`${name}-${index}`}
+                  className='flex items-center gap-1 rounded-full bg-brand-soft py-1 pl-3 pr-1 text-sm text-brand'
                 >
-                  Agregar
-                </button>
-              </div>
-              {namedMembers.length > 0 ? (
-                <ul className='mt-2 space-y-1'>
-                  {namedMembers.map((name, index) => (
-                    <li
-                      key={`${name}-${index}`}
-                      className='flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg text-sm'
-                    >
-                      <span>{name}</span>
-                      <button
-                        type='button'
-                        onClick={() => handleRemoveMember(index)}
-                        className='text-red-600 hover:text-red-800'
-                      >
-                        Quitar
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className='text-xs text-gray-500 mt-2'>
-                  Puedes agregar jugadores sin cuenta en la app.
-                </p>
-              )}
-            </div>
+                  {name}
+                  <button
+                    type='button'
+                    aria-label={`Quitar a ${name}`}
+                    onClick={() => handleRemoveMember(index)}
+                    className='flex size-7 items-center justify-center rounded-full hover:bg-white'
+                  >
+                    ×
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
 
-            {/* Imagen */}
-            <div className='flex flex-col md:col-span-2'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Logo del equipo</label>
+        <FieldWrapper label='Logo' hint='JPG, PNG o WEBP, hasta 10 MB' className='sm:col-span-2'>
+          {({ id, describedBy }) => (
+            <div className='flex items-center gap-4'>
+              <div className='flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-surface'>
+                {displayPreview ? (
+                  <img src={displayPreview} alt='' className='size-full object-cover' />
+                ) : (
+                  <span className='text-xs text-ink-soft'>Sin imagen</span>
+                )}
+              </div>
               <input
+                id={id}
                 type='file'
-                className='w-full px-3 py-2 rounded-lg border-2 border-dashed bg-gray-50 transition cursor-pointer'
-                style={{ borderColor: 'var(--main-blue)', outline: 'none' }}
-                accept='image/*'
+                accept='image/jpeg,image/png,image/webp,image/avif'
+                aria-describedby={describedBy}
+                className='min-h-11 w-full cursor-pointer rounded-[10px] border border-dashed border-[#9aa9c2] bg-white px-3 py-2 text-sm text-brand file:mr-3 file:rounded-lg file:border-0 file:bg-brand-soft file:px-3 file:py-1.5 file:font-semibold file:text-brand'
                 {...register('logo', {
                   onChange: (e) => {
-                    if (filePreview) URL.revokeObjectURL(filePreview);
-                    const file = e.target.files?.[0];
-                    setFilePreview(file ? URL.createObjectURL(file) : null);
+                    readImageFilePreview(e.target.files?.[0], setFilePreview);
                   },
                 })}
               />
             </div>
-          </div>
-
-          {/* BOTONES */}
-          <div className='flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t'>
-            <button
-              type='button'
-              onClick={() => {
-                reset();
-                setFilePreview(null);
-                onClose();
-              }}
-              className='w-full sm:w-auto px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition'
-            >
-              Cancelar
-            </button>
-
-            <button
-              type='submit'
-              className='w-full sm:w-auto px-5 py-2 rounded-lg text-white font-medium transition shadow'
-              style={{
-                background: 'linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)',
-                border: 'none',
-              }}
-            >
-              {loading ? <Spinner small /> : team ? 'Guardar cambios' : 'Crear equipo'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          )}
+        </FieldWrapper>
+      </form>
+    </Modal>
   );
 };

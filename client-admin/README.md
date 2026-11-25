@@ -172,10 +172,16 @@ Verifica el flujo de renovación de sesión (`src/shared/api/sessionRefresh.test
 El archivo `dockerfiles/Dockerfile.client-admin` define tres etapas principales:
 
 1. **`dev`:** Ejecuta `vite --host 0.0.0.0 --port 5173` para desarrollo con recarga en caliente.
-2. **`build`:** Recibe los argumentos de compilación `ARG VITE_AUTH_URL`, `ARG VITE_ADMIN_URL` y `ARG VITE_CLOUDINARY_BASE_URL` (definidos en `docker-compose.prod.yml`) y ejecuta `pnpm build` generando `/app/dist`.
-3. **`runtime`:** Copia `/app/dist` dentro de la imagen `nginxinc/nginx-unprivileged:1.27-alpine`, configura `try_files $uri $uri/ /index.html;` para soportar el enrutamiento SPA de React Router y escucha en el puerto interno `8080` (mapeado a `${CLIENT_ADMIN_PORT:-5173}:8080` en `docker-compose.prod.yml`).
+2. **`build`:** Recibe los argumentos de compilación `ARG VITE_AUTH_URL`, `ARG VITE_ADMIN_URL` y `ARG VITE_CLOUDINARY_BASE_URL` (definidos en `docker-compose.prod.yml`) y ejecuta `pnpm build` generando `/app/dist` (incluye service worker y `manifest.webmanifest` vía `vite-plugin-pwa`).
+3. **`runtime`:** Copia `/app/dist` dentro de la imagen `nginxinc/nginx-unprivileged:1.27-alpine`, aplica `dockerfiles/nginx/client-admin.conf` (SPA + PWA: `sw.js`/`manifest` sin caché agresiva, assets con hash inmutables) y escucha en el puerto interno `8080` (mapeado a `${CLIENT_ADMIN_PORT:-5173}:8080` en `docker-compose.prod.yml`).
 
-### 11.2 Limitaciones y Consideraciones Operativas
+### 11.2 PWA
+
+- En desarrollo el service worker está **desactivado** (`devOptions.enabled: false`) para no interferir con HMR.
+- En producción (`pnpm build` / etapa `runtime`) se generan `sw.js`, `workbox-*.js` y `manifest.webmanifest` con `registerType: 'autoUpdate'`.
+- Para instalar la app fuera de `localhost` el sitio debe servirse por **HTTPS** y `SECURE_COOKIES=true` en los backends de autenticación.
+
+### 11.3 Limitaciones y Consideraciones Operativas
 
 - **Variables inyectadas en tiempo de compilación (`VITE_*`):** A diferencia de `client-admin-next` (BFF), en una SPA estática las URLs `VITE_AUTH_URL` y `VITE_ADMIN_URL` quedan incrustadas en el bundle JavaScript durante `pnpm build` y son visibles desde el navegador del cliente.
 - **Requisito de CORS y `SameSite`:** Como el navegador realiza peticiones directas hacia los puertos de autenticación y administración con `withCredentials: true`, los backends deben incluir el origen de `client-admin` en su lista blanca de CORS (`ALLOWED_ORIGINS` / `ADMIN_ALLOWED_ORIGINS`).

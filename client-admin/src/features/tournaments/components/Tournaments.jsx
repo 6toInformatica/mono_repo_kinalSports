@@ -1,10 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useTournamentsStore } from '../../tournaments/store/tournamentStore';
-import { Spinner } from '../../auth/components/Spinner.jsx';
 import { TournamentModal } from './TournamentModal.jsx';
 import { useUIStore } from '../../auth/store/uiStore.js';
 import { resolveCloudinaryUrl } from '../../../shared/utils/cloudinary.js';
-import defaultTournamentImg from '../../../assets/img/avatarDefault-1749508519496.png';
+import { CAPACITY_LABELS, formatDate } from '../../../shared/utils/formatters.js';
+import { showSuccess } from '../../../shared/utils/toast.js';
+import { Button } from '../../../shared/components/ui/Button.jsx';
+import { EntityCard } from '../../../shared/components/ui/EntityCard.jsx';
+import {
+  Badge,
+  CardGridSkeleton,
+  EmptyState,
+  ErrorState,
+  PageHeader,
+} from '../../../shared/components/ui/feedback.jsx';
+import { PlusIcon } from '../../../shared/components/ui/icons.jsx';
+import defaultLogo from '../../../assets/img/kinal_sports.png';
 
 export const Tournaments = () => {
   const { tournaments, loading, error, getTournaments, deleteTournament } = useTournamentsStore();
@@ -17,101 +28,78 @@ export const Tournaments = () => {
     getTournaments();
   }, [getTournaments]);
 
-  // Con el modal abierto no se reemplaza la vista: así el formulario no se desmonta al guardar
-  if (loading && !openModal) return <Spinner />;
+  const handleDeactivate = (tournament) => {
+    openConfirm({
+      title: 'Desactivar torneo',
+      message: `¿Desactivar ${tournament.tournamentsName}?`,
+      confirmLabel: 'Desactivar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await deleteTournament(tournament._id);
+          showSuccess('Torneo desactivado');
+        } catch {
+          // El store establece el error
+        }
+      },
+    });
+  };
 
   return (
-    <div className='p-4'>
-      {/* HEADER */}
-      <div className='flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8'>
-        <div>
-          <h1 className='text-3xl font-bold text-main-blue'>Gestión de Torneos</h1>
-          <p className='text-gray-500 text-sm'>Administra los torneos registrados</p>
-        </div>
-
-        <button
-          className='bg-main-blue px-4 py-2 rounded text-white hover:opacity-90 transition'
-          onClick={() => {
-            setSelectedTournament(null);
-            setOpenModal(true);
-          }}
-        >
-          + Agregar Torneo
-        </button>
-      </div>
-
-      {error && <div className='bg-red-100 text-red-700 px-4 py-2 rounded mb-4'>{error}</div>}
-
-      {/* GRID */}
-      <div className='grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'>
-        {tournaments.map((t) => (
-          <div
-            key={t._id}
-            className='bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:scale-[1.02]'
+    <section className='flex flex-col gap-6'>
+      <PageHeader
+        title='Torneos'
+        description='Torneos, sus fechas y equipos inscritos'
+        action={
+          <Button
+            onClick={() => {
+              setSelectedTournament(null);
+              setOpenModal(true);
+            }}
           >
-            <div className='w-full h-44 bg-gray-100 flex items-center justify-center'>
-              <img
-                src={resolveCloudinaryUrl(t.logo, defaultTournamentImg)}
-                alt={t.tournamentsName}
-                className='max-h-full max-w-full object-contain'
-                onError={(event) => {
-                  event.currentTarget.onerror = null;
-                  event.currentTarget.src = defaultTournamentImg;
-                }}
-              />
-            </div>
+            <PlusIcon /> Nuevo torneo
+          </Button>
+        }
+      />
 
-            <div className='p-5'>
-              <h2 className='text-xl font-bold text-main-blue'>{t.tournamentsName}</h2>
+      {error && <ErrorState message={error} onRetry={getTournaments} />}
 
-              {/* BADGES */}
-              <div className='flex gap-2 mt-2 flex-wrap'>
-                <span className='px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium'>
-                  {t.category?.replace('_', ' ')}
-                </span>
-
-                <span className='px-3 py-1 text-xs rounded-full bg-green-100 text-green-700 font-medium'>
-                  {t.status}
-                </span>
-              </div>
-
-              {/* INFO */}
-              <p className='text-sm text-gray-400 mt-2'>Equipos: {t.teams?.length ?? 0}</p>
-
-              <p className='text-sm text-gray-400'>
-                {new Date(t.startDate).toLocaleDateString()} -{' '}
-                {new Date(t.endDate).toLocaleDateString()}
+      {loading && !openModal && tournaments.length === 0 ? (
+        <CardGridSkeleton />
+      ) : tournaments.length === 0 && !error ? (
+        <EmptyState
+          title='Sin torneos'
+          message='Crea un torneo para que los equipos se inscriban.'
+        />
+      ) : (
+        <div className='grid gap-5 sm:grid-cols-2 xl:grid-cols-3'>
+          {tournaments.map((tournament) => (
+            <EntityCard
+              key={tournament._id}
+              image={resolveCloudinaryUrl(tournament.logo, null)}
+              imageFallback={defaultLogo}
+              title={tournament.tournamentsName}
+              badges={
+                <>
+                  <Badge>{CAPACITY_LABELS[tournament.category] ?? tournament.category}</Badge>
+                  {tournament.status && <Badge tone='neutral'>{tournament.status}</Badge>}
+                </>
+              }
+              onEdit={() => {
+                setSelectedTournament(tournament);
+                setOpenModal(true);
+              }}
+              onDeactivate={() => handleDeactivate(tournament)}
+            >
+              <p>
+                {formatDate(tournament.startDate)} – {formatDate(tournament.endDate)}
               </p>
-
-              {/* BOTONES */}
-              <div className='flex gap-3 mt-5'>
-                <button
-                  className='flex-1 py-2 rounded-lg bg-main-blue text-white hover:opacity-90'
-                  onClick={() => {
-                    setSelectedTournament(t);
-                    setOpenModal(true);
-                  }}
-                >
-                  ✏️ Editar
-                </button>
-
-                <button
-                  className='flex-1 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700'
-                  onClick={() =>
-                    openConfirm({
-                      title: 'Eliminar torneo',
-                      message: `¿Eliminar ${t.tournamentsName}?`,
-                      onConfirm: () => deleteTournament(t._id),
-                    })
-                  }
-                >
-                  🗑️ Eliminar
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+              <p>Equipos: {tournament.teams?.length ?? 0}</p>
+              <p className='line-clamp-2'>{tournament.description}</p>
+            </EntityCard>
+          ))}
+        </div>
+      )}
 
       <TournamentModal
         isOpen={openModal}
@@ -121,6 +109,6 @@ export const Tournaments = () => {
         }}
         tournament={selectedTournament}
       />
-    </div>
+    </section>
   );
 };

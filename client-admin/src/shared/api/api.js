@@ -4,10 +4,34 @@ import { useAuthStore } from '../../features/auth/store/authStore.js';
 import { isAuthError, performTokenRefresh, tryRefreshSession } from './sessionRefresh.js';
 
 // ================= AXIOS INSTANCES =================
+// Alinea el hostname con el que se abrió el navegador (localhost, 127.0.0.1 o 0.0.0.0)
+// para que las cookies httpOnly SameSite=Lax (kinal_access y kinal_refresh) compartan
+// exactamente el mismo sitio registrable y el navegador las adjunte en cada petición.
+function alignWithBrowserHost(rawUrl) {
+  if (!rawUrl || typeof window === 'undefined' || !window.location?.hostname) {
+    return rawUrl;
+  }
+  try {
+    const parsed = new URL(rawUrl, window.location.origin);
+    const localHosts = new Set(['localhost', '127.0.0.1', '0.0.0.0']);
+    if (
+      localHosts.has(parsed.hostname) &&
+      localHosts.has(window.location.hostname) &&
+      parsed.hostname !== window.location.hostname
+    ) {
+      parsed.hostname = window.location.hostname;
+      return parsed.toString().replace(/\/$/, '');
+    }
+  } catch {
+    return rawUrl;
+  }
+  return rawUrl;
+}
+
 // withCredentials: true envía y recibe las cookies httpOnly (kinal_access y kinal_refresh)
 // para no persistir tokens JWT ni refresh tokens en localStorage (prevención de XSS).
 const axiosAuth = axios.create({
-  baseURL: import.meta.env.VITE_AUTH_URL,
+  baseURL: alignWithBrowserHost(import.meta.env.VITE_AUTH_URL),
   timeout: 8000,
   withCredentials: true,
   headers: {
@@ -16,7 +40,7 @@ const axiosAuth = axios.create({
 });
 
 const axiosAdmin = axios.create({
-  baseURL: import.meta.env.VITE_ADMIN_URL,
+  baseURL: alignWithBrowserHost(import.meta.env.VITE_ADMIN_URL),
   timeout: 60000,
   withCredentials: true,
   headers: {

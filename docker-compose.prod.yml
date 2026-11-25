@@ -87,8 +87,11 @@ services:
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN:?Define INTERNAL_SERVICE_TOKEN en .env.docker}
       SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:-}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      # Orígenes de ambos paneles admin (SPA :5173 y Next :3000). Ajusta en .env.docker si publicas otro host.
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://0.0.0.0:3000,http://localhost:5173,http://127.0.0.1:5173,http://0.0.0.0:5173}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      # false = cookies sin Secure (HTTP local). En HTTPS real: SECURE_COOKIES=true
+      SECURE_COOKIES: ${SECURE_COOKIES:-false}
       MAIL_PROVIDER: ${MAIL_PROVIDER:-kmh}
       KMH_API_BASE_URL: ${KMH_API_BASE_URL:-https://mail.lab.kinal.edu.gt}
       KMH_MAIL_FROM: ${KMH_MAIL_FROM:-kinal-sports@am-delta.in6am.mail.kinal.test}
@@ -147,7 +150,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_ISSUER: ${JWT_ISSUER:-AuthService}
       JWT_AUDIENCE: ${JWT_AUDIENCE:-AuthService}
-      ADMIN_ALLOWED_ORIGINS: ${ADMIN_ALLOWED_ORIGINS:-${FRONTEND_URL:-http://localhost:5173}}
+      ADMIN_ALLOWED_ORIGINS: ${ADMIN_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000,http://0.0.0.0:3000,http://localhost:5173,http://127.0.0.1:5173,http://0.0.0.0:5173}
       # En producción server-admin consulta perfiles en auth-node (intercambiable con auth-service)
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-node:3007/api/v1}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
@@ -263,6 +266,8 @@ services:
       AUTH_API_URL: ${AUTH_API_URL:-http://auth-node:3007/api/v1}
       ADMIN_API_URL: ${ADMIN_API_URL:-http://server-admin:3009/kinalSportsAdmin/v1}
       NEXT_PUBLIC_CLOUDINARY_BASE_URL: ${CLOUDINARY_BASE_URL:-https://res.cloudinary.com/b3xvlule/image/upload/}
+      # Alineado con auth-node: false en HTTP local; true detrás de HTTPS
+      SECURE_COOKIES: ${SECURE_COOKIES:-false}
     ports:
       - "${CLIENT_ADMIN_NEXT_PORT:-3000}:3000"
     networks:

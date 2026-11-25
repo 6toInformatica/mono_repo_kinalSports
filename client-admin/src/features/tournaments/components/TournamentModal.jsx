@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Spinner } from '../../auth/components/Spinner.jsx';
 import { useSaveTournament } from '../hooks/useSaveTournament';
 import { useTournamentsStore } from '../store/tournamentStore';
 import { resolveCloudinaryUrl } from '../../../shared/utils/cloudinary.js';
-import defaultTournamentImg from '../../../assets/img/avatarDefault-1749508519496.png';
+import { readImageFilePreview, sanitizeImageSrc } from '../../../shared/utils/imagePreview.js';
+import { showSuccess } from '../../../shared/utils/toast.js';
+import { Button } from '../../../shared/components/ui/Button.jsx';
+import { Modal } from '../../../shared/components/ui/Modal.jsx';
+import { FieldWrapper } from '../../../shared/components/ui/fields.jsx';
+import { CONTROL, borderFor } from '../../../shared/components/ui/uiConstants.js';
 
 export const TournamentModal = ({ isOpen, onClose, tournament }) => {
   const {
@@ -19,12 +23,13 @@ export const TournamentModal = ({ isOpen, onClose, tournament }) => {
 
   const [preview, setPreview] = useState(null);
 
-  const displayPreview = preview || resolveCloudinaryUrl(tournament?.logo, null) || null;
+  const displayPreview = sanitizeImageSrc(
+    preview || resolveCloudinaryUrl(tournament?.logo, null) || null
+  );
 
   const [prevOpen, setPrevOpen] = useState(isOpen);
   if (isOpen !== prevOpen) {
     setPrevOpen(isOpen);
-    if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
   }
 
@@ -52,17 +57,10 @@ export const TournamentModal = ({ isOpen, onClose, tournament }) => {
     }
   }, [isOpen, reset, tournament]);
 
-  useEffect(() => {
-    return () => {
-      if (preview && preview.startsWith('blob:')) {
-        URL.revokeObjectURL(preview);
-      }
-    };
-  }, [preview]);
-
   const onSubmit = async (data) => {
     try {
       await saveTournament(data, tournament?._id);
+      showSuccess(tournament ? 'Torneo actualizado' : 'Torneo creado');
       reset();
       setPreview(null);
       onClose();
@@ -71,163 +69,150 @@ export const TournamentModal = ({ isOpen, onClose, tournament }) => {
     }
   };
 
-  if (!isOpen) return null;
+  const handleCancel = () => {
+    reset();
+    setPreview(null);
+    onClose();
+  };
 
   return (
-    <div className='fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 px-3 sm:px-4'>
-      <div className='bg-white rounded-2xl shadow-2xl w-full max-w-lg md:max-w-2xl max-h-[90vh] flex flex-col overflow-hidden'>
-        <div
-          className='p-4 sm:p-5 text-white sticky top-0 z-10'
-          style={{
-            background: 'linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)',
-          }}
+    <Modal
+      open={isOpen}
+      title={tournament ? 'Editar torneo' : 'Nuevo torneo'}
+      onClose={handleCancel}
+      size='lg'
+      footer={
+        <>
+          <Button variant='secondary' onClick={handleCancel}>
+            Cancelar
+          </Button>
+          <Button type='submit' form='tournament-form' loading={loading}>
+            Guardar
+          </Button>
+        </>
+      }
+    >
+      <form
+        id='tournament-form'
+        noValidate
+        onSubmit={handleSubmit(onSubmit)}
+        className='grid gap-4 sm:grid-cols-2'
+      >
+        <FieldWrapper
+          label='Nombre'
+          error={errors.tournamentsName?.message}
+          className='sm:col-span-2'
         >
-          <h2 className='text-xl sm:text-2xl font-bold'>
-            {tournament ? 'Editar Torneo' : 'Nuevo Torneo'}
-          </h2>
-          <p className='text-xs sm:text-sm opacity-80'>Completa la informacion del torneo</p>
-        </div>
+          {({ id, describedBy }) => (
+            <input
+              id={id}
+              aria-invalid={Boolean(errors.tournamentsName) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} ${borderFor(errors.tournamentsName?.message)}`}
+              {...register('tournamentsName', {
+                required: 'El nombre es obligatorio',
+                minLength: {
+                  value: 3,
+                  message: 'Debe tener al menos 3 caracteres',
+                },
+              })}
+            />
+          )}
+        </FieldWrapper>
 
-        <form onSubmit={handleSubmit(onSubmit)} className='p-4 sm:p-6 space-y-5 overflow-y-auto'>
-          <div className='flex justify-center'>
-            <div className='w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl bg-gray-100 border flex items-center justify-center overflow-hidden shadow-inner'>
-              {displayPreview ? (
-                <img
-                  src={displayPreview}
-                  alt='Logo del torneo'
-                  className='w-full h-full object-cover'
-                  onError={(event) => {
-                    event.currentTarget.onerror = null;
-                    event.currentTarget.src = defaultTournamentImg;
-                  }}
-                />
-              ) : (
-                <span className='text-gray-400 text-xs sm:text-sm'>Sin imagen</span>
-              )}
-            </div>
-          </div>
+        <FieldWrapper label='Fecha de inicio' error={errors.startDate?.message}>
+          {({ id, describedBy }) => (
+            <input
+              id={id}
+              type='date'
+              aria-invalid={Boolean(errors.startDate) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} ${borderFor(errors.startDate?.message)}`}
+              {...register('startDate', {
+                required: 'La fecha de inicio es obligatoria',
+              })}
+            />
+          )}
+        </FieldWrapper>
 
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <div className='flex flex-col md:col-span-2'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Nombre del torneo</label>
+        <FieldWrapper label='Fecha de fin' error={errors.endDate?.message}>
+          {({ id, describedBy }) => (
+            <input
+              id={id}
+              type='date'
+              aria-invalid={Boolean(errors.endDate) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} ${borderFor(errors.endDate?.message)}`}
+              {...register('endDate', {
+                required: 'La fecha de fin es obligatoria',
+              })}
+            />
+          )}
+        </FieldWrapper>
+
+        <FieldWrapper label='Categoría' error={errors.category?.message} className='sm:col-span-2'>
+          {({ id, describedBy }) => (
+            <select
+              id={id}
+              aria-invalid={Boolean(errors.category) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} ${borderFor(errors.category?.message)}`}
+              {...register('category', {
+                required: 'La categoría es obligatoria',
+              })}
+            >
+              <option value=''>Seleccione una categoría</option>
+              <option value='FUTBOL_7'>Fútbol 7</option>
+              <option value='FUTBOL_11'>Fútbol 11</option>
+            </select>
+          )}
+        </FieldWrapper>
+
+        <FieldWrapper
+          label='Descripción'
+          error={errors.description?.message}
+          className='sm:col-span-2'
+        >
+          {({ id, describedBy }) => (
+            <textarea
+              id={id}
+              rows={3}
+              aria-invalid={Boolean(errors.description) || undefined}
+              aria-describedby={describedBy}
+              className={`${CONTROL} py-2.5 ${borderFor(errors.description?.message)}`}
+              {...register('description', {
+                required: 'La descripción es obligatoria',
+              })}
+            />
+          )}
+        </FieldWrapper>
+
+        <FieldWrapper label='Logo' hint='JPG, PNG o WEBP, hasta 10 MB' className='sm:col-span-2'>
+          {({ id, describedBy }) => (
+            <div className='flex items-center gap-4'>
+              <div className='flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-surface'>
+                {displayPreview ? (
+                  <img src={displayPreview} alt='' className='size-full object-cover' />
+                ) : (
+                  <span className='text-xs text-ink-soft'>Sin imagen</span>
+                )}
+              </div>
               <input
-                className='w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition'
-                placeholder='Ej. Copa Primavera 2026'
-                {...register('tournamentsName', {
-                  required: 'El nombre es obligatorio',
-                  minLength: {
-                    value: 3,
-                    message: 'Debe tener al menos 3 caracteres',
-                  },
-                })}
-              />
-              {errors.tournamentsName && (
-                <p className='text-red-600 text-xs mt-1'>{errors.tournamentsName.message}</p>
-              )}
-            </div>
-
-            <div className='flex flex-col'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Fecha de inicio</label>
-              <input
-                type='date'
-                className='w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition'
-                {...register('startDate', {
-                  required: 'La fecha de inicio es obligatoria',
-                })}
-              />
-              {errors.startDate && (
-                <p className='text-red-600 text-xs mt-1'>{errors.startDate.message}</p>
-              )}
-            </div>
-
-            <div className='flex flex-col'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Fecha de fin</label>
-              <input
-                type='date'
-                className='w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition'
-                {...register('endDate', {
-                  required: 'La fecha de fin es obligatoria',
-                })}
-              />
-              {errors.endDate && (
-                <p className='text-red-600 text-xs mt-1'>{errors.endDate.message}</p>
-              )}
-            </div>
-
-            <div className='flex flex-col'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Categoria</label>
-              <select
-                className='w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition'
-                {...register('category', {
-                  required: 'La categoria es obligatoria',
-                })}
-              >
-                <option value=''>Seleccione una categoria</option>
-                <option value='FUTBOL_7'>Futbol 7</option>
-                <option value='FUTBOL_11'>Futbol 11</option>
-              </select>
-              {errors.category && (
-                <p className='text-red-600 text-xs mt-1'>{errors.category.message}</p>
-              )}
-            </div>
-
-            <div className='flex flex-col'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Logo del torneo</label>
-              <input
+                id={id}
                 type='file'
-                className='w-full px-3 py-2 rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 hover:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-200 transition cursor-pointer'
-                accept='image/*'
+                accept='image/jpeg,image/png,image/webp,image/avif'
+                aria-describedby={describedBy}
+                className='min-h-11 w-full cursor-pointer rounded-[10px] border border-dashed border-[#9aa9c2] bg-white px-3 py-2 text-sm text-brand file:mr-3 file:rounded-lg file:border-0 file:bg-brand-soft file:px-3 file:py-1.5 file:font-semibold file:text-brand'
                 {...register('logo', {
                   onChange: (e) => {
-                    if (preview) URL.revokeObjectURL(preview);
-                    const file = e.target.files?.[0];
-                    setPreview(file ? URL.createObjectURL(file) : null);
+                    readImageFilePreview(e.target.files?.[0], setPreview);
                   },
                 })}
               />
             </div>
-
-            <div className='flex flex-col md:col-span-2'>
-              <label className='text-sm font-semibold text-gray-700 mb-1'>Descripcion</label>
-              <textarea
-                className='w-full px-3 py-2 rounded-lg border-2 border-gray-300 bg-gray-50 shadow-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition'
-                placeholder='Detalles del torneo...'
-                {...register('description', {
-                  required: 'La descripcion es obligatoria',
-                })}
-              />
-              {errors.description && (
-                <p className='text-red-600 text-xs mt-1'>{errors.description.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className='flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t'>
-            <button
-              type='button'
-              onClick={() => {
-                reset();
-                setPreview(null);
-                onClose();
-              }}
-              className='w-full sm:w-auto px-4 py-2 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition'
-            >
-              Cancelar
-            </button>
-
-            <button
-              type='submit'
-              className='w-full sm:w-auto px-5 py-2 rounded-lg text-white font-medium transition shadow'
-              style={{
-                background: 'linear-gradient(90deg, var(--main-blue) 0%, #1956a3 100%)',
-                border: 'none',
-              }}
-            >
-              {loading ? <Spinner small /> : tournament ? 'Guardar cambios' : 'Crear torneo'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          )}
+        </FieldWrapper>
+      </form>
+    </Modal>
   );
 };

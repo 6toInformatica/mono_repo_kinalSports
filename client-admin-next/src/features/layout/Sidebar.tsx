@@ -3,9 +3,27 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, type ComponentType, type SVGProps } from "react";
-import { logout, type SessionUser } from "@/features/auth/session";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type SVGProps,
+} from "react";
+import {
+  fetchMyProfile,
+  logout,
+  updateMyProfilePicture,
+  updateSessionUser,
+  type SessionUser,
+} from "@/features/auth/session";
+import { ROLE_LABELS } from "@/features/users/api";
+import { fullName } from "@/shared/lib/format";
+import { Button } from "@/shared/ui/Button";
+import { Badge } from "@/shared/ui/feedback";
+import { Modal } from "@/shared/ui/Modal";
 import { Avatar } from "@/shared/ui/table";
+import { useToast } from "@/shared/ui/toast";
 import {
   CalendarIcon,
   FieldIcon,
@@ -29,6 +47,13 @@ const SECTIONS: {
   { href: "/dashboard/users", label: "Usuarios", icon: UserIcon },
 ];
 
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/avif",
+]);
+
 const isActive = (pathname: string, href: string) =>
   href === "/dashboard" ? pathname === href : pathname.startsWith(href);
 
@@ -44,12 +69,180 @@ function useLogout() {
   return { loading, run };
 }
 
+function ProfileModal({
+  user,
+  onClose,
+  onUserUpdated,
+}: {
+  user: SessionUser;
+  onClose: () => void;
+  onUserUpdated: (updated: SessionUser) => void;
+}) {
+  const toast = useToast();
+  const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [profile, setProfile] = useState<SessionUser>(user);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetchMyProfile()
+      .then((fresh) => {
+        if (active && fresh) {
+          setProfile((prev) => ({ ...prev, ...fresh }));
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const displayName = fullName(profile) || profile.username || "Administrador";
+  const rows: [string, string | undefined][] = [
+    ["Nombre completo", displayName],
+    ["Usuario", profile.username ? `@${profile.username}` : undefined],
+    ["Correo", profile.email],
+    ["Teléfono", profile.phone],
+  ];
+
+  const handleSave = async () => {
+    if (!selectedFile) {
+      onClose();
+      return;
+    }
+    setSaving(true);
+    try {
+      const updated = await updateMyProfilePicture(selectedFile);
+      const nextUser: SessionUser = {
+        ...profile,
+        ...updated,
+      };
+      await updateSessionUser(nextUser).catch(() => undefined);
+      onUserUpdated(nextUser);
+      toast.success("Foto de perfil actualizada");
+      router.refresh();
+      onClose();
+    } catch (err) {
+      toast.error(
+        (err as Error).message || "No se pudo actualizar la foto de perfil",
+      );
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      open
+      title="Mi perfil"
+      description="Información de tu cuenta de administrador"
+      onClose={onClose}
+      size="md"
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose}>
+            Cerrar
+          </Button>
+          {selectedFile && (
+            <Button onClick={() => void handleSave()} loading={saving}>
+              Guardar foto
+            </Button>
+          )}
+        </>
+      }
+    >
+      <div className="flex flex-col gap-5">
+        <div className="flex items-center gap-4">
+          <Avatar src={preview ?? profile.profilePicture} size={64} />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="truncate font-display text-base font-bold text-ink">
+                {displayName}
+              </p>
+              <Badge tone="info">
+                {ROLE_LABELS[profile.role] ?? profile.role}
+              </Badge>
+            </div>
+            <p className="mt-0.5 truncate text-xs text-ink-soft">
+              @{profile.username}
+            </p>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (!file || !ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+                  setSelectedFile(null);
+                  setPreview(null);
+                  return;
+                }
+                setSelectedFile(file);
+                const reader = new FileReader();
+                reader.onload = () => {
+                  if (typeof reader.result === "string") {
+                    setPreview(reader.result);
+                  }
+                };
+                reader.readAsDataURL(file);
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="mt-2 text-xs font-semibold text-brand hover:underline"
+            >
+              {selectedFile ? "Elegir otra imagen" : "Cambiar foto de perfil"}
+            </button>
+          </div>
+        </div>
+
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 border-t border-line pt-4 text-sm">
+          {rows.map(([label, value]) => (
+            <div key={label} className="contents">
+              <dt className="text-ink-soft">{label}</dt>
+              <dd className="break-all font-medium text-ink">{value || "—"}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    </Modal>
+  );
+}
+
 export function Sidebar({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
   const { loading, run } = useLogout();
-  const name = user
-    ? [user.name, user.surname].filter(Boolean).join(" ") || user.username
-    : "";
+  const [overrideUser, setOverrideUser] = useState<SessionUser | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const currentUser = overrideUser ?? user;
+
+  useEffect(() => {
+    if (user) return;
+    let active = true;
+    fetchMyProfile()
+      .then((fresh) => {
+        if (active && fresh) {
+          setOverrideUser(fresh);
+          void updateSessionUser(fresh).catch(() => undefined);
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  const name = currentUser
+    ? [currentUser.name, currentUser.surname].filter(Boolean).join(" ") ||
+      currentUser.username ||
+      "Administrador"
+    : "Administrador";
+  const username = currentUser?.username || "admin";
 
   return (
     <>
@@ -91,19 +284,27 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
             })}
           </ul>
         </nav>
-        <div className="m-3 flex items-center gap-3 rounded-xl bg-white/10 p-3">
-          <Avatar src={user?.profilePicture} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold">{name}</p>
-            <p className="truncate text-xs text-white/70">@{user?.username}</p>
-          </div>
+        <div className="m-3 flex items-center gap-2 rounded-xl bg-white/10 p-2">
+          <button
+            type="button"
+            onClick={() => currentUser && setProfileOpen(true)}
+            aria-label="Ver mi perfil"
+            title="Ver mi perfil"
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-lg p-1 text-left transition hover:bg-white/10"
+          >
+            <Avatar src={currentUser?.profilePicture} />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{name}</p>
+              <p className="truncate text-xs text-white/70">@{username}</p>
+            </div>
+          </button>
           <button
             type="button"
             onClick={() => void run()}
             disabled={loading}
             aria-label="Cerrar sesión"
             title="Cerrar sesión"
-            className="flex size-11 items-center justify-center rounded-[10px] text-white/85 hover:bg-white/10 disabled:opacity-50"
+            className="flex size-11 shrink-0 items-center justify-center rounded-[10px] text-white/85 hover:bg-white/10 disabled:opacity-50"
           >
             <LogoutIcon />
           </button>
@@ -122,10 +323,18 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
         <p className="font-display font-bold">Kinal Sports</p>
         <button
           type="button"
+          onClick={() => currentUser && setProfileOpen(true)}
+          aria-label="Ver mi perfil"
+          className="ml-auto flex items-center gap-2 rounded-lg p-1 hover:bg-white/10"
+        >
+          <Avatar src={currentUser?.profilePicture} size={32} />
+        </button>
+        <button
+          type="button"
           onClick={() => void run()}
           disabled={loading}
           aria-label="Cerrar sesión"
-          className="ml-auto flex size-11 items-center justify-center rounded-[10px] hover:bg-white/10"
+          className="flex size-11 items-center justify-center rounded-[10px] hover:bg-white/10"
         >
           <LogoutIcon />
         </button>
@@ -156,6 +365,14 @@ export function Sidebar({ user }: { user: SessionUser | null }) {
           })}
         </ul>
       </nav>
+
+      {profileOpen && currentUser && (
+        <ProfileModal
+          user={currentUser}
+          onClose={() => setProfileOpen(false)}
+          onUserUpdated={setOverrideUser}
+        />
+      )}
     </>
   );
 }

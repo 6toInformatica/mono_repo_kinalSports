@@ -31,6 +31,20 @@ export const updateUserRole = async (userId, roleName) => {
   return await axiosAuth.put(`/users/${userId}/role`, { roleName });
 };
 
+export const getMyProfile = async () => {
+  const { data } = await axiosAuth.get('/auth/profile');
+  return data?.data ?? data;
+};
+
+export const updateMyProfilePicture = async (file) => {
+  const formData = new FormData();
+  formData.append('profilePicture', file);
+  const { data } = await axiosAuth.post('/auth/profile/picture', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data?.data ?? data;
+};
+
 // ================= USERS =================
 export const getAllUsers = async () => {
   const { data } = await axiosAuth.get('/auth/users');

@@ -10,7 +10,7 @@ const DEFAULT_MARKERS = ['avatarDefault', 'default_avatar', 'nyvxo5'];
  */
 export const resolveAvatarUrl = (value, fallback = defaultAvatarImg) => {
   const trimmed = value?.trim();
-  if (!trimmed) return fallback;
+  if (!trimmed || isDefaultAvatarUrl(trimmed)) return fallback;
 
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return trimmed;

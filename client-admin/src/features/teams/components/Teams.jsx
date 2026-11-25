@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react';
 import { useTeamsStore } from '../../teams/store/teamStore';
-import { Spinner } from '../../auth/components/Spinner';
 import { TeamModal } from './TeamModal.jsx';
 import { useUIStore } from '../../auth/store/uiStore';
 import { useUserManagementStore } from '../../users/store/useUserManagementStore';
-import { showError } from '../../../shared/utils/toast.js';
+import { showError, showSuccess } from '../../../shared/utils/toast.js';
 import { resolveCloudinaryUrl } from '../../../shared/utils/cloudinary.js';
-import defaultTeamImg from '../../../assets/img/avatarDefault-1749508519496.png';
+import { CAPACITY_LABELS, fullName } from '../../../shared/utils/formatters.js';
+import { Button } from '../../../shared/components/ui/Button.jsx';
+import { EntityCard } from '../../../shared/components/ui/EntityCard.jsx';
+import {
+  Badge,
+  CardGridSkeleton,
+  EmptyState,
+  ErrorState,
+  PageHeader,
+} from '../../../shared/components/ui/feedback.jsx';
+import { PlusIcon } from '../../../shared/components/ui/icons.jsx';
+import defaultLogo from '../../../assets/img/kinal_sports.png';
 
 export const Teams = () => {
   const { teams, loading, error, getTeams, deleteTeam } = useTeamsStore();
@@ -23,120 +33,87 @@ export const Teams = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Mostrar toast de error si existe
   useEffect(() => {
     if (error) showError(error);
   }, [error]);
 
-  // Con el modal abierto no se reemplaza la vista: así el formulario no se desmonta al guardar
-  if (loading && !openModal) return <Spinner />;
+  const handleDeactivate = (team) => {
+    openConfirm({
+      title: 'Desactivar equipo',
+      message: `¿Desactivar ${team.teamName}?`,
+      confirmLabel: 'Desactivar',
+      danger: true,
+      onConfirm: async () => {
+        try {
+          await deleteTeam(team._id);
+          showSuccess('Equipo desactivado');
+        } catch {
+          // El store establece el error
+        }
+      },
+    });
+  };
 
   return (
-    <div className='p-4'>
-      {/* HEADER */}
-      <div className='flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8'>
-        <div>
-          <h1 className='text-3xl font-bold text-main-blue'>Gestión de Equipos</h1>
-          <p className='text-gray-500 text-sm'>Administra los equipos registrados</p>
-        </div>
-
-        <button
-          className='bg-main-blue px-4 py-2 rounded text-white hover:opacity-90'
-          onClick={() => {
-            setSelectedTeam(null);
-            setOpenModal(true);
-          }}
-        >
-          + Agregar Equipo
-        </button>
-      </div>
-
-      {/* GRID RESPONSIVE */}
-      <div className='grid sm:grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6'>
-        {teams.map((team) => (
-          <div
-            key={team._id}
-            className='bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:scale-[1.02]'
+    <section className='flex flex-col gap-6'>
+      <PageHeader
+        title='Equipos'
+        description='Equipos registrados, su manager e integrantes'
+        action={
+          <Button
+            onClick={() => {
+              setSelectedTeam(null);
+              setOpenModal(true);
+            }}
           >
-            {/* IMAGEN */}
-            <div className='w-full h-52 bg-gray-100 flex items-center justify-center'>
-              <img
-                src={resolveCloudinaryUrl(team.logo, defaultTeamImg)}
-                alt={team.teamName}
-                className='max-h-full max-w-full object-contain rounded-t-xl'
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = defaultTeamImg;
+            <PlusIcon /> Nuevo equipo
+          </Button>
+        }
+      />
+
+      {error && <ErrorState message={error} onRetry={getTeams} />}
+
+      {loading && !openModal && teams.length === 0 ? (
+        <CardGridSkeleton />
+      ) : teams.length === 0 && !error ? (
+        <EmptyState title='Sin equipos' message='Todavía no hay equipos registrados.' />
+      ) : (
+        <div className='grid gap-5 sm:grid-cols-2 xl:grid-cols-3'>
+          {teams.map((team) => {
+            const manager = users?.find((u) => u.id === team.managerId);
+            const named = team.namedMembers?.length ?? 0;
+            const total = (team.members?.length ?? 0) + named;
+
+            return (
+              <EntityCard
+                key={team._id}
+                image={resolveCloudinaryUrl(team.logo, null)}
+                imageFallback={defaultLogo}
+                title={team.teamName}
+                badges={<Badge>{CAPACITY_LABELS[team.category] ?? team.category}</Badge>}
+                onEdit={() => {
+                  setSelectedTeam(team);
+                  setOpenModal(true);
                 }}
-              />
-            </div>
-
-            {/* CONTENIDO */}
-            <div className='p-5'>
-              <h2 className='text-xl font-bold text-main-blue'>{team.teamName}</h2>
-
-              <div className='flex gap-2 mt-2'>
-                <span className='px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-medium'>
-                  {team.category?.replace('_', ' ')}
-                </span>
-
-                <span className='px-3 py-1 text-xs rounded-full bg-purple-100 text-purple-700 font-medium'>
-                  Manager
-                </span>
-              </div>
-
-              <p className='text-sm text-gray-700 mt-2 truncate font-medium'>
-                <span className='text-gray-400 font-normal'>Capitán: </span>
-                {(() => {
-                  const manager = users?.find((u) => u.id === team.managerId);
-                  return manager
-                    ? `${manager.name} (@${manager.username})`
-                    : `ID: ${team.managerId}`;
-                })()}
-              </p>
-
-              <p className='text-sm text-gray-600 mt-1'>
-                {(team.members?.length ?? 0) + (team.namedMembers?.length ?? 0)} miembros
-                {(team.namedMembers?.length ?? 0) > 0
-                  ? ` (${team.namedMembers.length} por nombre)`
-                  : ''}
-              </p>
-
-              {team.namedMembers?.length > 0 ? (
-                <p className='text-xs text-gray-500 mt-1 truncate'>
-                  Roster: {team.namedMembers.map((m) => m.name).join(', ')}
+                onDeactivate={() => handleDeactivate(team)}
+              >
+                <p>
+                  Manager:{' '}
+                  {manager ? fullName(manager) || manager.username : `ID: ${team.managerId}`}
                 </p>
-              ) : null}
-
-              {/* BOTONES */}
-              <div className='flex gap-3 mt-5'>
-                <button
-                  className='flex-1 py-2 rounded-lg bg-main-blue text-white font-medium hover:opacity-90 transition'
-                  onClick={() => {
-                    setSelectedTeam(team);
-                    setOpenModal(true);
-                  }}
-                >
-                  ✏️ Editar
-                </button>
-
-                <button
-                  className='flex-1 py-2 rounded-lg bg-red-600 text-white font-medium hover:bg-red-700 transition'
-                  onClick={() =>
-                    openConfirm({
-                      title: 'Eliminar equipo',
-                      message: `¿Eliminar ${team.teamName}?`,
-                      onConfirm: () => deleteTeam(team._id),
-                    })
-                  }
-                >
-                  🗑️ Eliminar
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
+                <p>
+                  {total} miembros{named > 0 ? ` (${named} por nombre)` : ''}
+                </p>
+                {named > 0 && (
+                  <p className='line-clamp-2'>
+                    Roster: {team.namedMembers.map((m) => m.name).join(', ')}
+                  </p>
+                )}
+              </EntityCard>
+            );
+          })}
+        </div>
+      )}
 
       <TeamModal
         isOpen={openModal}
@@ -146,6 +123,6 @@ export const Teams = () => {
         }}
         team={selectedTeam}
       />
-    </div>
+    </section>
   );
 };

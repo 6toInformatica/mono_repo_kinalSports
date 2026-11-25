@@ -2,6 +2,42 @@ import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import { Button } from '../../../shared/components/ui/Button.jsx';
+import { FieldWrapper } from '../../../shared/components/ui/fields.jsx';
+import { CONTROL, borderFor } from '../../../shared/components/ui/uiConstants.js';
+import logoImg from '../../../assets/img/kinal_sports.png';
+
+const CARD =
+  'flex w-full max-w-[400px] flex-col gap-[18px] rounded-[18px] border border-line bg-white p-9';
+const LINK = 'self-center text-sm font-semibold text-brand hover:text-brand-dark';
+
+function Alert({ tone = 'error', children }) {
+  return (
+    <div
+      role={tone === 'error' ? 'alert' : 'status'}
+      className={`flex items-start gap-2.5 rounded-[10px] px-3.5 py-3 text-sm ${
+        tone === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+      }`}
+    >
+      <svg
+        aria-hidden='true'
+        width='18'
+        height='18'
+        viewBox='0 0 24 24'
+        fill='none'
+        stroke='currentColor'
+        strokeWidth='2'
+        strokeLinecap='round'
+        className='mt-px shrink-0'
+      >
+        <circle cx='12' cy='12' r='10' />
+        <line x1='12' y1='8' x2='12' y2='12' />
+        <line x1='12' y1='16' x2='12.01' y2='16' />
+      </svg>
+      <span>{children}</span>
+    </div>
+  );
+}
 
 export const LoginForm = ({ onForgot }) => {
   const navigate = useNavigate();
@@ -9,6 +45,7 @@ export const LoginForm = ({ onForgot }) => {
   const login = useAuthStore((state) => state.login);
   const loading = useAuthStore((state) => state.loading);
   const error = useAuthStore((state) => state.error);
+  const sessionMessage = useAuthStore((state) => state.sessionMessage);
 
   const {
     register,
@@ -24,65 +61,63 @@ export const LoginForm = ({ onForgot }) => {
     }
   };
 
+  const activeError = error || sessionMessage;
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className='space-y-5'>
-      {/* Email o Usuario */}
-      <div>
-        <label htmlFor='emailOrUsername' className='block text-sm font-medium text-gray-800 mb-1.5'>
-          Email o Usuario
-        </label>
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className={CARD}>
+      <img
+        src={logoImg}
+        alt='Logo de Kinal Sports'
+        width={72}
+        height={72}
+        className='size-[72px] self-center object-contain'
+      />
+      <div className='flex flex-col gap-1.5'>
+        <h2 className='font-display text-[26px] font-bold text-brand'>Iniciar sesión</h2>
+        <p className='text-sm text-ink-soft'>Usa tu correo o tu nombre de usuario.</p>
+      </div>
 
-        <input
-          id='emailOrUsername'
-          type='text'
-          placeholder='correo@ejemplo.com o usuario'
-          className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
-          {...register('emailOrUsername', {
-            required: 'Este campo es obligatorio',
-          })}
-        />
-
-        {errors.emailOrUsername && (
-          <p className='text-red-600 text-xs mt-1'>{errors.emailOrUsername.message}</p>
+      <FieldWrapper label='Correo o usuario' error={errors.emailOrUsername?.message}>
+        {({ id, describedBy }) => (
+          <input
+            id={id}
+            type='text'
+            autoComplete='username'
+            aria-invalid={Boolean(errors.emailOrUsername) || undefined}
+            aria-describedby={describedBy}
+            className={`${CONTROL} ${borderFor(errors.emailOrUsername?.message)}`}
+            {...register('emailOrUsername', {
+              required: 'Este campo es obligatorio',
+            })}
+          />
         )}
-      </div>
+      </FieldWrapper>
 
-      {/* Contraseña */}
-      <div>
-        <label htmlFor='password' className='block text-sm font-medium text-gray-700 mb-1.5'>
-          Contraseña
-        </label>
+      <FieldWrapper label='Contraseña' error={errors.password?.message}>
+        {({ id, describedBy }) => (
+          <input
+            id={id}
+            type='password'
+            autoComplete='current-password'
+            aria-invalid={Boolean(errors.password) || undefined}
+            aria-describedby={describedBy}
+            className={`${CONTROL} ${borderFor(errors.password?.message)}`}
+            {...register('password', {
+              required: 'La contraseña es obligatoria',
+            })}
+          />
+        )}
+      </FieldWrapper>
 
-        <input
-          id='password'
-          type='password'
-          placeholder='••••••••'
-          className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500'
-          {...register('password', {
-            required: 'La contraseña es obligatoria',
-          })}
-        />
+      {activeError && <Alert tone='error'>{activeError}</Alert>}
 
-        {errors.password && <p className='text-red-600 text-xs mt-1'>{errors.password.message}</p>}
-      </div>
+      <Button type='submit' loading={loading} className='min-h-12'>
+        Iniciar sesión
+      </Button>
 
-      {/* Error del backend */}
-      {error && <p className='text-red-600 text-sm text-center'>{error}</p>}
-
-      {/* Botón login */}
-      <button
-        type='submit'
-        disabled={loading}
-        className='w-full bg-main-blue hover:opacity-90 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 text-sm disabled:opacity-50'
-      >
-        {loading ? 'Iniciando...' : 'Iniciar Sesión'}
+      <button type='button' onClick={onForgot} className={LINK}>
+        ¿Olvidaste tu contraseña?
       </button>
-
-      <p className='text-center text-sm'>
-        <button type='button' onClick={onForgot} className='text-main-blue hover:underline'>
-          ¿Olvidaste tu contraseña?
-        </button>
-      </p>
     </form>
   );
 };

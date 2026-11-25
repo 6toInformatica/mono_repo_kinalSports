@@ -8,6 +8,17 @@ export const AUTH_COOKIE = {
 const ACCESS_MAX_AGE = 15 * 60; // 15 minutos
 const REFRESH_MAX_AGE = 30 * 24 * 60 * 60; // 30 días
 
+/**
+ * Secure cookies: obligatorio en HTTPS real.
+ * SECURE_COOKIES=true|false sobrescribe el default (NODE_ENV === 'production')
+ * para poder probar docker-compose.prod.yml en http://localhost.
+ */
+export const cookiesAreSecure = () => {
+  if (process.env.SECURE_COOKIES === 'true') return true;
+  if (process.env.SECURE_COOKIES === 'false') return false;
+  return process.env.NODE_ENV === 'production';
+};
+
 const serializeCookie = (
   name: string,
   value: string,
@@ -50,7 +61,7 @@ export const readCookie = (
 export const setAuthCookies = (
   reply: FastifyReply,
   tokens: { accessToken: string; refreshToken: string; expiresIn?: number },
-  secure = process.env.NODE_ENV === 'production'
+  secure = cookiesAreSecure()
 ) => {
   const accessMaxAge = tokens.expiresIn ?? ACCESS_MAX_AGE;
   reply.header('set-cookie', [
@@ -72,7 +83,7 @@ export const setAuthCookies = (
 /** Limpia las cookies httpOnly de sesión al cerrar sesión */
 export const clearAuthCookies = (
   reply: FastifyReply,
-  secure = process.env.NODE_ENV === 'production'
+  secure = cookiesAreSecure()
 ) => {
   reply.header('set-cookie', [
     serializeCookie(AUTH_COOKIE.access, '', 0, secure),

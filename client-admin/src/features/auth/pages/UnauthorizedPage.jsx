@@ -12,16 +12,16 @@ export const UnauthorizedPage = () => {
   };
 
   return (
-    <div style={{ textAlign: 'center', marginTop: '50px' }}>
-      <h2>Acceso denegado</h2>
-      <p>Solo los administradores pueden acceder a esta sección.</p>
+    <main className='flex min-h-screen flex-col items-center justify-center gap-4 p-6 text-center'>
+      <h1 className='text-2xl font-bold text-brand'>Acceso no autorizado</h1>
+      <p>No tienes permisos para acceder como administrador.</p>
       <button
         type='button'
         onClick={handleBackToLogin}
-        className='mt-6 px-5 py-2 rounded-lg bg-main-blue text-white font-medium hover:opacity-90 transition'
+        className='font-semibold text-brand underline'
       >
-        Volver al inicio de sesión
+        Volver al inicio
       </button>
-    </div>
+    </main>
   );
 };
