@@ -4,7 +4,11 @@ import { useFieldsStore } from '../../users/store/adminStore';
 import { useSaveField } from '../../fields/hooks/useSaveField';
 import { showSuccess, showError } from '../../../shared/utils/toast.js';
 import { resolveCloudinaryUrl } from '../../../shared/utils/cloudinary.js';
-import { readImageFilePreview, sanitizeImageSrc } from '../../../shared/utils/imagePreview.js';
+import {
+  imageFileError,
+  readImageFilePreview,
+  sanitizeImageSrc,
+} from '../../../shared/utils/imagePreview.js';
 import { CAPACITY_LABELS, FIELD_TYPE_LABELS } from '../../../shared/utils/formatters.js';
 import { Button } from '../../../shared/components/ui/Button.jsx';
 import { Modal } from '../../../shared/components/ui/Modal.jsx';
@@ -17,6 +21,7 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
     handleSubmit,
     reset,
     watch,
+    trigger,
     formState: { errors },
   } = useForm();
 
@@ -54,11 +59,14 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
     // eslint-disable-next-line react-hooks/incompatible-library
     const subscription = watch((value, { name }) => {
       if (name === 'photo' && value.photo && value.photo.length > 0) {
-        readImageFilePreview(value.photo[0], setPreview);
+        const file = value.photo[0];
+        if (imageFileError(file)) setPreview(field ? resolveCloudinaryUrl(field.photo) : null);
+        else readImageFilePreview(file, setPreview);
+        void trigger('photo');
       }
     });
     return () => subscription.unsubscribe();
-  }, [watch]);
+  }, [watch, trigger, field]);
 
   const safePreview = sanitizeImageSrc(preview);
 
@@ -199,7 +207,12 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
           )}
         </FieldWrapper>
 
-        <FieldWrapper label='Foto' hint='JPG, PNG o WEBP, hasta 10 MB' className='sm:col-span-2'>
+        <FieldWrapper
+          label='Foto'
+          hint='JPG, PNG, WEBP o AVIF, hasta 10 MB'
+          error={errors.photo?.message}
+          className='sm:col-span-2'
+        >
           {({ id, describedBy }) => (
             <div className='flex items-center gap-4'>
               <div className='flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-line bg-surface'>
@@ -215,7 +228,9 @@ export const FieldModal = ({ isOpen, onClose, field }) => {
                 accept='image/jpeg,image/png,image/webp,image/avif'
                 aria-describedby={describedBy}
                 className='min-h-11 w-full cursor-pointer rounded-[10px] border border-dashed border-[#9aa9c2] bg-white px-3 py-2 text-sm text-brand file:mr-3 file:rounded-lg file:border-0 file:bg-brand-soft file:px-3 file:py-1.5 file:font-semibold file:text-brand'
-                {...register('photo')}
+                {...register('photo', {
+                  validate: (files) => imageFileError(files?.[0]) ?? true,
+                })}
               />
             </div>
           )}

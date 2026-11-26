@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
 import * as ImagePicker from "expo-image-picker";
+import { imageAssetError } from "../../../shared/utils/imageFile.js";
 import { MaterialIcons } from "@expo/vector-icons";
 import userClient from "../../../shared/api/userClient.js";
 import useAuthStore from "../../../shared/store/authStore.js";
@@ -134,7 +135,13 @@ export default function ProfileScreen() {
           });
 
           if (!result.canceled) {
-            await uploadAvatarImage(result.assets[0].uri);
+            const asset = result.assets[0];
+            const message = imageAssetError(asset);
+            if (message) {
+              Alert.alert("Imagen no válida", message);
+              return;
+            }
+            await uploadAvatarImage(asset.uri);
           }
         },
       },
@@ -157,7 +164,13 @@ export default function ProfileScreen() {
           });
 
           if (!result.canceled) {
-            await uploadAvatarImage(result.assets[0].uri);
+            const asset = result.assets[0];
+            const message = imageAssetError(asset);
+            if (message) {
+              Alert.alert("Imagen no válida", message);
+              return;
+            }
+            await uploadAvatarImage(asset.uri);
           }
         },
       },

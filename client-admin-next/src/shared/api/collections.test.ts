@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { api } from "./client";
 import { fetchAllPages, fetchList } from "./collections";
-import { dropEmptyFile, hasErrors, text } from "../lib/forms";
+import { dropEmptyFile, hasErrors, imageFieldError, text } from "../lib/forms";
 
 vi.mock("./client", () => ({ api: vi.fn() }));
 
@@ -57,6 +57,20 @@ describe("forms", () => {
 
     expect(form.has("photo")).toBe(false);
     expect(form.has("logo")).toBe(true);
+  });
+
+  it("imageFieldError rechaza tipo y tamaño antes de enviar", () => {
+    expect(imageFieldError(new File([], "vacio.png"))).toBeNull();
+    expect(
+      imageFieldError(new File(["gif"], "a.gif", { type: "image/gif" })),
+    ).toMatch(/Formato/);
+    const big = new File([new Uint8Array(10 * 1024 * 1024 + 1)], "grande.png", {
+      type: "image/png",
+    });
+    expect(imageFieldError(big)).toMatch(/10 MB/);
+    expect(
+      imageFieldError(new File(["ok"], "foto.png", { type: "image/png" })),
+    ).toBeNull();
   });
 
   it("hasErrors", () => {

@@ -14,6 +14,27 @@ const removeLocalFile = async (filePath: string, warning: string) => {
   }
 };
 
+/**
+ * public_id de una imagen guardada. Acepta la URL de Cloudinary (como las canchas)
+ * y la ruta antigua `v<versión>/<public_id>.<ext>`.
+ */
+const publicIdFromStored = (imagePath: string): string | null => {
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    const marker = '/image/upload/';
+    const start = imagePath.indexOf(marker);
+    if (start === -1) return null;
+
+    const segments = imagePath.slice(start + marker.length).split('/');
+    const version = segments.findIndex((segment) => /^v\d+$/.test(segment));
+    const storedPath = (
+      version === -1 ? segments : segments.slice(version + 1)
+    ).join('/');
+    return storedPath.replace(/\.[a-z0-9]+$/i, '') || null;
+  }
+
+  return imagePath.replace(/^v\d+\//, '').replace(/\.[a-z0-9]+$/i, '') || null;
+};
+
 /** Imágenes de perfil en Cloudinary (misma carpeta y formato de ruta que auth-service) */
 export const createCloudinaryImageStorage = (
   settings: AppConfig['cloudinary']
@@ -66,8 +87,9 @@ export const createCloudinaryImageStorage = (
     async upload(filePath, fileName) {
       try {
         const result = await cloudinary.uploader.upload(filePath, {
-          public_id: fileName,
+          public_id: fileName.replace(/\.[a-z0-9]+$/i, ''),
           folder: settings.folder,
+          allowed_formats: ['jpeg', 'jpg', 'png', 'webp', 'avif'],
           resource_type: 'image',
           transformation: [
             { width: 400, height: 400, crop: 'fill', gravity: 'face' },
@@ -78,7 +100,10 @@ export const createCloudinaryImageStorage = (
           filePath,
           'Warning: Could not delete local file:'
         );
-        return `v${result.version}/${result.public_id}.${result.format}`;
+        if (!result.secure_url) {
+          throw new Error('Cloudinary no devolvió la URL de la imagen');
+        }
+        return result.secure_url;
       } catch (error) {
         console.error(
           'Error uploading to Cloudinary:',
@@ -97,9 +122,8 @@ export const createCloudinaryImageStorage = (
     async delete(imagePath) {
       try {
         if (!imagePath || imagePath === settings.defaultAvatarPath) return true;
-        const publicId = imagePath
-          .replace(/^v\d+\//, '')
-          .replace(/\.[a-z0-9]+$/i, '');
+        const publicId = publicIdFromStored(imagePath);
+        if (!publicId) return false;
         const result = await cloudinary.uploader.destroy(publicId);
         return result.result;
       } catch (error) {

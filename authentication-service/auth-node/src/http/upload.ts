@@ -21,7 +21,7 @@ const isFileTooLarge = (error: unknown) =>
  * Lee un formulario multipart con un solo archivo opcional en `fieldName`.
  * Los campos de texto quedan en request.body y el archivo en request.uploadedFile,
  * guardado temporalmente en UPLOAD_PATH. Mismas validaciones y respuestas que multer:
- * tipo de imagen permitido, 5 MB máximo y ningún otro campo de archivo.
+ * tipo de imagen permitido, 10 MB máximo y ningún otro campo de archivo.
  * Si la petición no es multipart, el cuerpo (JSON o urlencoded) se deja igual.
  */
 export const singleFileUpload =
@@ -54,7 +54,7 @@ export const singleFileUpload =
           throw new HttpResponseError(400, {
             success: false,
             message: 'Tipo de archivo no permitido',
-            error: 'Solo se permiten imágenes (JPEG, JPG, PNG, GIF)',
+            error: 'Solo se permiten imágenes (JPEG, PNG, WEBP, AVIF)',
           });
         }
 

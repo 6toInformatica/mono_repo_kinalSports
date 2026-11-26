@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { CAPACITY_LABELS, FIELD_TYPE_LABELS } from "@/shared/lib/format";
 import {
+  assignImageError,
   dropEmptyFile,
   hasErrors,
   text,
@@ -48,6 +49,7 @@ const validate = (form: FormData): Errors => {
   else if (!(price > 0)) errors.pricePerHour = "Debe ser mayor a 0";
   if (!text(form, "description"))
     errors.description = "La descripción es obligatoria";
+  assignImageError(errors, form, "image");
   return errors;
 };
 
@@ -148,6 +150,7 @@ function FieldForm({
           label="Foto"
           name="image"
           currentUrl={resolveImage(field?.photo)}
+          error={errors.image}
           className="sm:col-span-2"
         />
       </form>

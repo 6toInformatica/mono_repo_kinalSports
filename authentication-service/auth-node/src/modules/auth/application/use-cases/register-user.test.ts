@@ -92,7 +92,7 @@ describe('registerUser', () => {
     );
   });
 
-  it('usa el avatar por defecto si la subida falla', async () => {
+  it('usa el avatar por defecto si la subida a Cloudinary falla', async () => {
     const { deps, register } = setup();
     vi.spyOn(console, 'error').mockImplementation(() => {});
     deps.images.upload.mockRejectedValue(new Error('cloudinary caído'));

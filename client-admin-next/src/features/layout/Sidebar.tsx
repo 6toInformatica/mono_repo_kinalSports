@@ -19,6 +19,7 @@ import {
 } from "@/features/auth/session";
 import { ROLE_LABELS } from "@/features/users/api";
 import { fullName } from "@/shared/lib/format";
+import { imageFieldError } from "@/shared/lib/forms";
 import { Button } from "@/shared/ui/Button";
 import { Badge } from "@/shared/ui/feedback";
 import { Modal } from "@/shared/ui/Modal";
@@ -46,13 +47,6 @@ const SECTIONS: {
   { href: "/dashboard/tournaments", label: "Torneos", icon: TrophyIcon },
   { href: "/dashboard/users", label: "Usuarios", icon: UserIcon },
 ];
-
-const ALLOWED_IMAGE_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/avif",
-]);
 
 const isActive = (pathname: string, href: string) =>
   href === "/dashboard" ? pathname === href : pathname.startsWith(href);
@@ -175,9 +169,12 @@ function ProfileModal({
               className="hidden"
               onChange={(event) => {
                 const file = event.target.files?.[0];
-                if (!file || !ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+                const message = imageFieldError(file);
+                if (!file || message) {
                   setSelectedFile(null);
                   setPreview(null);
+                  event.target.value = "";
+                  if (message) toast.error(message);
                   return;
                 }
                 setSelectedFile(file);

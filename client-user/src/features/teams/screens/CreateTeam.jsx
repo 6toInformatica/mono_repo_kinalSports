@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useForm, Controller } from "react-hook-form";
 import * as ImagePicker from "expo-image-picker";
+import { imageAssetError } from "../../../shared/utils/imageFile.js";
 import { MaterialIcons } from "@expo/vector-icons";
 import Input from "../../../shared/components/common/Input.jsx";
 import Button from "../../../shared/components/common/Button.jsx";
@@ -58,7 +59,13 @@ export default function CreateTeam({ navigation }) {
       quality: 0.7,
     });
     if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
+      const asset = result.assets[0];
+      const message = imageAssetError(asset);
+      if (message) {
+        Alert.alert("Imagen no válida", message);
+        return;
+      }
+      setImageUri(asset.uri);
     }
   }, []);
 

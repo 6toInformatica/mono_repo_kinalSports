@@ -8,6 +8,7 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
+import { imageFieldError } from "@/shared/lib/forms";
 
 const CONTROL =
   "min-h-11 w-full rounded-[10px] border bg-white px-3.5 text-sm text-ink placeholder:text-ink-soft/70 focus:outline-none focus:ring-2 focus:ring-brand/30 disabled:bg-surface disabled:text-ink-soft";
@@ -144,13 +145,6 @@ export function TextAreaField({
  * Selector de imagen con vista previa. `currentUrl` es la imagen guardada;
  * al elegir un archivo se muestra el nuevo hasta guardar.
  */
-const ALLOWED_IMAGE_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/avif",
-]);
-
 const sanitizeImageSrc = (url: string | null | undefined): string | null => {
   if (!url) return null;
   if (url.startsWith("/")) return url;
@@ -177,19 +171,24 @@ export function ImageField({
   name,
   currentUrl,
   className,
+  error,
 }: {
   label: string;
   name: string;
   currentUrl?: string | null;
   className?: string;
+  error?: string;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | undefined>(undefined);
   const shown = sanitizeImageSrc(preview ?? currentUrl);
+  const message = localError !== undefined ? localError || undefined : error;
 
   return (
     <FieldWrapper
       label={label}
-      hint="JPG, PNG o WEBP, hasta 10 MB"
+      error={message}
+      hint="JPG, PNG, WEBP o AVIF, hasta 10 MB"
       className={className}
     >
       {({ id, describedBy }) => (
@@ -211,7 +210,9 @@ export function ImageField({
             aria-describedby={describedBy}
             onChange={(event) => {
               const file = event.target.files?.[0];
-              if (!file || !ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+              const fileError = imageFieldError(file);
+              setLocalError(fileError ?? "");
+              if (!file || fileError) {
                 setPreview(null);
                 return;
               }

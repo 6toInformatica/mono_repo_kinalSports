@@ -3,6 +3,7 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { fullName } from "@/shared/lib/format";
 import {
+  assignImageError,
   dropEmptyFile,
   hasErrors,
   text,
@@ -147,6 +148,7 @@ const validateUser = (form: FormData): Errors => {
     errors.confirmPassword = "Debe confirmar su contraseña";
   else if (form.get("confirmPassword") !== password)
     errors.confirmPassword = "Las contraseñas no coinciden";
+  assignImageError(errors, form, "profilePicture");
   return errors;
 };
 
@@ -242,6 +244,7 @@ function CreateUser({
         <ImageField
           label="Foto de perfil"
           name="profilePicture"
+          error={errors.profilePicture}
           className="sm:col-span-2"
         />
       </form>

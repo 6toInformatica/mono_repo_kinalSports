@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { CAPACITY_LABELS, formatDate, toDateInput } from "@/shared/lib/format";
 import {
+  assignImageError,
   dropEmptyFile,
   hasErrors,
   text,
@@ -53,6 +54,7 @@ const validate = (form: FormData): Errors => {
   if (!text(form, "category")) errors.category = "La categoría es obligatoria";
   if (!text(form, "description"))
     errors.description = "La descripción es obligatoria";
+  assignImageError(errors, form, "logo");
   return errors;
 };
 
@@ -150,6 +152,7 @@ function TournamentForm({
         <ImageField
           label="Logo"
           name="logo"
+          error={errors.logo}
           currentUrl={resolveImage(tournament?.logo)}
           className="sm:col-span-2"
         />

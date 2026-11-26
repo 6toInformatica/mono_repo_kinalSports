@@ -31,7 +31,8 @@ export const buildApp = async (config: AppConfig, container: Container) => {
     logger: loggerOptions(config),
     // Detrás de un proxy (un salto), para que request.ip sea la IP real del cliente
     trustProxy: (_address, hop) => hop < 1,
-    bodyLimit: 10 * 1024 * 1024,
+    // 12 MB: la foto puede ocupar 10 MB y el resto del formulario multipart cabe junto
+    bodyLimit: 12 * 1024 * 1024,
   });
 
   app.decorateRequest('user', null);

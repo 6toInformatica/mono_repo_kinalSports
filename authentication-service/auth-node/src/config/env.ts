@@ -153,12 +153,13 @@ export const config = {
   },
   upload: {
     path: env.UPLOAD_PATH,
-    maxSize: 5 * 1024 * 1024,
+    maxSize: 10 * 1024 * 1024,
     allowedTypes: [
       'image/jpeg',
       'image/jpg',
       'image/png',
       'image/webp',
+      'image/avif',
     ] as string[],
   },
   mailProvider: env.MAIL_PROVIDER,

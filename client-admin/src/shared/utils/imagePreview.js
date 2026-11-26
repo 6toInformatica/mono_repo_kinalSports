@@ -1,4 +1,23 @@
-const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
+export const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+
+export const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/avif',
+]);
+
+/** null si el archivo puede enviarse. Un archivo vacío es opcional. */
+export const imageFileError = (file) => {
+  if (!file || file.size === 0) return null;
+  if (!ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+    return 'Formato no permitido. Usa JPG, PNG, WEBP o AVIF.';
+  }
+  if (file.size > IMAGE_MAX_BYTES) {
+    return 'La imagen supera los 10 MB.';
+  }
+  return null;
+};
 
 export const sanitizeImageSrc = (url) => {
   if (!url || typeof url !== 'string') return null;
@@ -25,7 +44,7 @@ export const sanitizeImageSrc = (url) => {
 };
 
 export const readImageFilePreview = (file, setPreview) => {
-  if (!file || !ALLOWED_IMAGE_MIME_TYPES.has(file.type)) {
+  if (imageFileError(file)) {
     setPreview(null);
     return;
   }

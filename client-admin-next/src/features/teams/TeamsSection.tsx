@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { CAPACITY_LABELS, fullName } from "@/shared/lib/format";
 import {
+  assignImageError,
   dropEmptyFile,
   hasErrors,
   text,
@@ -72,6 +73,7 @@ function TeamForm({
       found.teamName = "Debe tener al menos 3 caracteres";
     if (!text(form, "managerId")) found.managerId = "El manager es obligatorio";
     if (!text(form, "category")) found.category = "La categoría es obligatoria";
+    assignImageError(found, form, "logo");
     setErrors(found);
     if (hasErrors(found)) return;
 
@@ -199,6 +201,7 @@ function TeamForm({
         <ImageField
           label="Logo"
           name="logo"
+          error={errors.logo}
           currentUrl={resolveImage(team?.logo)}
           className="sm:col-span-2"
         />

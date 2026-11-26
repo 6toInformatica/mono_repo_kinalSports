@@ -35,8 +35,8 @@ export const makeRegisterUser = (deps: Deps) => {
   const { users, passwords, emails, images, present } = deps;
 
   /**
-   * Foto a guardar: un archivo local se sube a Cloudinary (si falla, se usa el avatar
-   * por defecto); una URL o ruta de Cloudinary se reduce al nombre del archivo.
+   * Sin archivo, o si Cloudinary no acepta la foto, el registro sigue y usa
+   * el avatar por defecto. Una URL o ruta ya publicada se reduce al nombre.
    */
   const resolveProfilePicture = async (picture: string | null) => {
     if (!picture) return null;

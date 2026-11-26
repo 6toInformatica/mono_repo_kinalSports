@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuthStore } from '../../../features/auth/store/authStore';
 import { getMyProfile, updateMyProfilePicture } from '../../api';
 import { ROLE_LABELS, fullName } from '../../utils/formatters';
-import { readImageFilePreview } from '../../utils/imagePreview';
+import { imageFileError, readImageFilePreview } from '../../utils/imagePreview';
 import { showError, showSuccess } from '../../utils/toast';
 import { Button } from '../ui/Button.jsx';
 import { Badge } from '../ui/feedback.jsx';
@@ -115,9 +115,12 @@ function ProfileModal({ user, onClose, onUserUpdated }) {
               className='hidden'
               onChange={(event) => {
                 const file = event.target.files?.[0];
-                if (!file) {
+                const message = imageFileError(file);
+                if (!file || message) {
                   setSelectedFile(null);
                   setPreview(null);
+                  event.target.value = '';
+                  if (message) showError(message);
                   return;
                 }
                 setSelectedFile(file);

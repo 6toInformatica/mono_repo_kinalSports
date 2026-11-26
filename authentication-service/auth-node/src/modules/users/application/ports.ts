@@ -32,7 +32,7 @@ export interface UserRepository {
 
 /** Almacenamiento de imágenes de perfil (Cloudinary) */
 export interface ImageStorage {
-  /** Sube el archivo local y devuelve la ruta a guardar (v<versión>/<public_id>.<ext>) */
+  /** Sube el archivo local y devuelve la secure_url de Cloudinary */
   upload(filePath: string, fileName: string): Promise<string>;
   delete(imagePath: string): Promise<unknown>;
   fullUrl(imagePath: string | null | undefined): string;

@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { readImageFilePreview, sanitizeImageSrc } from '../../../shared/utils/imagePreview.js';
+import {
+  imageFileError,
+  readImageFilePreview,
+  sanitizeImageSrc,
+} from '../../../shared/utils/imagePreview.js';
 import { Button } from '../../../shared/components/ui/Button.jsx';
 import { Modal } from '../../../shared/components/ui/Modal.jsx';
 import { FieldWrapper } from '../../../shared/components/ui/fields.jsx';
@@ -12,6 +16,7 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading }) => {
     handleSubmit,
     getValues,
     reset,
+    trigger,
     formState: { errors },
   } = useForm();
   const [preview, setPreview] = useState(null);
@@ -192,7 +197,8 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading }) => {
 
         <FieldWrapper
           label='Foto de perfil'
-          hint='JPG, PNG o WEBP, hasta 10 MB'
+          hint='JPG, PNG, WEBP o AVIF, hasta 10 MB'
+          error={errors.profilePicture?.message}
           className='sm:col-span-2'
         >
           {({ id, describedBy }) => (
@@ -211,8 +217,12 @@ export const CreateUserModal = ({ isOpen, onClose, onCreate, loading }) => {
                 aria-describedby={describedBy}
                 className='min-h-11 w-full cursor-pointer rounded-[10px] border border-dashed border-[#9aa9c2] bg-white px-3 py-2 text-sm text-brand file:mr-3 file:rounded-lg file:border-0 file:bg-brand-soft file:px-3 file:py-1.5 file:font-semibold file:text-brand'
                 {...register('profilePicture', {
+                  validate: (files) => imageFileError(files?.[0]) ?? true,
                   onChange: (e) => {
-                    readImageFilePreview(e.target.files?.[0], setPreview);
+                    const file = e.target.files?.[0];
+                    if (imageFileError(file)) setPreview(null);
+                    else readImageFilePreview(file, setPreview);
+                    void trigger('profilePicture');
                   },
                 })}
               />
