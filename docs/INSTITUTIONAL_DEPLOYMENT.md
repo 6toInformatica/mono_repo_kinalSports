@@ -1,8 +1,8 @@
 # Despliegue institucional — KinalSports
 
-Guía reproducible para Ubuntu 24.04 + **HestiaCP** + **Nginx** (host) + **Docker rootless**.
+Guía reproducible para Ubuntu 24.04 + **HestiaCP** + **Nginx** (host) + **Docker rootful**.
 
-Este documento **no** configura HestiaCP ni el servidor: el administrador crea dominios, certificados HTTPS y proxies inversos manualmente.
+En el servidor, Docker se administra con `sudo`. El operador previsto es `braulioecheverria`. Este documento **no** configura HestiaCP ni el servidor: ese operador crea dominios, certificados HTTPS y proxies inversos manualmente.
 
 > El stack **no se considera validado en producción** hasta probarse en el servidor institucional.
 
@@ -24,7 +24,8 @@ HestiaCP / Nginx (host)  — termina TLS
                                       └── /kinalSportsAdmin/v1/* → server-admin:3009
 
 Red Docker privada `kinal_inst_network`:
-  postgres, mongodb, redis, auth-node, server-admin
+  postgres, mongodb (con autenticación), redis (caché sin disco),
+  auth-node, server-admin
   (sin puertos publicados en el host)
 ```
 
@@ -44,8 +45,8 @@ Next.js habla con los backends por la red Docker (`AUTH_API_URL` / `ADMIN_API_UR
 | Servicio              | Contenedor                     | Puerto host       | Puerto interno |
 | --------------------- | ------------------------------ | ----------------- | -------------- |
 | PostgreSQL 18         | `kinal_inst_postgres`          | _(ninguno)_       | 5432           |
-| MongoDB 7             | `kinal_inst_mongodb`           | _(ninguno)_       | 27017          |
-| Redis 7               | `kinal_inst_redis`             | _(ninguno)_       | 6379           |
+| MongoDB 7 (auth)      | `kinal_inst_mongodb`           | _(ninguno)_       | 27017          |
+| Redis 7 (sin disco)   | `kinal_inst_redis`             | _(ninguno)_       | 6379           |
 | auth-node             | `kinal_inst_auth_node`         | _(ninguno)_       | 3007           |
 | server-admin          | `kinal_inst_server_admin`      | _(ninguno)_       | 3009           |
 | client-admin-next     | `kinal_inst_client_admin_next` | `127.0.0.1:33000` | 3000           |
@@ -67,6 +68,8 @@ cp .env.institutional.example .env.institutional
 Obligatorias:
 
 - `POSTGRES_USER`, `POSTGRES_PASSWORD`
+- `MONGO_INITDB_ROOT_USERNAME`, `MONGO_INITDB_ROOT_PASSWORD`
+- `MONGO_APP_USERNAME`, `MONGO_APP_PASSWORD` (distinto del root; solo `[A-Za-z0-9]`)
 - `JWT_SECRET` (≥ 32 caracteres)
 - `INTERNAL_SERVICE_TOKEN`
 - `ALLOWED_ORIGINS`, `ADMIN_ALLOWED_ORIGINS` (orígenes HTTPS de SSR y CSR)
@@ -74,8 +77,25 @@ Obligatorias:
 Generación de secretos:
 
 ```bash
-openssl rand -base64 48
+openssl rand -base64 48   # JWT, token interno, PostgreSQL
+openssl rand -hex 24      # contraseñas de MongoDB (la URI no las codifica)
 ```
+
+`--env-file` solo sustituye `${VAR}` en Compose. El archivo **no** se monta dentro de los contenedores. `auth-node` recibe PostgreSQL, JWT, Redis, CORS, Cloudinary de perfiles y Kinal Mail Hub. `server-admin` recibe MongoDB, JWT, Redis, CORS admin y Cloudinary de canchas, equipos y torneos. `client-admin-next` solo recibe las URLs internas del BFF y `SECURE_COOKIES`.
+
+### MongoDB
+
+El entrypoint de `mongo:7` crea el usuario root en `admin` y arranca con `--auth`. `dockerfiles/mongo/institutional-init-app-user.js` crea, en el primer arranque, un usuario con rol `readWrite` únicamente sobre `MONGO_DB_NAME`. `server-admin` se conecta con ese usuario (`authSource` = la misma base).
+
+Esos usuarios se crean solo si `inst_mongo_data` está vacío. No reutilizar un volumen inicializado sin autenticación: `--auth` quedaría activo y el script de init no volvería a ejecutarse.
+
+### Redis
+
+La aplicación usa Redis como caché Cache-Aside (perfiles, 60 s; listados de canchas, 120 s). No guarda sesiones ni colas. El servicio arranca con `--save ""` y `--appendonly no`, y no tiene volumen: un reinicio vacía la caché y los servicios la reconstruyen. No publica puerto y no exige contraseña.
+
+### Correo
+
+`auth-node` sigue usando Kinal Mail Hub (`MAIL_PROVIDER=kmh`, `KMH_API_BASE_URL`, `KMH_PROJECT_API_KEY`, `KMH_MAIL_FROM`) y el `extra_host` de `mail.lab.kinal.edu.gt`. Esas variables no se copian a `server-admin`.
 
 Build vs runtime: ver comentarios en `.env.institutional.example`. Tras cambiar `VITE_*`, hay que **reconstruir** el gateway (`up --build` o `build institutional-gateway`).
 
@@ -83,21 +103,32 @@ Build vs runtime: ver comentarios en `.env.institutional.example`. Tras cambiar 
 
 ## 3. Validar Compose
 
+En el servidor (Docker rootful):
+
+```bash
+sudo ./scripts/institutional/compose.sh config
+```
+
+El wrapper llama a `docker compose` sin `sudo`. En el servidor hay que invocarlo con `sudo`. En una estación con acceso directo al socket de Docker:
+
 ```bash
 ./scripts/institutional/compose.sh config
-# o:
-docker compose -f docker-compose.institutional.yml --env-file .env.institutional config
 ```
 
 ---
 
 ## 4. Construir e iniciar
 
+En el servidor:
+
 ```bash
-# Desde la raíz del monorepo
+sudo ./scripts/institutional/compose.sh up --build -d
+```
+
+Desde una estación con acceso directo al socket, y con `.env.institutional` ya creado:
+
+```bash
 pnpm docker:inst:up
-# equivalente:
-./scripts/institutional/compose.sh up --build -d
 ```
 
 ---
@@ -105,8 +136,7 @@ pnpm docker:inst:up
 ## 5. Verificar estado
 
 ```bash
-pnpm docker:inst:ps
-./scripts/institutional/compose.sh ps
+sudo ./scripts/institutional/compose.sh ps
 curl -fsS http://127.0.0.1:33000/api/health
 curl -fsS http://127.0.0.1:33001/healthz
 ```
@@ -123,9 +153,8 @@ docker exec kinal_inst_server_admin node -e "fetch('http://127.0.0.1:3009/kinalS
 ## 6. Logs
 
 ```bash
-pnpm docker:inst:logs
-./scripts/institutional/compose.sh logs -f --tail=200 auth-node
-./scripts/institutional/compose.sh logs -f --tail=200 institutional-gateway
+sudo ./scripts/institutional/compose.sh logs -f --tail=200 auth-node
+sudo ./scripts/institutional/compose.sh logs -f --tail=200 institutional-gateway
 ```
 
 ---
@@ -133,8 +162,8 @@ pnpm docker:inst:logs
 ## 7. Reiniciar
 
 ```bash
-./scripts/institutional/compose.sh restart
-./scripts/institutional/compose.sh restart client-admin-next
+sudo ./scripts/institutional/compose.sh restart
+sudo ./scripts/institutional/compose.sh restart client-admin-next
 ```
 
 ---
@@ -143,12 +172,12 @@ pnpm docker:inst:logs
 
 ```bash
 git pull   # o el mecanismo de entrega institucional
-pnpm docker:inst:up
+sudo ./scripts/institutional/compose.sh up --build -d
 # Solo frontends:
-./scripts/institutional/compose.sh up --build -d client-admin-next institutional-gateway
+sudo ./scripts/institutional/compose.sh up --build -d client-admin-next institutional-gateway
 ```
 
-Volúmenes de datos (`inst_*`) se conservan.
+Los volúmenes `inst_postgres18_data` e `inst_mongo_data` se conservan. Redis no tiene volumen.
 
 ---
 
@@ -157,7 +186,7 @@ Volúmenes de datos (`inst_*`) se conservan.
 1. Conservar el commit/tag anterior del código.
 2. `git checkout <tag-o-commit-anterior>`
 3. `pnpm docker:inst:up` para reconstruir imágenes de ese punto.
-4. Si un volumen quedó en mal estado, restaurar backup de `inst_postgres18_data` / `inst_mongo_data` (procedimiento de backup del servidor; fuera de este repo).
+4. Si un volumen quedó en mal estado, restaurar backup de `inst_postgres18_data` / `inst_mongo_data` (procedimiento de backup del servidor; fuera de este repo). Redis no se respalda.
 
 No hay `docker compose down -v` en operación normal: borraría datos.
 
@@ -213,23 +242,23 @@ Esa vía **no** está automatizada en `docker-compose.institutional.yml`; el gat
 
 ## 11. Scripts pnpm
 
-| Script                  | Acción                      |
-| ----------------------- | --------------------------- |
-| `pnpm docker:inst:up`   | `up --build -d`             |
-| `pnpm docker:inst:down` | `down` (conserva volúmenes) |
-| `pnpm docker:inst:logs` | `logs -f`                   |
-| `pnpm docker:inst:ps`   | `ps`                        |
+| Script                  | Acción                                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------- |
+| `pnpm docker:inst:up`   | `up --build -d` (socket local; en el servidor usar `sudo ./scripts/institutional/compose.sh`) |
+| `pnpm docker:inst:down` | `down` (conserva volúmenes)                                                                   |
+| `pnpm docker:inst:logs` | `logs -f`                                                                                     |
+| `pnpm docker:inst:ps`   | `ps`                                                                                          |
 
 ---
 
 ## 12. Pendientes de verificar en el servidor
 
 - [ ] Disponibilidad real de `33000` / `33001` (y del rango 33000–33049).
-- [ ] Docker rootless operativo (`docker info`, UID mapping, storage driver).
+- [ ] Docker rootful operativo para `braulioecheverria` vía `sudo` (`sudo docker info`).
 - [ ] Alcance DNS de `ks-ssr` / `ks-csr` y certificados.
 - [ ] Conectividad a `mail.lab.kinal.edu.gt` / `KMH_PROJECT_API_KEY`.
 - [ ] Credenciales Cloudinary de producción.
-- [ ] Backup de volúmenes `inst_*`.
+- [ ] Backup de `inst_postgres18_data` e `inst_mongo_data` (Redis no persiste).
 - [ ] Prueba de login HTTPS con `SECURE_COOKIES=true` en ambos frontends.
 - [ ] Que Hestia reenvíe `X-Forwarded-Proto: https`.
 
@@ -237,11 +266,12 @@ Esa vía **no** está automatizada en `docker-compose.institutional.yml`; el gat
 
 ## 13. Archivos del stack institucional
 
-| Archivo                                         | Rol                          |
-| ----------------------------------------------- | ---------------------------- |
-| `docker-compose.institutional.yml`              | Orquestación                 |
-| `.env.institutional.example`                    | Plantilla de variables       |
-| `dockerfiles/Dockerfile.institutional-gateway`  | Build SPA + Nginx gateway    |
-| `dockerfiles/nginx/institutional-gateway.conf`  | Proxy + estáticos + bloqueos |
-| `scripts/institutional/compose.sh`              | Wrapper compose              |
-| `client-admin-next/src/app/api/health/route.ts` | Health Next                  |
+| Archivo                                            | Rol                          |
+| -------------------------------------------------- | ---------------------------- |
+| `docker-compose.institutional.yml`                 | Orquestación                 |
+| `.env.institutional.example`                       | Plantilla de variables       |
+| `dockerfiles/mongo/institutional-init-app-user.js` | Usuario MongoDB `readWrite`  |
+| `dockerfiles/Dockerfile.institutional-gateway`     | Build SPA + Nginx gateway    |
+| `dockerfiles/nginx/institutional-gateway.conf`     | Proxy + estáticos + bloqueos |
+| `scripts/institutional/compose.sh`                 | Wrapper compose              |
+| `client-admin-next/src/app/api/health/route.ts`    | Health Next                  |

@@ -1,13 +1,18 @@
-# Despliegue institucional (Ubuntu 24.04 + HestiaCP + Docker rootless)
-# Dominios públicos (configurados en HestiaCP, no en este archivo):
+# Despliegue institucional (Ubuntu 24.04 + HestiaCP + Docker rootful).
+# En el servidor, Docker se administra con sudo (usuario braulioecheverria).
+# HestiaCP, certificados y proxies se configuran manualmente, fuera de este archivo.
+# Dominios públicos:
 #   ks-ssr.lab.kinal.edu.gt  → 127.0.0.1:33000  (client-admin-next)
 #   ks-csr.lab.kinal.edu.gt  → 127.0.0.1:33001  (gateway: SPA + proxy /api/v1 + /kinalSportsAdmin/v1)
 #
-# Uso:
+# Uso en el servidor:
 #   cp .env.institutional.example .env.institutional
 #   # completar secretos, luego:
-#   docker compose -f docker-compose.institutional.yml --env-file .env.institutional config
-#   docker compose -f docker-compose.institutional.yml --env-file .env.institutional up --build -d
+#   sudo docker compose -f docker-compose.institutional.yml --env-file .env.institutional config
+#   sudo docker compose -f docker-compose.institutional.yml --env-file .env.institutional up --build -d
+#
+# --env-file solo interpola ${VAR} en este archivo. No se monta el archivo
+# completo dentro de los contenedores: cada servicio declara sus variables.
 #
 # No altera docker-compose.yml ni docker-compose.prod.yml.
 # Rango de puertos host propuesto: 33000–33049 (verificar disponibilidad en el servidor).
@@ -43,23 +48,42 @@ services:
     image: mongo:7
     container_name: kinal_inst_mongodb
     restart: unless-stopped
+    environment:
+      # El entrypoint oficial crea este usuario en admin con rol root y
+      # arranca mongod con --auth. No lo usa la aplicación.
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:?Define MONGO_INITDB_ROOT_USERNAME en .env.institutional}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:?Define MONGO_INITDB_ROOT_PASSWORD en .env.institutional}
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-kinalSports}
+      # Usuario readWrite de la base de aplicación. El script de init solo corre
+      # con el volumen vacío; un volumen ya inicializado no recrea usuarios.
+      MONGO_APP_USERNAME: ${MONGO_APP_USERNAME:?Define MONGO_APP_USERNAME en .env.institutional}
+      MONGO_APP_PASSWORD: ${MONGO_APP_PASSWORD:?Define MONGO_APP_PASSWORD en .env.institutional}
+      MONGO_DB_NAME: ${MONGO_DB_NAME:-kinalSports}
     volumes:
       - inst_mongo_data:/data/db
+      - ./dockerfiles/mongo/institutional-init-app-user.js:/docker-entrypoint-initdb.d/10-app-user.js:ro
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test:
+        [
+          "CMD-SHELL",
+          'mongosh --quiet --host 127.0.0.1 --username "$$MONGO_APP_USERNAME" --password "$$MONGO_APP_PASSWORD" --authenticationDatabase "$$MONGO_DB_NAME" "$$MONGO_DB_NAME" --eval ''quit(db.runCommand({ ping: 1 }).ok ? 0 : 1)''',
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 20s
+      start_period: 30s
     networks:
       - kinal-inst-network
+    # Sin puertos en el host: solo red Docker privada
 
+  # Caché Cache-Aside (perfiles ~60 s, canchas ~120 s). No hay sesiones,
+  # colas ni datos que deban sobrevivir a un reinicio: sin RDB, sin AOF
+  # y sin volumen. Redis no tiene contraseña; no publica puertos.
   redis:
     image: redis:7-alpine
     container_name: kinal_inst_redis
     restart: unless-stopped
-    volumes:
-      - inst_redis_data:/data
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -118,9 +142,6 @@ services:
       CLOUDINARY_DEFAULT_AVATAR_FILENAME: ${CLOUDINARY_DEFAULT_AVATAR_FILENAME:-}
     extra_hosts:
       - "mail.lab.kinal.edu.gt:${KMH_HOST_IP:-181.114.7.76}"
-    env_file:
-      - path: .env.institutional
-        required: false
     # Sin publicación en el host: solo reachable vía red Docker / gateway
     healthcheck:
       test:
@@ -154,7 +175,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3009
-      URI_MONGODB: mongodb://mongodb:27017/${MONGO_DB_NAME:-kinalSports}
+      URI_MONGODB: mongodb://${MONGO_APP_USERNAME}:${MONGO_APP_PASSWORD}@mongodb:27017/${MONGO_DB_NAME:-kinalSports}?authSource=${MONGO_DB_NAME:-kinalSports}
       JWT_SECRET: ${JWT_SECRET}
       JWT_ISSUER: ${JWT_ISSUER:-AuthService}
       JWT_AUDIENCE: ${JWT_AUDIENCE:-AuthService}
@@ -165,9 +186,11 @@ services:
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
-    env_file:
-      - path: .env.institutional
-        required: false
+      # Carpetas propias de server-admin. CLOUDINARY_FOLDER del archivo de
+      # entorno es la de perfiles de auth-node y no se inyecta aquí.
+      CLOUDINARY_FOLDER: ${CLOUDINARY_FIELDS_FOLDER:-kinal_sports/fields}
+      CLOUDINARY_TEAMS_FOLDER: ${CLOUDINARY_TEAMS_FOLDER:-kinal_sports/teams}
+      CLOUDINARY_TOURNAMENTS_FOLDER: ${CLOUDINARY_TOURNAMENTS_FOLDER:-kinal_sports/tournaments}
     healthcheck:
       test:
         [
@@ -252,4 +275,3 @@ networks:
 volumes:
   inst_postgres18_data:
   inst_mongo_data:
-  inst_redis_data:

@@ -168,6 +168,6 @@ Para ejecutar el monorepo en modo producción (`docker-compose.prod.yml`, con et
 
 - [README Principal del Monorepo](../README.md)
 - [Arquitectura del Sistema](./ARCHITECTURE.md)
-- [Despliegue institucional (HestiaCP + Docker rootless)](./INSTITUTIONAL_DEPLOYMENT.md)
+- [Despliegue institucional (HestiaCP + Docker rootful)](./INSTITUTIONAL_DEPLOYMENT.md)
 - [Guía de Colaboración y Contribución](../CONTRIBUTING.md)
 - [Pruebas de Contrato HTTP](../tests/contract/README.md)
