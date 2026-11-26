@@ -11,6 +11,7 @@ import {
 } from "@/shared/lib/forms";
 import { useResource } from "@/shared/lib/use-resource";
 import { Button } from "@/shared/ui/Button";
+import { useConfirm } from "@/shared/ui/confirm";
 import {
   Badge,
   EmptyState,
@@ -34,8 +35,10 @@ import { useToast } from "@/shared/ui/toast";
 import {
   ROLES,
   ROLE_LABELS,
+  deactivateUser,
   getUsers,
   registerUser,
+  updateUser,
   updateUserRole,
   type AuthUser,
 } from "./api";
@@ -51,80 +54,148 @@ function UserDetail({
   isSelf,
   onClose,
   onSaved,
+  onRemoved,
 }: {
   user: AuthUser;
   isSelf: boolean;
   onClose: () => void;
-  onSaved: (role: string) => void;
+  onSaved: (user: AuthUser) => void;
+  onRemoved: () => void;
 }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const [role, setRole] = useState(user.role ?? "USER_ROLE");
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<Errors>({});
 
-  const save = async () => {
+  const save = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const found = validateProfile(form);
+    setErrors(found);
+    if (hasErrors(found)) return;
     setSaving(true);
     try {
-      const updated = await updateUserRole(user.id, role);
-      toast.success("Rol actualizado correctamente");
-      onSaved(updated?.role ?? role);
+      const updated = await updateUser(user.id, {
+        name: text(form, "name"),
+        surname: text(form, "surname"),
+        username: text(form, "username"),
+        email: text(form, "email"),
+        phone: text(form, "phone"),
+      });
+      if (!isSelf && role !== user.role) {
+        const withRole = await updateUserRole(user.id, role);
+        updated.role = withRole.role ?? role;
+      }
+      toast.success("Usuario actualizado");
+      onSaved(updated);
     } catch (err) {
-      toast.error((err as Error).message || "Error al actualizar rol");
+      toast.error((err as Error).message || "No se pudo actualizar el usuario");
       setSaving(false);
     }
   };
 
-  const rows: [string, string | undefined][] = [
-    ["Usuario", user.username && `@${user.username}`],
-    ["Correo", user.email],
-    ["Teléfono", user.phone],
-  ];
+  const remove = async () => {
+    const ok = await confirm({
+      title: "Desactivar usuario",
+      message: `¿Desactivar a ${fullName(user) || user.username}? La cuenta deja de poder entrar, pero el registro se conserva.`,
+      confirmLabel: "Desactivar",
+      danger: true,
+    });
+    if (!ok) return;
+    try {
+      await deactivateUser(user.id);
+      toast.success("Usuario desactivado");
+      onRemoved();
+    } catch (err) {
+      toast.error((err as Error).message || "No se pudo desactivar el usuario");
+    }
+  };
 
   return (
     <Modal
       open
       title={fullName(user) || user.username || "Usuario"}
       onClose={onClose}
+      size="lg"
       footer={
         <>
+          <Button
+            variant="danger-outline"
+            onClick={() => void remove()}
+            disabled={isSelf}
+          >
+            Desactivar
+          </Button>
           <Button variant="secondary" onClick={onClose}>
             Cerrar
           </Button>
-          <Button
-            onClick={() => void save()}
-            loading={saving}
-            disabled={isSelf || role === user.role}
-          >
-            Guardar rol
+          <Button type="submit" form="user-detail-form" loading={saving}>
+            Guardar
           </Button>
         </>
       }
     >
-      <div className="flex flex-col gap-5">
-        <div className="flex items-center gap-4">
+      <form
+        id="user-detail-form"
+        noValidate
+        onSubmit={(event) => void save(event)}
+        className="grid gap-4 sm:grid-cols-2"
+      >
+        <div className="sm:col-span-2">
           <Avatar src={user.profilePicture} size={64} />
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-            {rows.map(([label, value]) => (
-              <div key={label} className="contents">
-                <dt className="text-ink-soft">{label}</dt>
-                <dd className="break-all text-ink">{value || "—"}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
+        <TextField
+          label="Nombre"
+          name="name"
+          defaultValue={user.name}
+          error={errors.name}
+        />
+        <TextField
+          label="Apellido"
+          name="surname"
+          defaultValue={user.surname}
+          error={errors.surname}
+        />
+        <TextField
+          label="Usuario"
+          name="username"
+          defaultValue={user.username}
+          error={errors.username}
+        />
+        <TextField
+          label="Teléfono"
+          name="phone"
+          defaultValue={user.phone}
+          error={errors.phone}
+        />
+        <TextField
+          label="Correo"
+          name="email"
+          type="email"
+          defaultValue={user.email}
+          error={errors.email}
+          className="sm:col-span-2"
+        />
         <SelectField
           label="Rol"
           value={role}
           options={ROLE_OPTIONS}
           onChange={(event) => setRole(event.target.value)}
           disabled={isSelf}
-          hint={isSelf ? "No puedes cambiar tu propio rol" : undefined}
+          hint={
+            isSelf
+              ? "No puedes cambiar tu propio rol ni desactivar tu cuenta"
+              : undefined
+          }
+          className="sm:col-span-2"
         />
-      </div>
+      </form>
     </Modal>
   );
 }
 
-const validateUser = (form: FormData): Errors => {
+const validateProfile = (form: FormData): Errors => {
   const errors: Errors = {};
   if (!text(form, "name")) errors.name = "El nombre es obligatorio";
   if (!text(form, "surname")) errors.surname = "El apellido es obligatorio";
@@ -140,6 +211,11 @@ const validateUser = (form: FormData): Errors => {
   if (!email) errors.email = "El email es obligatorio";
   else if (!/^\S+@\S+\.\S+$/.test(email))
     errors.email = "Formato de email inválido";
+  return errors;
+};
+
+const validateUser = (form: FormData): Errors => {
+  const errors = validateProfile(form);
   const password = String(form.get("password") ?? "");
   if (!password) errors.password = "La contraseña es obligatoria";
   else if (password.length < 8)
@@ -284,7 +360,7 @@ export function UsersSection({ currentUserId }: { currentUserId?: string }) {
     <section className="flex flex-col gap-6">
       <PageHeader
         title="Usuarios"
-        description="Administra usuarios, consulta su información y cambia su rol"
+        description="Administra usuarios: edita sus datos, cambia su rol o desactiva la cuenta"
         action={
           <Button onClick={() => setCreating(true)}>
             <PlusIcon /> Nuevo usuario
@@ -380,7 +456,7 @@ export function UsersSection({ currentUserId }: { currentUserId?: string }) {
                       variant="secondary"
                       onClick={() => setSelected(user)}
                     >
-                      Ver detalle
+                      Editar
                     </Button>
                   </td>
                 </tr>
@@ -394,12 +470,16 @@ export function UsersSection({ currentUserId }: { currentUserId?: string }) {
           user={selected}
           isSelf={selected.id === currentUserId}
           onClose={() => setSelected(null)}
-          onSaved={(newRole) => {
+          onSaved={(updated) => {
             setData((list) =>
               list.map((user) =>
-                user.id === selected.id ? { ...user, role: newRole } : user,
+                user.id === selected.id ? { ...user, ...updated } : user,
               ),
             );
+            setSelected(null);
+          }}
+          onRemoved={() => {
+            setData((list) => list.filter((user) => user.id !== selected.id));
             setSelected(null);
           }}
         />

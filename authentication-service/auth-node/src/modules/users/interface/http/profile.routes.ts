@@ -43,6 +43,53 @@ export const profileRoutes =
             return reply.code(200).send(await users.listUsers());
           }
         );
+
+        limited.put<{
+          Params: { userId: string };
+          Body: {
+            name?: unknown;
+            surname?: unknown;
+            username?: unknown;
+            email?: unknown;
+            phone?: unknown;
+          };
+        }>(
+          '/users/:userId',
+          { preHandler: requireUser },
+          async (request, reply) => {
+            if (!isAdmin(request.user?.roles ?? [])) {
+              return reply
+                .code(403)
+                .send({ success: false, message: 'Forbidden' });
+            }
+            const updated = await users.updateUser(
+              request.params.userId,
+              request.body ?? {}
+            );
+            return reply.code(200).send({
+              success: true,
+              message: 'Usuario actualizado',
+              data: updated,
+            });
+          }
+        );
+
+        limited.delete<{ Params: { userId: string } }>(
+          '/users/:userId',
+          { preHandler: requireUser },
+          async (request, reply) => {
+            if (!isAdmin(request.user?.roles ?? [])) {
+              return reply
+                .code(403)
+                .send({ success: false, message: 'Forbidden' });
+            }
+            await users.deactivateUser(request.userId!, request.params.userId);
+            return reply.code(200).send({
+              success: true,
+              message: 'Usuario desactivado',
+            });
+          }
+        );
       })
     );
 

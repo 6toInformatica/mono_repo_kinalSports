@@ -34,5 +34,24 @@ export const updateUserRole = (id: string, roleName: string) =>
     body: { roleName },
   });
 
+export interface UserDetails {
+  name: string;
+  surname: string;
+  username: string;
+  email: string;
+  phone: string;
+}
+
+export const updateUser = async (id: string, body: UserDetails) => {
+  const response = await api<{ data: AuthUser }>("auth", `auth/users/${id}`, {
+    method: "PUT",
+    body,
+  });
+  return response.data;
+};
+
+export const deactivateUser = (id: string) =>
+  api("auth", `auth/users/${id}`, { method: "DELETE" });
+
 export const registerUser = (form: FormData) =>
   api("auth", "auth/register", { method: "POST", body: form });

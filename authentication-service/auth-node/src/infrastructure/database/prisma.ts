@@ -50,6 +50,7 @@ BEGIN
       email character varying(150) NOT NULL,
       password character varying(255) NOT NULL,
       status boolean NOT NULL DEFAULT false,
+      deleted_at timestamp with time zone,
       created_at timestamp with time zone NOT NULL,
       updated_at timestamp with time zone NOT NULL,
       CONSTRAINT pk_users PRIMARY KEY (id)
@@ -119,6 +120,10 @@ BEGIN
     CREATE INDEX ix_user_roles_user_id ON user_roles (user_id);
   END IF;
 END $$;
+
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at timestamp with time zone;
+ALTER TABLE roles DROP COLUMN IF EXISTS label;
+ALTER TABLE roles DROP COLUMN IF EXISTS deleted_at;
 `;
 
 export const connectDatabase = async () => {

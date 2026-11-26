@@ -41,7 +41,7 @@ export const authenticate =
         });
       }
 
-      if (!user.status) {
+      if (user.deletedAt || !user.status) {
         return reply.code(423).send({
           success: false,
           message: 'Cuenta desactivada. Contacta al administrador.',

@@ -31,7 +31,7 @@ export const makeRefreshSession =
 
     // Un usuario desactivado no puede seguir renovando su sesión
     const user = await users.findById(stored.userId);
-    if (!user || !user.status) {
+    if (!user || user.deletedAt || !user.status) {
       throw new UnauthorizedError('La cuenta está desactivada');
     }
 

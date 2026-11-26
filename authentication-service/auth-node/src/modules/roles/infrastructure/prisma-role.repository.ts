@@ -24,7 +24,7 @@ export class PrismaRoleRepository implements RoleRepository {
   async findUsersByRole(roleName: string) {
     const hasRole = { role: { name: roleName } };
     const records = await this.#db.user.findMany({
-      where: { userRoles: { some: hasRole } },
+      where: { deletedAt: null, userRoles: { some: hasRole } },
       include: {
         userProfile: true,
         userEmail: true,
@@ -53,7 +53,10 @@ export class PrismaRoleRepository implements RoleRepository {
 
       if (isAdmin && roleName !== ADMIN_ROLE) {
         const admins = await tx.userRole.findMany({
-          where: { role: { name: ADMIN_ROLE } },
+          where: {
+            role: { name: ADMIN_ROLE },
+            user: { deletedAt: null },
+          },
           distinct: ['userId'],
           select: { userId: true },
         });

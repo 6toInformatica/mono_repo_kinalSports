@@ -11,6 +11,7 @@ export const aUser = (overrides: Partial<User> = {}): User => ({
   email: 'andrea.morales@kinalsports.gt',
   passwordHash: 'hash',
   status: true,
+  deletedAt: null,
   createdAt: new Date('2026-01-01'),
   updatedAt: new Date('2026-01-01'),
   profile: { phone: '42178935', profilePicture: 'avatar.png' },
@@ -40,6 +41,8 @@ export const fakeDeps = () => {
       setPasswordResetToken: vi.fn(),
       updatePassword: vi.fn(),
       updateProfilePicture: vi.fn(),
+      updateDetails: vi.fn(),
+      softDelete: vi.fn(),
     },
     roles: {
       getUserRoleNames: vi.fn().mockResolvedValue(['USER_ROLE']),

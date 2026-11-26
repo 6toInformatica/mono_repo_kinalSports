@@ -27,6 +27,7 @@ export const toDomainUser = (record: UserRecord): User => ({
   email: record.email,
   passwordHash: record.password,
   status: record.status,
+  deletedAt: record.deletedAt,
   createdAt: record.createdAt,
   updatedAt: record.updatedAt,
   profile: record.userProfile && {
@@ -67,6 +68,7 @@ export class PrismaUserRepository implements UserRepository {
   findAll() {
     return guard(SEARCH_ERROR, async () => {
       const records = await this.#db.user.findMany({
+        where: { deletedAt: null },
         include: userWithRelations,
       });
       return records.map(toDomainUser);
@@ -235,7 +237,7 @@ export class PrismaUserRepository implements UserRepository {
           },
         }),
         this.#db.user.updateMany({
-          where: { id: userId },
+          where: { id: userId, deletedAt: null },
           data: { status: true },
         }),
       ])
@@ -278,6 +280,61 @@ export class PrismaUserRepository implements UserRepository {
         this.#db.userPasswordReset.updateMany({
           where: { userId },
           data: { passwordResetToken: null, passwordResetTokenExpiry: null },
+        }),
+      ])
+    );
+  }
+
+  async updateDetails(
+    userId: string,
+    details: {
+      name: string;
+      surname: string;
+      username: string;
+      email: string;
+      phone: string;
+    }
+  ) {
+    await guard('Error al actualizar usuario', () =>
+      this.#db.$transaction(async (tx) => {
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            name: details.name,
+            surname: details.surname,
+            username: details.username,
+            email: details.email,
+          },
+        });
+        const profiles = await tx.userProfile.updateMany({
+          where: { userId },
+          data: { phone: details.phone },
+        });
+        if (profiles.count === 0) {
+          await tx.userProfile.create({
+            data: {
+              id: generateId(),
+              userId,
+              phone: details.phone,
+              profilePicture: '',
+            },
+          });
+        }
+      })
+    );
+  }
+
+  async softDelete(userId: string) {
+    const now = new Date();
+    await guard('Error al desactivar usuario', () =>
+      this.#db.$transaction([
+        this.#db.user.update({
+          where: { id: userId },
+          data: { deletedAt: now, status: false },
+        }),
+        this.#db.refreshToken.updateMany({
+          where: { userId, revokedAt: null },
+          data: { revokedAt: now },
         }),
       ])
     );

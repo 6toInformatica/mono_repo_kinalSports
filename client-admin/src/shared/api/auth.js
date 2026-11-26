@@ -31,6 +31,15 @@ export const updateUserRole = async (userId, roleName) => {
   return await axiosAuth.put(`/users/${userId}/role`, { roleName });
 };
 
+export const updateUser = async (userId, body) => {
+  const { data } = await axiosAuth.put(`/auth/users/${userId}`, body);
+  return data?.data ?? data;
+};
+
+export const deactivateUser = async (userId) => {
+  return axiosAuth.delete(`/auth/users/${userId}`);
+};
+
 export const getMyProfile = async () => {
   const { data } = await axiosAuth.get('/auth/profile');
   return data?.data ?? data;

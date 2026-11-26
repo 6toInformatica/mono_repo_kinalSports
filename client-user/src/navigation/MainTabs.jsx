@@ -30,6 +30,10 @@ export default function MainTabs() {
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
+        headerStyle: { backgroundColor: COLORS.primary },
+        headerTintColor: "#ffffff",
+        headerTitleStyle: { fontWeight: "700" },
+        headerShadowVisible: false,
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.secondary,
         tabBarStyle: {

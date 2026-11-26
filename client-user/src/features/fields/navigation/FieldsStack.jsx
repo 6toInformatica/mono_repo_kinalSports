@@ -1,5 +1,6 @@
 // src/features/fields/navigation/FieldsStack.jsx
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { stackScreenOptions } from "../../../shared/constants/theme.js";
 import FieldsList from "../screens/FieldsList.jsx";
 import FieldDetail from "../screens/FieldDetail.jsx";
 import CreateReservation from "../screens/CreateReservation.jsx";
@@ -8,7 +9,7 @@ const Stack = createNativeStackNavigator();
 
 export default function FieldsStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={stackScreenOptions}>
       <Stack.Screen
         name="FieldsList"
         component={FieldsList}

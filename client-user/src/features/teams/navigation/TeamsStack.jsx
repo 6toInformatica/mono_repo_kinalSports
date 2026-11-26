@@ -1,5 +1,6 @@
 // src/features/teams/navigation/TeamsStack.jsx
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { stackScreenOptions } from "../../../shared/constants/theme.js";
 import TeamsList from "../screens/TeamsList.jsx";
 import TeamDetail from "../screens/TeamDetail.jsx";
 import MyTeams from "../screens/MyTeams.jsx";
@@ -9,7 +10,7 @@ const Stack = createNativeStackNavigator();
 
 export default function TeamsStack() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={stackScreenOptions}>
       <Stack.Screen
         name="TeamsList"
         component={TeamsList}

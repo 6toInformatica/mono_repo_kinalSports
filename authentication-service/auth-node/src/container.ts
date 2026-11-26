@@ -33,6 +33,10 @@ import {
   makeGetUserProfileByUsername,
   makeListUsers,
 } from './modules/users/application/use-cases/get-user-profile.ts';
+import {
+  makeDeactivateUser,
+  makeUpdateUser,
+} from './modules/users/application/use-cases/manage-user.ts';
 import { makeUpdateProfilePicture } from './modules/users/application/use-cases/update-profile-picture.ts';
 import { createUserPresenter } from './modules/users/application/user-response.ts';
 import { PrismaUserRepository } from './modules/users/infrastructure/prisma-user.repository.ts';
@@ -85,6 +89,8 @@ export const createContainer = (config: AppConfig) => {
       getProfile: makeGetUserProfile(deps),
       getProfileByUsername: makeGetUserProfileByUsername(deps),
       listUsers: makeListUsers(deps),
+      updateUser: makeUpdateUser(deps),
+      deactivateUser: makeDeactivateUser(deps),
       updateProfilePicture: makeUpdateProfilePicture(deps),
       /** Admin inicial si la tabla users está vacía (igual que DataSeeder en .NET) */
       seedAdmin: async () => {

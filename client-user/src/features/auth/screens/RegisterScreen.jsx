@@ -176,11 +176,18 @@ export default function RegisterScreen({ navigation }) {
         <Controller
           control={control}
           name="phone"
-          rules={{ required: "El teléfono es requerido" }}
+          rules={{
+            required: "El teléfono es requerido",
+            pattern: {
+              value: /^[0-9]{8}$/,
+              message: "Debe tener exactamente 8 dígitos",
+            },
+          }}
           render={({ field: { onChange, value, onBlur } }) => (
             <Input
               label="Teléfono"
-              placeholder="5512345678"
+              placeholder="12345678"
+              maxLength={8}
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}

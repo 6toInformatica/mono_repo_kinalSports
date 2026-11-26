@@ -3,6 +3,7 @@ import { useUserManagementStore } from '../store/useUserManagementStore.js';
 import { useAuthStore } from '../../auth/store/authStore.js';
 import { CreateUserModal } from './CreateUserModal.jsx';
 import { UserDetailModal } from './UserDetailModal.jsx';
+import { deactivateUser, updateUser } from '../../../shared/api/auth.js';
 import { showError, showSuccess } from '../../../shared/utils/toast.js';
 import { ROLE_LABELS, fullName } from '../../../shared/utils/formatters.js';
 import { Button } from '../../../shared/components/ui/Button.jsx';
@@ -65,14 +66,41 @@ export const Users = () => {
     setOpenDetailModal(true);
   };
 
-  const handleSaveRole = async (user, newRole) => {
-    const res = await updateUserRole(user.id, newRole);
-    if (res.success) {
-      showSuccess('Rol actualizado correctamente');
+  const handleSave = async (user, values) => {
+    try {
+      await updateUser(user.id, {
+        name: values.name,
+        surname: values.surname,
+        username: values.username,
+        email: values.email,
+        phone: values.phone,
+      });
+      if (values.role !== user.role && user.id !== currentUser?.id) {
+        const res = await updateUserRole(user.id, values.role);
+        if (!res.success) {
+          showError(res.error || 'Los datos se guardaron, pero el rol no cambió');
+          await fetchUsers(undefined, { force: true });
+          return;
+        }
+      }
+      showSuccess('Usuario actualizado');
       setOpenDetailModal(false);
       setSelectedUser(null);
-    } else {
-      showError(res.error || 'Error al actualizar rol');
+      await fetchUsers(undefined, { force: true });
+    } catch (error) {
+      showError(error.response?.data?.message || 'No se pudo actualizar el usuario');
+    }
+  };
+
+  const handleDeactivate = async (user) => {
+    try {
+      await deactivateUser(user.id);
+      showSuccess('Usuario desactivado');
+      setOpenDetailModal(false);
+      setSelectedUser(null);
+      await fetchUsers(undefined, { force: true });
+    } catch (error) {
+      showError(error.response?.data?.message || 'No se pudo desactivar el usuario');
     }
   };
 
@@ -91,7 +119,7 @@ export const Users = () => {
     <section className='flex flex-col gap-6'>
       <PageHeader
         title='Usuarios'
-        description='Administra usuarios, consulta su información y cambia su rol'
+        description='Administra usuarios: edita sus datos, cambia su rol o desactiva la cuenta'
         action={
           <Button onClick={() => setOpenCreateModal(true)}>
             <PlusIcon /> Nuevo usuario
@@ -179,7 +207,7 @@ export const Users = () => {
                   </td>
                   <td className={`${TD} text-right`}>
                     <Button size='sm' variant='secondary' onClick={() => handleOpenDetail(user)}>
-                      Ver detalle
+                      Editar
                     </Button>
                   </td>
                 </tr>
@@ -205,7 +233,8 @@ export const Users = () => {
         }}
         user={selectedUser}
         currentUserId={currentUser?.id}
-        onSaveRole={handleSaveRole}
+        onSave={handleSave}
+        onDeactivate={handleDeactivate}
         loading={loading}
       />
     </section>

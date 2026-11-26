@@ -28,6 +28,18 @@ export interface UserRepository {
   /** Cambia la contraseña, cierra las sesiones y consume el token de reset */
   updatePassword(userId: string, passwordHash: string): Promise<void>;
   updateProfilePicture(userId: string, profilePicture: string): Promise<void>;
+  updateDetails(
+    userId: string,
+    details: {
+      name: string;
+      surname: string;
+      username: string;
+      email: string;
+      phone: string;
+    }
+  ): Promise<void>;
+  /** Baja lógica y cierre de sesiones */
+  softDelete(userId: string): Promise<void>;
 }
 
 /** Almacenamiento de imágenes de perfil (Cloudinary) */

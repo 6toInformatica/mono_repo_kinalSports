@@ -9,6 +9,8 @@ export interface User {
   passwordHash: string;
   /** false hasta verificar el email, o si un administrador lo desactiva */
   status: boolean;
+  /** Baja lógica: el registro permanece, pero no inicia sesión ni aparece en el panel */
+  deletedAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   profile: { phone: string; profilePicture: string } | null;

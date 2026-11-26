@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#08316D"
       },
-      "package": "com.kinalsports.clientuser"
+      "package": "com.kinalsports.clientuser",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"

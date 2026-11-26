@@ -1,16 +1,29 @@
 // src/shared/constants/theme.js
 
 export const COLORS = {
-  primary: "#08316D",
-  secondary: "#64748b",
-  background: "#f8fafc",
+  primary: "#08316d",
+  primaryLight: "#0d3f86",
+  primaryDark: "#051f45",
+  soft: "#dbe4f3",
+  secondary: "#4b5563",
+  background: "#f4f6fa",
   surface: "#ffffff",
-  text: "#1e293b",
-  textLight: "#94a3b8",
-  error: "#ef4444",
-  success: "#22c55e",
+  text: "#111827",
+  textLight: "#4b5563",
+  error: "#b91c1c",
+  success: "#16a34a",
   warning: "#f59e0b",
-  border: "#e2e8f0",
+  border: "#e3e8f0",
+  borderStrong: "#c9d3e3",
+};
+
+/** Encabezados de las pilas, alineados con la barra azul de los paneles. */
+export const stackScreenOptions = {
+  headerStyle: { backgroundColor: COLORS.primary },
+  headerTintColor: "#ffffff",
+  headerTitleStyle: { fontWeight: "700" },
+  headerShadowVisible: false,
+  contentStyle: { backgroundColor: COLORS.background },
 };
 
 export const SPACING = {

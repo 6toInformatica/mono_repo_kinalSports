@@ -20,6 +20,12 @@ export const makeLoginUser =
       throw new UnauthorizedError('Credenciales inválidas');
     }
 
+    if (user.deletedAt) {
+      throw new LockedError(
+        'Tu cuenta está desactivada. Contacta al administrador.'
+      );
+    }
+
     if (!user.emailVerification?.verified) {
       throw new UnauthorizedError(
         'Debes verificar tu email antes de iniciar sesión. Revisa tu bandeja de entrada o reenvía el email de verificación.'
