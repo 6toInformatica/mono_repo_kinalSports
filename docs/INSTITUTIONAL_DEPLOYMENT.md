@@ -21,17 +21,18 @@ HestiaCP / Nginx (host)  — termina TLS
                                       │
                                       ├── estáticos SPA/PWA (dist)
                                       ├── /api/v1/*              → auth-node:3007
-                                      └── /kinalSportsAdmin/v1/* → server-admin:3009
+                                      ├── /kinalSportsAdmin/v1/* → server-admin:3009
+                                      └── /kinalSportsUser/v1/*  → server-user:3008
 
 Red Docker privada `kinal_inst_network`:
   postgres, mongodb (con autenticación), redis (caché sin disco),
-  auth-node, server-admin
+  auth-node, server-admin, server-user
   (sin puertos publicados en el host)
 ```
 
 ### Por qué un gateway Nginx interno
 
-Hestia solo ve `127.0.0.1`. Si las APIs no publican puertos, el Nginx del host **no** puede alcanzar `auth-node` / `server-admin`. El gateway:
+Hestia solo ve `127.0.0.1`. Si las APIs no publican puertos, el Nginx del host **no** puede alcanzar `auth-node`, `server-admin` ni `server-user`. El gateway:
 
 1. Sirve `client-admin` como estáticos (no hay contenedor Node permanente de Vite).
 2. Proxifica únicamente los prefijos públicos de API.
@@ -49,10 +50,11 @@ Next.js habla con los backends por la red Docker (`AUTH_API_URL` / `ADMIN_API_UR
 | Redis 7 (sin disco)   | `kinal_inst_redis`             | _(ninguno)_       | 6379           |
 | auth-node             | `kinal_inst_auth_node`         | _(ninguno)_       | 3007           |
 | server-admin          | `kinal_inst_server_admin`      | _(ninguno)_       | 3009           |
+| server-user           | `kinal_inst_server_user`       | _(ninguno)_       | 3008           |
 | client-admin-next     | `kinal_inst_client_admin_next` | `127.0.0.1:33000` | 3000           |
 | institutional-gateway | `kinal_inst_gateway`           | `127.0.0.1:33001` | 8080           |
 
-`server-user` y el runtime `.NET` **no** forman parte de este stack (paneles admin + auth-node).
+El runtime `.NET` **no** forma parte de este stack. `server-user` sí: la app móvil lo alcanza por `https://ks-csr.lab.kinal.edu.gt/kinalSportsUser/v1`.
 
 Rango propuesto de puertos: **33000–33049**. Debe verificarse en el servidor (`ss -lntp` / política del centro de datos) antes de fijar `INST_NEXT_PORT` / `INST_GATEWAY_PORT`.
 
@@ -81,11 +83,11 @@ openssl rand -base64 48   # JWT, token interno, PostgreSQL
 openssl rand -hex 24      # contraseñas de MongoDB (la URI no las codifica)
 ```
 
-`--env-file` solo sustituye `${VAR}` en Compose. El archivo **no** se monta dentro de los contenedores. `auth-node` recibe PostgreSQL, JWT, Redis, CORS, Cloudinary de perfiles y Kinal Mail Hub. `server-admin` recibe MongoDB, JWT, Redis, CORS admin y Cloudinary de canchas, equipos y torneos. `client-admin-next` solo recibe las URLs internas del BFF y `SECURE_COOKIES`.
+`--env-file` solo sustituye `${VAR}` en Compose. El archivo **no** se monta dentro de los contenedores. `auth-node` recibe PostgreSQL, JWT, Redis, CORS, Cloudinary de perfiles y Kinal Mail Hub. `server-admin` recibe MongoDB, JWT, Redis, CORS admin y Cloudinary de canchas, equipos y torneos. `server-user` recibe el mismo usuario MongoDB de aplicación, el mismo JWT y el mismo token interno, Redis, `ALLOWED_ORIGINS`, Cloudinary solo de equipos, `AUTH_NODE_URL` y `ADMIN_SERVICE_URL`. `client-admin-next` solo recibe las URLs internas del BFF y `SECURE_COOKIES`.
 
 ### MongoDB
 
-El entrypoint de `mongo:7` crea el usuario root en `admin` y arranca con `--auth`. `dockerfiles/mongo/institutional-init-app-user.js` crea, en el primer arranque, un usuario con rol `readWrite` únicamente sobre `MONGO_DB_NAME`. `server-admin` se conecta con ese usuario (`authSource` = la misma base).
+El entrypoint de `mongo:7` crea el usuario root en `admin` y arranca con `--auth`. `dockerfiles/mongo/institutional-init-app-user.js` crea, en el primer arranque, un usuario con rol `readWrite` únicamente sobre `MONGO_DB_NAME`. `server-admin` y `server-user` se conectan con ese usuario (`authSource` = la misma base). Comparten `kinalSports`; no se crea otro usuario ni se vuelve a ejecutar el init sobre un volumen ya lleno. Ninguno de los dos recibe `MONGO_INITDB_ROOT_USERNAME` ni `MONGO_INITDB_ROOT_PASSWORD`.
 
 Esos usuarios se crean solo si `inst_mongo_data` está vacío. No reutilizar un volumen inicializado sin autenticación: `--auth` quedaría activo y el script de init no volvería a ejecutarse.
 
@@ -175,9 +177,12 @@ git pull   # o el mecanismo de entrega institucional
 sudo ./scripts/institutional/compose.sh up --build -d
 # Solo frontends:
 sudo ./scripts/institutional/compose.sh up --build -d client-admin-next institutional-gateway
+# Incorporar o actualizar server-user y el proxy que lo publica.
+# No usar `down -v`: el volumen de MongoDB ya tiene el usuario de aplicación.
+sudo ./scripts/institutional/compose.sh up --build -d server-user institutional-gateway
 ```
 
-Los volúmenes `inst_postgres18_data` e `inst_mongo_data` se conservan. Redis no tiene volumen.
+Los volúmenes `inst_postgres18_data` e `inst_mongo_data` se conservan. Redis no tiene volumen. El conf del gateway va dentro de la imagen: un cambio de `/kinalSportsUser/v1/` exige reconstruir `institutional-gateway`, no basta con reiniciarlo.
 
 ---
 
@@ -210,13 +215,16 @@ Certificados Let’s Encrypt (o institucionales) en HestiaCP. Reenviar:
 
 ### Rutas relevantes (CSR vía gateway)
 
-| Ruta                               | Destino interno                     |
-| ---------------------------------- | ----------------------------------- |
-| `/`, `/assets/*`, PWA              | estáticos del gateway               |
-| `/api/v1/*`                        | `auth-node:3007`                    |
-| `/kinalSportsAdmin/v1/*`           | `server-admin:3009`                 |
-| `/api/v1/auth/profile/by-id`       | **404** en gateway (solo servicios) |
-| `/api/v1/auth/profile/by-username` | **404** en gateway                  |
+| Ruta                               | Destino interno                      |
+| ---------------------------------- | ------------------------------------ |
+| `/`, `/assets/*`, PWA              | estáticos del gateway                |
+| `/api/v1/*`                        | `auth-node:3007`                     |
+| `/kinalSportsAdmin/v1/*`           | `server-admin:3009`                  |
+| `/kinalSportsUser/v1/*`            | `server-user:3008` (prefijo intacto) |
+| `/api/v1/auth/profile/by-id`       | **404** en gateway (solo servicios)  |
+| `/api/v1/auth/profile/by-username` | **404** en gateway                   |
+
+`server-user` llama a `auth-node` por la red Docker (`AUTH_NODE_URL`), no a través del gateway. Por eso la foto de perfil y las consultas `profile/by-*` siguen funcionando aunque el gateway responda 404 a esas dos rutas. El JWT es el mismo (`JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`). La app móvil no envía `Origin`; un navegador en los orígenes de `ALLOWED_ORIGINS` sí pasa CORS. Las subidas admiten JPG, PNG, WEBP y AVIF de hasta 10 MB; el gateway acepta cuerpos de hasta 15 MB en esa ruta.
 
 ### Rutas relevantes (SSR / Next)
 
@@ -266,12 +274,13 @@ Esa vía **no** está automatizada en `docker-compose.institutional.yml`; el gat
 
 ## 13. Archivos del stack institucional
 
-| Archivo                                            | Rol                          |
-| -------------------------------------------------- | ---------------------------- |
-| `docker-compose.institutional.yml`                 | Orquestación                 |
-| `.env.institutional.example`                       | Plantilla de variables       |
-| `dockerfiles/mongo/institutional-init-app-user.js` | Usuario MongoDB `readWrite`  |
-| `dockerfiles/Dockerfile.institutional-gateway`     | Build SPA + Nginx gateway    |
-| `dockerfiles/nginx/institutional-gateway.conf`     | Proxy + estáticos + bloqueos |
-| `scripts/institutional/compose.sh`                 | Wrapper compose              |
-| `client-admin-next/src/app/api/health/route.ts`    | Health Next                  |
+| Archivo                                            | Rol                                |
+| -------------------------------------------------- | ---------------------------------- |
+| `docker-compose.institutional.yml`                 | Orquestación                       |
+| `.env.institutional.example`                       | Plantilla de variables             |
+| `dockerfiles/mongo/institutional-init-app-user.js` | Usuario MongoDB `readWrite`        |
+| `dockerfiles/Dockerfile.institutional-gateway`     | Build SPA + Nginx gateway          |
+| `dockerfiles/nginx/institutional-gateway.conf`     | Proxy + estáticos + bloqueos       |
+| `scripts/institutional/compose.sh`                 | Wrapper compose                    |
+| `scripts/institutional/stack.test.mjs`             | Contrato del compose y del gateway |
+| `client-admin-next/src/app/api/health/route.ts`    | Health Next                        |

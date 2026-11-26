@@ -3,7 +3,7 @@
 # HestiaCP, certificados y proxies se configuran manualmente, fuera de este archivo.
 # Dominios públicos:
 #   ks-ssr.lab.kinal.edu.gt  → 127.0.0.1:33000  (client-admin-next)
-#   ks-csr.lab.kinal.edu.gt  → 127.0.0.1:33001  (gateway: SPA + proxy /api/v1 + /kinalSportsAdmin/v1)
+#   ks-csr.lab.kinal.edu.gt  → 127.0.0.1:33001  (gateway: SPA + /api/v1 + /kinalSportsAdmin/v1 + /kinalSportsUser/v1)
 #
 # Uso en el servidor:
 #   cp .env.institutional.example .env.institutional
@@ -206,6 +206,57 @@ services:
     networks:
       - kinal-inst-network
 
+  # API de deportistas. Sin puertos en el host: solo el gateway la publica.
+  # Misma base y mismo usuario readWrite que server-admin. El root de MongoDB
+  # no se inyecta aquí. El volumen inst_mongo_data no se toca.
+  server-user:
+    build:
+      context: ./server-user
+      dockerfile: ../dockerfiles/Dockerfile.server-user
+      target: runtime
+    container_name: kinal_inst_server_user
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth-node:
+        condition: service_healthy
+      server-admin:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3008
+      URI_MONGODB: mongodb://${MONGO_APP_USERNAME}:${MONGO_APP_PASSWORD}@mongodb:27017/${MONGO_DB_NAME:-kinalSports}?authSource=${MONGO_DB_NAME:-kinalSports}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ISSUER: ${JWT_ISSUER:-AuthService}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-AuthService}
+      ADMIN_SERVICE_URL: ${ADMIN_SERVICE_URL:-http://server-admin:3009/kinalSportsAdmin/v1}
+      AUTH_NODE_URL: ${AUTH_NODE_URL:-http://auth-node:3007/api/v1}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      BUSINESS_TIMEZONE: ${BUSINESS_TIMEZONE:-America/Guatemala}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      CLOUDINARY_TEAMS_FOLDER: ${CLOUDINARY_TEAMS_FOLDER:-kinal_sports/teams}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3008/kinalSportsUser/v1/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+    networks:
+      - kinal-inst-network
+
   # Next.js SSR + BFF — único servicio de app publicado hacia el loopback del host
   client-admin-next:
     build:
@@ -261,6 +312,8 @@ services:
       auth-node:
         condition: service_healthy
       server-admin:
+        condition: service_healthy
+      server-user:
         condition: service_healthy
     ports:
       - "127.0.0.1:${INST_GATEWAY_PORT:-33001}:8080"
