@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   },
   name: {
     flex: 1,
-    fontSize: FONT_SIZE.md,
+    fontSize: FONT_SIZE.lg,
     fontWeight: "700",
     color: COLORS.text,
   },

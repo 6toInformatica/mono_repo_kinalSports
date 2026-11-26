@@ -114,6 +114,6 @@ const styles = StyleSheet.create({
     color: COLORS.surface,
   },
   info: { flex: 1 },
-  name: { fontSize: FONT_SIZE.md, fontWeight: "600", color: COLORS.text },
+  name: { fontSize: FONT_SIZE.lg, fontWeight: "600", color: COLORS.text },
   sport: { fontSize: FONT_SIZE.sm, color: COLORS.textLight, marginTop: 2 },
 });

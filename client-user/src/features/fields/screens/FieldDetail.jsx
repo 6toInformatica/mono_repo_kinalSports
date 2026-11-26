@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 200,
     borderRadius: 12,
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.soft,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: SPACING.md,
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: COLORS.soft,
     marginVertical: SPACING.sm,
   },
   errorText: { fontSize: FONT_SIZE.md, color: COLORS.error },

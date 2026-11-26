@@ -112,15 +112,15 @@ const styles = StyleSheet.create({
   imageFallback: {
     width: 80,
     height: 80,
-    borderRadius: 8,
-    backgroundColor: COLORS.border,
+    borderRadius: 10,
+    backgroundColor: COLORS.soft,
     alignItems: "center",
     justifyContent: "center",
   },
   imageFallbackText: { fontSize: FONT_SIZE.xs, color: COLORS.textLight },
   info: { flex: 1 },
   name: {
-    fontSize: FONT_SIZE.md,
+    fontSize: FONT_SIZE.lg,
     fontWeight: "600",
     color: COLORS.text,
     marginBottom: 2,

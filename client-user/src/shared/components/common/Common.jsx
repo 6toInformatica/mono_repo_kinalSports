@@ -1,7 +1,7 @@
 // src/shared/components/common/Common.jsx
 import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { COLORS, FONT_SIZE, SPACING, SHADOWS } from "../../constants/theme.js";
+import { COLORS, FONT_SIZE, SPACING } from "../../constants/theme.js";
 
 // ─── LoadingSpinner ───────────────────────────────────────────────────────────
 
@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     padding: SPACING.xl,
   },
   emptyTitle: {
-    fontSize: FONT_SIZE.lg,
+    fontSize: 18,
     fontWeight: "600",
     color: COLORS.text,
     marginTop: SPACING.md,
@@ -79,8 +79,14 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: COLORS.border,
     padding: SPACING.md,
-    ...SHADOWS.md,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+    elevation: 1,
   },
 });

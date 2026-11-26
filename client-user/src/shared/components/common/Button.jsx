@@ -5,7 +5,7 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
-import { COLORS, FONT_SIZE, SPACING, SHADOWS } from "../../constants/theme.js";
+import { COLORS } from "../../constants/theme.js";
 
 /**
  * @param {{
@@ -63,28 +63,26 @@ export default function Button({
 
 const styles = StyleSheet.create({
   base: {
-    height: 48,
+    minHeight: 48,
     borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: SPACING.lg,
-    ...SHADOWS.sm,
+    paddingHorizontal: 18,
   },
   primary: {
     backgroundColor: COLORS.primary,
   },
   secondary: {
     backgroundColor: COLORS.surface,
-    borderWidth: 1.5,
-    borderColor: COLORS.primary,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
   },
   disabled: {
     opacity: 0.5,
   },
   text: {
-    fontSize: FONT_SIZE.md,
+    fontSize: 14,
     fontWeight: "600",
-    letterSpacing: 0.3,
   },
   textPrimary: {
     color: COLORS.surface,

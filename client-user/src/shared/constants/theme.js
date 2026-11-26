@@ -1,4 +1,5 @@
 // src/shared/constants/theme.js
+import { FONTS } from "./fonts.js";
 
 export const COLORS = {
   primary: "#08316d",
@@ -10,6 +11,8 @@ export const COLORS = {
   surface: "#ffffff",
   text: "#111827",
   textLight: "#4b5563",
+  /** Etiquetas de formulario, igual que gray-700 de los paneles */
+  label: "#374151",
   error: "#b91c1c",
   success: "#16a34a",
   warning: "#f59e0b",
@@ -21,7 +24,7 @@ export const COLORS = {
 export const stackScreenOptions = {
   headerStyle: { backgroundColor: COLORS.primary },
   headerTintColor: "#ffffff",
-  headerTitleStyle: { fontWeight: "700" },
+  headerTitleStyle: { fontFamily: FONTS.displayBold, fontSize: 18 },
   headerShadowVisible: false,
   contentStyle: { backgroundColor: COLORS.background },
 };

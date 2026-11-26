@@ -233,9 +233,9 @@ const styles = StyleSheet.create({
     paddingTop: SPACING.xl,
   },
   title: {
-    fontSize: FONT_SIZE.xxl,
+    fontSize: 26,
     fontWeight: "700",
-    color: COLORS.text,
+    color: COLORS.primary,
     textAlign: "center",
     marginBottom: SPACING.xs,
   },

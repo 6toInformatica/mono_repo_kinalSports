@@ -1,6 +1,6 @@
 // src/shared/components/common/Input.jsx
 import { View, Text, TextInput, StyleSheet } from "react-native";
-import { COLORS, FONT_SIZE, SPACING } from "../../constants/theme.js";
+import { COLORS, SPACING } from "../../constants/theme.js";
 
 /**
  * @param {{
@@ -29,27 +29,29 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
   label: {
-    fontSize: FONT_SIZE.sm,
-    fontWeight: "500",
-    color: COLORS.text,
-    marginBottom: SPACING.xs,
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.label,
+    marginBottom: 6,
   },
   input: {
-    height: 48,
+    minHeight: 48,
     backgroundColor: COLORS.surface,
     borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    paddingHorizontal: SPACING.md,
-    fontSize: FONT_SIZE.md,
+    borderWidth: 1,
+    borderColor: COLORS.borderStrong,
+    paddingHorizontal: 14,
+    fontSize: 14,
     color: COLORS.text,
   },
   inputError: {
+    borderWidth: 2,
     borderColor: COLORS.error,
   },
   errorText: {
-    fontSize: FONT_SIZE.xs,
+    fontSize: 13,
+    fontWeight: "500",
     color: COLORS.error,
-    marginTop: SPACING.xs,
+    marginTop: 6,
   },
 });

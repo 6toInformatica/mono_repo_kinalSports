@@ -1,4 +1,5 @@
 // src/navigation/AuthStack.jsx
+import { StatusBar } from "expo-status-bar";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import LoginScreen from "../features/auth/screens/LoginScreen.jsx";
 import RegisterScreen from "../features/auth/screens/RegisterScreen.jsx";
@@ -8,10 +9,13 @@ const Stack = createNativeStackNavigator();
 
 export default function AuthStack() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Register" component={RegisterScreen} />
-      <Stack.Screen name="AccountEmail" component={AccountEmailScreen} />
-    </Stack.Navigator>
+    <>
+      <StatusBar style="dark" />
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="AccountEmail" component={AccountEmailScreen} />
+      </Stack.Navigator>
+    </>
   );
 }
