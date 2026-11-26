@@ -25,12 +25,12 @@
     "@react-navigation/native": "^7.5.1",
     "@react-navigation/native-stack": "^7.21.0",
     "axios": "^1.21.0",
-    "expo": "~58.0.23",
-    "expo-font": "~58.0.11",
+    "expo": "~58.1.0",
+    "expo-font": "~58.0.12",
     "expo-image-picker": "^58.0.10",
-    "expo-secure-store": "~58.0.2",
-    "expo-splash-screen": "~58.0.13",
-    "expo-status-bar": "~58.0.4",
+    "expo-secure-store": "~58.0.3",
+    "expo-splash-screen": "~58.0.15",
+    "expo-status-bar": "~58.0.5",
     "react": "19.3.0",
     "react-hook-form": "^7.91.0",
     "react-native": "0.88.1",
@@ -49,6 +49,6 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-native": "^4.1.0",
     "jest": "^30.5.2",
-    "jest-expo": "~58.0.15"
+    "jest-expo": "~58.0.16"
   }
 }

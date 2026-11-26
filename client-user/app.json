@@ -17,7 +17,8 @@
         "backgroundColor": "#08316D"
       },
       "package": "com.kinalsports.clientuser",
-      "versionCode": 1
+      "versionCode": 1,
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -37,6 +38,12 @@
           "imageWidth": 200
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "18d0cb3e-dfa5-490d-892a-b02eca65d20d"
+      }
+    },
+    "owner": "braudev"
   }
 }
