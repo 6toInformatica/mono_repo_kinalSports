@@ -381,6 +381,9 @@ importers:
       '@testing-library/react-native':
         specifier: ^14.1.0
         version: 14.1.0(jest@30.5.2(@types/node@24.19.2))(react-native@0.88.1(@babel/core@7.29.7)(@types/react@19.3.0)(react@19.3.0))(react@19.3.0)(test-renderer@1.3.0(@types/react@19.3.0)(react@19.3.0))
+      babel-preset-expo:
+        specifier: 58.0.27
+        version: 58.0.27(@babel/core@7.29.7)(@babel/runtime@7.29.10)(expo@58.1.0)(react-refresh@0.14.2)
       eslint:
         specifier: ^9.39.5
         version: 9.39.5(jiti@2.7.0)
@@ -8889,8 +8892,8 @@ snapshots:
 
   '@babel/helper-module-imports@7.29.7':
     dependencies:
-      '@babel/traverse': 7.29.12
-      '@babel/types': 7.29.11
+      '@babel/traverse': 7.29.15
+      '@babel/types': 7.29.15
     transitivePeerDependencies:
       - supports-color
 
@@ -12235,7 +12238,7 @@ snapshots:
       obug: 3.0.0
       std-env: 4.3.0
       tinyrainbow: 3.2.0
-      vitest: 5.1.0(@types/node@24.19.2)(@vitest/coverage-v8@5.1.0)(jsdom@31.0.1)(vite@8.3.7(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
+      vitest: 5.1.0(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(jsdom@31.0.1)(vite@8.3.7(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.51.2)(yaml@2.9.1))
 
   '@vitest/istanbul-lib-coverage@2.1.0': {}
 
@@ -15738,9 +15741,9 @@ snapshots:
       '@babel/code-frame': 7.29.7
       '@babel/core': 7.29.7
       '@babel/generator': 7.29.15
-      '@babel/parser': 7.29.12
+      '@babel/parser': 7.29.15
       '@babel/template': 7.29.7
-      '@babel/traverse': 7.29.12
+      '@babel/traverse': 7.29.15
       '@babel/types': 7.29.15
       accepts: 2.0.0
       connect: 3.7.0

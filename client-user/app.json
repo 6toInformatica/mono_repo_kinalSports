@@ -17,7 +17,8 @@
         "backgroundColor": "#08316D"
       },
       "package": "com.kinalsports.clientuser",
-      "versionCode": 1
+      "versionCode": 1,
+      "blockedPermissions": ["android.permission.SYSTEM_ALERT_WINDOW"]
     },
     "web": {
       "favicon": "./assets/favicon.png"
